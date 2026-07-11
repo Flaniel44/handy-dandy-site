@@ -1,0 +1,12 @@
+{
+  "name": "handy-dani",
+  "private": true,
+  "packageManager": "npm@11.4.2",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "npm run dev --workspace=@handy-dani/web",
+    "build": "npm run build --workspace=@handy-dani/web",
+    "lint": "npm run lint --workspace=@handy-dani/web",
+    "typecheck": "npm run typecheck --workspace=@handy-dani/web"
+  }
+}
