@@ -27,6 +27,12 @@ export function LandingScene() {
     const demosButton = root.querySelector<HTMLButtonElement>("[data-action='demos']");
     if (demosButton) demosButton.textContent = "What's Possible?";
 
+    const sceneSvg = root.querySelector<SVGSVGElement>(".stage > svg");
+    const mobileScene = window.matchMedia("(max-width: 620px)");
+    const syncSceneViewport = () => sceneSvg?.setAttribute("viewBox", mobileScene.matches ? "170 0 340 460" : "0 0 680 460");
+    syncSceneViewport();
+    mobileScene.addEventListener("change", syncSceneViewport);
+
     const hitArea = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     hitArea.setAttribute("x", "280");
     hitArea.setAttribute("y", "-45");
@@ -46,10 +52,12 @@ export function LandingScene() {
     }
 
     if (restored) root.classList.add("lit", "session-restored", "ambient-ready");
+    document.body.classList.toggle("landing-lights-off", !restored);
 
     let readyTimer: number | undefined;
     const setPowered = (powered: boolean) => {
       root.classList.toggle("lit", powered);
+      document.body.classList.toggle("landing-lights-off", !powered);
       chain.setAttribute("aria-label", powered ? "Turn the house lights off" : "Turn the house lights on");
       window.clearTimeout(readyTimer);
       if (powered && !root.classList.contains("session-restored")) {
@@ -76,8 +84,135 @@ export function LandingScene() {
     const actionFrom = (target: EventTarget | null) =>
       target instanceof Element ? target.closest<HTMLElement>("[data-action]")?.dataset.action : undefined;
 
+    const beads = Array.from(chain.querySelectorAll<SVGCircleElement>(":scope > circle"));
+    const handle = Array.from(chain.querySelectorAll<SVGRectElement>(":scope > rect")).find((rect) => rect !== hitArea);
+    const points = [
+      ...beads.map((bead) => ({ x: Number(bead.getAttribute("cx")), y: Number(bead.getAttribute("cy")), oldX: Number(bead.getAttribute("cx")), oldY: Number(bead.getAttribute("cy")) })),
+      { x: 340, y: 103, oldX: 340, oldY: 103 },
+    ];
+    const restingPoints = points.map((point) => ({ x: point.x, y: point.y }));
+    const segmentLengths = points.slice(1).map((point, index) => Math.hypot(point.x - points[index].x, point.y - points[index].y));
+    let pullStartX: number | undefined;
+    let pullStartY: number | undefined;
+    let pullDistance = 0;
+    let suppressTouchClick = false;
+    let previousMouseX: number | undefined;
+    let ropeFrame: number | undefined;
+    let grabbed = false;
+    let grabX = points.at(-1)!.x;
+    let grabY = points.at(-1)!.y;
+    let settledFrames = 0;
+    let mousePull = false;
+
+    const svgScale = () => {
+      const svg = chain.ownerSVGElement;
+      return svg ? svg.viewBox.baseVal.width / svg.getBoundingClientRect().width : 1;
+    };
+
+    const renderRope = () => {
+      beads.forEach((bead, index) => {
+        bead.setAttribute("cx", points[index].x.toFixed(2));
+        bead.setAttribute("cy", points[index].y.toFixed(2));
+      });
+      if (!handle) return;
+      const end = points.at(-1)!;
+      const previous = points.at(-2)!;
+      const angle = Math.atan2(end.y - previous.y, end.x - previous.x) * 180 / Math.PI - 90;
+      handle.setAttribute("x", (end.x - 7).toFixed(2));
+      handle.setAttribute("y", (end.y - 11).toFixed(2));
+      handle.setAttribute("transform", `rotate(${angle} ${end.x} ${end.y})`);
+    };
+
+    const simulateRope = () => {
+      let energy = 0;
+      for (let index = 1; index < points.length; index += 1) {
+        const point = points[index];
+        if (grabbed && index === points.length - 1) {
+          point.x = grabX; point.y = grabY; point.oldX = grabX; point.oldY = grabY;
+          continue;
+        }
+        const velocityX = (point.x - point.oldX) * .985;
+        const velocityY = (point.y - point.oldY) * .985;
+        point.oldX = point.x; point.oldY = point.y;
+        point.x += velocityX; point.y += velocityY + .16;
+        energy += Math.abs(velocityX) + Math.abs(velocityY);
+      }
+      for (let iteration = 0; iteration < 7; iteration += 1) {
+        points[0].x = restingPoints[0].x; points[0].y = restingPoints[0].y;
+        for (let index = 0; index < segmentLengths.length; index += 1) {
+          const first = points[index]; const second = points[index + 1];
+          const dx = second.x - first.x; const dy = second.y - first.y;
+          const distance = Math.hypot(dx, dy) || 1;
+          const correction = (distance - segmentLengths[index]) / distance;
+          const firstWeight = index === 0 ? 0 : 1;
+          const secondWeight = grabbed && index + 1 === points.length - 1 ? 0 : 1;
+          const weight = firstWeight + secondWeight || 1;
+          first.x += dx * correction * firstWeight / weight; first.y += dy * correction * firstWeight / weight;
+          second.x -= dx * correction * secondWeight / weight; second.y -= dy * correction * secondWeight / weight;
+        }
+        if (grabbed) { points.at(-1)!.x = grabX; points.at(-1)!.y = grabY; }
+      }
+      renderRope();
+      settledFrames = !grabbed && energy < .025 ? settledFrames + 1 : 0;
+      if (settledFrames > 12) {
+        points.forEach((point, index) => Object.assign(point, { ...restingPoints[index], oldX: restingPoints[index].x, oldY: restingPoints[index].y }));
+        renderRope(); ropeFrame = undefined; return;
+      }
+      ropeFrame = window.requestAnimationFrame(simulateRope);
+    };
+
+    const startRope = () => { if (ropeFrame === undefined) ropeFrame = window.requestAnimationFrame(simulateRope); };
+
+    const onScenePointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse" || grabbed) return;
+      const bounds = chain.getBoundingClientRect();
+      if (previousMouseX !== undefined && event.clientY >= bounds.top - 10 && event.clientY <= bounds.bottom + 20
+        && event.clientX >= bounds.left - 40 && event.clientX <= bounds.right + 40) {
+        const movement = event.clientX - previousMouseX;
+        if (Math.abs(movement) > .4) {
+          const relativeY = (event.clientY - bounds.top) / Math.max(1, bounds.height);
+          const index = Math.max(1, Math.min(points.length - 1, Math.round(relativeY * (points.length - 1))));
+          points[index].oldX -= movement * svgScale() * .32;
+          startRope();
+        }
+      }
+      previousMouseX = event.clientX;
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      const end = points.at(-1)!;
+      pullStartX = event.clientX; pullStartY = event.clientY; pullDistance = 0; grabbed = true;
+      mousePull = event.pointerType === "mouse";
+      grabX = end.x; grabY = end.y + (mousePull ? 18 * svgScale() : 0);
+      suppressTouchClick = event.pointerType !== "mouse";
+      chain.setPointerCapture(event.pointerId); startRope();
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (!grabbed || pullStartX === undefined || pullStartY === undefined) return;
+      event.preventDefault();
+      const scale = svgScale();
+      const downwardTravel = Math.max(0, event.clientY - pullStartY);
+      pullDistance = Math.min(86, downwardTravel * .78);
+      grabX = restingPoints.at(-1)!.x + (event.clientX - pullStartX) * scale * .65;
+      grabY = restingPoints.at(-1)!.y + (mousePull ? 18 + pullDistance : pullDistance) * scale;
+    };
+
+    const releasePullChain = (event: PointerEvent) => {
+      if (!grabbed) return;
+      const shouldToggle = event.type === "pointerup" && event.pointerType !== "mouse" && pullDistance >= 42;
+      grabbed = false; mousePull = false; pullStartX = undefined; pullStartY = undefined;
+      if (chain.hasPointerCapture(event.pointerId)) chain.releasePointerCapture(event.pointerId);
+      startRope();
+      if (shouldToggle) setPowered(!root.classList.contains("lit"));
+    };
+
     const onClick = (event: MouseEvent) => {
       const action = actionFrom(event.target);
+      if (action === "toggle-light" && suppressTouchClick) {
+        suppressTouchClick = false;
+        return;
+      }
       if (action) activate(action);
     };
 
@@ -120,11 +255,24 @@ export function LandingScene() {
     const ambientTimer = window.setInterval(flickerRandomRoom, 9000);
     container.addEventListener("click", onClick);
     container.addEventListener("keydown", onKeyDown);
+    container.addEventListener("pointermove", onScenePointerMove);
+    chain.addEventListener("pointerdown", onPointerDown);
+    chain.addEventListener("pointermove", onPointerMove);
+    chain.addEventListener("pointerup", releasePullChain);
+    chain.addEventListener("pointercancel", releasePullChain);
 
     return () => {
       container.removeEventListener("click", onClick);
       container.removeEventListener("keydown", onKeyDown);
+      container.removeEventListener("pointermove", onScenePointerMove);
+      chain.removeEventListener("pointerdown", onPointerDown);
+      chain.removeEventListener("pointermove", onPointerMove);
+      chain.removeEventListener("pointerup", releasePullChain);
+      chain.removeEventListener("pointercancel", releasePullChain);
+      mobileScene.removeEventListener("change", syncSceneViewport);
+      document.body.classList.remove("landing-lights-off");
       window.clearInterval(ambientTimer);
+      if (ropeFrame !== undefined) window.cancelAnimationFrame(ropeFrame);
       if (readyTimer) window.clearTimeout(readyTimer);
     };
   }, [router]);
