@@ -89,6 +89,37 @@ a { color: inherit; }
 }
 .text-link { display: block; margin-top: 35px; color: var(--muted); }
 
+.possibilities-page { min-height: 100vh; padding: 150px clamp(20px, 6vw, 90px) 100px; background: radial-gradient(circle at 85% 5%, #342d7055, transparent 30%), var(--night); }
+.possibilities-hero, .possibilities-grid, .possibilities-cta { width: min(100%, 1180px); margin-inline: auto; }
+.possibilities-hero { padding: 4vh 0 14vh; }
+.possibilities-hero h1 { max-width: 900px; margin: 18px 0 30px; font-size: clamp(4rem, 10vw, 8.5rem); line-height: .83; letter-spacing: -.065em; }
+.possibilities-hero > p:not(.eyebrow) { max-width: 650px; color: var(--muted); font-size: clamp(1rem, 2vw, 1.2rem); line-height: 1.75; }
+.possibilities-jump { display: inline-flex; gap: 12px; align-items: center; margin-top: 35px; color: var(--ink); font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-decoration: none; text-transform: uppercase; }
+.possibilities-jump span { color: #f4a04f; font-size: 1.2rem; }
+.possibilities-grid { display: grid; gap: clamp(35px, 7vw, 90px); }
+.possibility-card { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: clamp(30px, 6vw, 80px); align-items: center; }
+.possibility-card:nth-child(even) .possibility-media { order: 2; }
+.possibility-media { position: relative; min-height: clamp(270px, 42vw, 500px); display: grid; align-content: center; justify-items: center; padding: 30px; overflow: hidden; border: 1px solid #343c5b; border-radius: 14px; background: linear-gradient(135deg, #171d31, #10131f); color: var(--muted); text-align: center; }
+.possibility-media::before { content: ""; position: absolute; width: 55%; aspect-ratio: 1; border: 1px solid #8279e555; border-radius: 50%; box-shadow: 0 0 80px #6259c333; }
+.possibility-media > span { position: absolute; top: 22px; left: 24px; color: #f4a04f; font-size: .7rem; font-weight: 800; letter-spacing: .15em; }
+.possibility-media p, .possibility-media small { position: relative; margin: 0; }
+.possibility-media p { color: var(--ink); font-size: .8rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.possibility-media small { margin-top: 8px; color: var(--muted); }
+.possibility-copy > span { color: #f25d9c; font-size: .72rem; font-weight: 800; letter-spacing: .15em; }
+.possibility-copy h2 { margin: 15px 0 20px; font-size: clamp(2rem, 4vw, 4rem); line-height: .98; letter-spacing: -.04em; }
+.possibility-copy p { margin: 0; color: var(--muted); line-height: 1.75; }
+.possibilities-cta { margin-top: clamp(100px, 18vw, 220px); padding: clamp(45px, 8vw, 90px); border: 1px solid #343c5b; border-radius: 14px; background: #111522; text-align: center; }
+.possibilities-cta h2 { max-width: 800px; margin: 18px auto 8px; font-size: clamp(2.4rem, 6vw, 5rem); line-height: .98; letter-spacing: -.05em; }
+
+@media (max-width: 760px) {
+  .possibilities-page { padding-top: 120px; }
+  .possibilities-hero { padding-bottom: 90px; }
+  .possibility-card { grid-template-columns: 1fr; }
+  .possibility-card:nth-child(even) .possibility-media { order: 0; }
+  .possibility-media { min-height: 280px; }
+  .possibilities-cta { padding-inline: 24px; }
+}
+
 .booking-page { min-height: 100vh; padding: 90px clamp(20px, 5vw, 72px); background: radial-gradient(circle at 82% 8%, #332b6a55, transparent 32%), var(--night); }
 .booking-header { max-width: 1060px; margin: 0 auto 9vh; display: flex; justify-content: space-between; align-items: center; }
 .booking-header .text-link { margin: 0; }
