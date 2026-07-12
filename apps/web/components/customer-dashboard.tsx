@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -24,7 +23,7 @@ export function CustomerDashboard({ firstName }: { firstName: string }) {
   }
   const upcoming = appointments.filter((item) => new Date(item.endsAt).getTime() >= now && item.status !== "cancelled").reverse();
   const past = appointments.filter((item) => new Date(item.endsAt).getTime() < now || item.status === "cancelled");
-  return <main className="account-page"><header className="account-header"><div><Link className="account-home-link" href="/">🏠 Handy Dandy</Link><h1>Greetings, {firstName}.</h1></div></header>
+  return <main className="account-page"><header className="account-header"><div><p className="eyebrow">Your account</p><h1>Greetings, {firstName}.</h1></div></header>
     {message && <p className="admin-message">{message}</p>}
     <AccountScheduler onBooked={load} onMessage={setMessage} />
     <section className="account-panel"><h2>Upcoming appointments</h2>{upcoming.length === 0 ? <p className="empty-state">You have no upcoming appointments.</p> : <div className="customer-appointments">{upcoming.map((appointment) => <UpcomingAppointment key={appointment.id} appointment={appointment} save={saveNotes} />)}</div>}</section>

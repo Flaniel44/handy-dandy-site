@@ -73,7 +73,7 @@ export function AdminDashboard() {
   }
 
   return <main className="admin-page">
-    <header className="admin-header"><div><p className="eyebrow">Handy Dandy</p><h1>Admin</h1></div></header>
+    <header className="admin-header"><div><p className="eyebrow">Administration</p><h1>Admin</h1></div></header>
     {message && <p className="admin-message" role="status">{message}</p>}
 
     <section className="admin-panel"><div className="admin-section-heading"><div><h2>Working hours</h2><p>Recurring availability in {timezone || "your business timezone"}.</p></div><button onClick={saveHours}>Save hours</button></div>

@@ -12,7 +12,10 @@ export function SiteSessionNav() {
     fetch("/api/auth/me").then((response) => response.json()).then((body) => setUser(body.user)).catch(() => setUser(null));
   }, [pathname]);
   async function logout() { await fetch("/api/auth/logout", { method: "POST" }); setUser(null); router.replace("/"); router.refresh(); }
-  return <nav className="site-session-nav" aria-label="Account navigation">
-    {user ? <><Link href={user.role === "admin" ? "/admin" : "/account"}>Hi, {user.firstName}</Link><button onClick={logout}>Sign out</button></> : user === null ? <Link href="/login">Sign in</Link> : null}
-  </nav>;
+  return <>
+    {pathname !== "/" && <Link className="site-home-link" href="/" aria-label="Back to Handy Dandy home">← Handy Dandy</Link>}
+    <nav className="site-session-nav" aria-label="Account navigation">
+      {user ? <><Link href={user.role === "admin" ? "/admin" : "/account"}>Hi, {user.firstName}</Link><button onClick={logout}>Sign out</button></> : user === null ? <Link href="/login">Sign in</Link> : null}
+    </nav>
+  </>;
 }
