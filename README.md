@@ -20,7 +20,9 @@ configuration but are not connected yet.
 ## Repository layout
 
 - `apps/web`: Next.js website and future route handlers
+- `apps/web/components/landing-scene.tsx`: production landing-page interaction
+- `apps/web/components/landing-scene-markup.ts`: app-owned SVG scene markup
 - `packages/domain`: framework-independent booking types and rules
-- `reference`: original design reference
+- `reference`: design references only; production code never reads from this folder
 
 See `docs/architecture.md` for system boundaries and delivery order.
