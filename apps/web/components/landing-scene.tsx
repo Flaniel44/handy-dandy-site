@@ -10,20 +10,29 @@ const ROOM_CLASSES = ["lamp1", "lamp2", "lamp3", "lamp4"] as const;
 
 export function LandingScene() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const bookingPathRef = useRef("/book");
   const router = useRouter();
 
+  useEffect(() => {
+    fetch("/api/auth/me").then((response) => response.json()).then((body) => {
+      bookingPathRef.current = body.user?.role === "customer" ? "/account" : "/book";
+    }).catch(() => undefined);
+  }, []);
   useEffect(() => {
     const container = containerRef.current;
     const root = container?.querySelector<HTMLElement>("#scene-root");
     const chain = root?.querySelector<SVGGElement>("[data-action='toggle-light']");
     if (!container || !root || !chain) return;
 
+    const demosButton = root.querySelector<HTMLButtonElement>("[data-action='demos']");
+    if (demosButton) demosButton.textContent = "What's Possible?";
+
     const hitArea = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    hitArea.setAttribute("x", "316");
+    hitArea.setAttribute("x", "280");
     hitArea.setAttribute("y", "-45");
-    hitArea.setAttribute("width", "48");
-    hitArea.setAttribute("height", "166");
-    hitArea.setAttribute("rx", "18");
+    hitArea.setAttribute("width", "120");
+    hitArea.setAttribute("height", "175");
+    hitArea.setAttribute("rx", "30");
     hitArea.setAttribute("fill", "transparent");
     hitArea.setAttribute("pointer-events", "all");
     hitArea.setAttribute("aria-hidden", "true");
@@ -59,7 +68,7 @@ export function LandingScene() {
 
     const activate = (action: string) => {
       if (action === "toggle-light") setPowered(!root.classList.contains("lit"));
-      if (action === "book") router.push("/book");
+      if (action === "book") router.push(bookingPathRef.current);
       if (action === "demos") router.push("/demos");
       if (action === "contact") window.location.href = "mailto:hello@example.com";
     };

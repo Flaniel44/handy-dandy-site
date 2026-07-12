@@ -1,18 +1,20 @@
 import Link from "next/link";
 
+import { BookingForm } from "../../components/booking-form";
+
 export default function BookPage() {
   return (
-    <main className="simple-page">
-      <p className="eyebrow">Booking</p>
-      <h1>Let’s make your home work smarter.</h1>
-      <p>
-        Online scheduling is the next build slice. Soon you’ll choose a consultation,
-        see live availability, and confirm securely with Stripe.
-      </p>
-      <a className="primary-button" href="mailto:hello@example.com?subject=Consultation request">
-        Request a consultation
-      </a>
-      <Link className="text-link" href="/">Back home</Link>
+    <main className="booking-page">
+      <header className="booking-header">
+        <Link className="booking-brand" href="/">Handy Dandy</Link>
+        <Link className="text-link" href="/">Back home</Link>
+      </header>
+      <section className="booking-intro">
+        <p className="eyebrow">Book a consultation</p>
+        <h1>Let&apos;s make your home work smarter.</h1>
+        <p>Choose a convenient time, tell me a little about your home, and reserve your consultation.</p>
+      </section>
+      <BookingForm />
     </main>
   );
 }

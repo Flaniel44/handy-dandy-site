@@ -1,0 +1,20 @@
+import { cookies } from "next/headers";
+import { z } from "zod";
+
+import { ADMIN_COOKIE, adminCookieOptions, createAdminSessionToken, verifyPassword } from "../../../../lib/admin-auth";
+
+const loginSchema = z.object({ email: z.email(), password: z.string().min(1).max(200) });
+
+export async function POST(request: Request) {
+  const parsed = loginSchema.safeParse(await request.json().catch(() => null));
+  const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+  const passwordHash = process.env.ADMIN_PASSWORD_HASH;
+  if (!parsed.success || !adminEmail || !passwordHash) {
+    return Response.json({ error: "Invalid email or password." }, { status: 401 });
+  }
+  if (parsed.data.email.toLowerCase() !== adminEmail || !verifyPassword(parsed.data.password, passwordHash)) {
+    return Response.json({ error: "Invalid email or password." }, { status: 401 });
+  }
+  (await cookies()).set(ADMIN_COOKIE, createAdminSessionToken(adminEmail), adminCookieOptions());
+  return Response.json({ ok: true });
+}

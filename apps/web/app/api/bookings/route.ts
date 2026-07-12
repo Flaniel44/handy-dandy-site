@@ -1,0 +1,64 @@
+import { z } from "zod";
+
+import { getAvailabilityForDate } from "../../../lib/availability";
+import { getDb } from "../../../lib/db";
+import { appointments, bookingSlots, customers } from "../../../lib/db/schema";
+
+export const dynamic = "force-dynamic";
+
+const bookingSchema = z.object({
+  serviceId: z.uuid(),
+  date: z.iso.date(),
+  startsAt: z.iso.datetime({ offset: true }),
+  name: z.string().trim().min(2).max(120),
+  email: z.email().transform((email) => email.trim().toLowerCase()),
+  notes: z.string().trim().max(2000).default(""),
+});
+
+export async function POST(request: Request) {
+  const parsed = bookingSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return Response.json({ error: "Please check your booking details." }, { status: 400 });
+
+  const startsAt = new Date(parsed.data.startsAt);
+  try {
+    const availability = await getAvailabilityForDate(parsed.data.date, parsed.data.serviceId);
+    const selected = availability?.slots.find((slot) => slot.startsAt === startsAt.toISOString());
+    if (!availability || !selected) return Response.json({ error: "That time is no longer available." }, { status: 409 });
+
+    const result = await getDb().transaction(async (tx) => {
+      const [customer] = await tx.insert(customers).values({
+        name: parsed.data.name,
+        email: parsed.data.email,
+      }).onConflictDoUpdate({
+        target: customers.email,
+        set: { name: parsed.data.name, updatedAt: new Date() },
+      }).returning({ id: customers.id });
+
+      const [slot] = await tx.insert(bookingSlots).values({
+        serviceId: parsed.data.serviceId,
+        startsAt,
+        endsAt: new Date(selected.endsAt),
+        state: "confirmed",
+      }).returning({ id: bookingSlots.id });
+
+      const [appointment] = await tx.insert(appointments).values({
+        slotId: slot.id,
+        customerId: customer.id,
+        status: "confirmed",
+        clientNotes: parsed.data.notes,
+      }).returning({ id: appointments.id });
+
+      return { appointmentId: appointment.id };
+    });
+
+    return Response.json(result, { status: 201 });
+  } catch (error) {
+    if (isOverlapError(error)) return Response.json({ error: "That time was just reserved by someone else." }, { status: 409 });
+    console.error("Unable to create booking", error);
+    return Response.json({ error: "We could not reserve that time." }, { status: 500 });
+  }
+}
+
+function isOverlapError(error: unknown) {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "23P01";
+}

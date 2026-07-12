@@ -34,3 +34,5 @@ export function isActiveAppointment(status: AppointmentStatus): boolean {
 export function rangesOverlap(left: TimeRange, right: TimeRange): boolean {
   return left.startsAt < right.endsAt && right.startsAt < left.endsAt;
 }
+
+export * from "./availability";
