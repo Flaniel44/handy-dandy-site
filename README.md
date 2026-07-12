@@ -1,6 +1,6 @@
 # Handy Dandy
 
-Web-first booking platform for smart-home consultations.
+Web-first booking platform for smart-home consultations and personal technology help.
 
 ## Development
 

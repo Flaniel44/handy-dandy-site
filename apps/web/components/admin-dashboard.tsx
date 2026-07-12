@@ -25,7 +25,12 @@ export function AdminDashboard() {
     const responses = await Promise.all(endpoints.map((url) => fetch(url)));
     if (responses.some((response) => response.status === 401)) { router.replace("/admin/login"); return; }
     const [hoursBody, blocksBody, clientsBody, appointmentsBody, servicesBody] = await Promise.all(responses.map((response) => response.json()));
-    setHours(hoursBody.hours ?? []); setTimezone(hoursBody.timezone ?? ""); setBlocks(blocksBody.blocks ?? []);
+    setHours((hoursBody.hours ?? []).map((item: Hours) => ({
+      ...item,
+      startsAtLocal: item.startsAtLocal.slice(0, 5),
+      endsAtLocal: item.endsAtLocal.slice(0, 5),
+    })));
+    setTimezone(hoursBody.timezone ?? ""); setBlocks(blocksBody.blocks ?? []);
     setClients(clientsBody.clients ?? []); setAppointments(appointmentsBody.appointments ?? []); setServices(servicesBody.services ?? []);
   }, [router]);
 
@@ -36,7 +41,9 @@ export function AdminDashboard() {
 
   async function saveHours() {
     const response = await fetch("/api/admin/working-hours", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hours }) });
-    setMessage(response.ok ? "Working hours saved." : "Could not save working hours.");
+    const body = await response.json().catch(() => ({}));
+    setMessage(response.ok ? "Working hours saved." : body.error ?? "Could not save working hours.");
+    if (response.ok) await load();
   }
 
   function toggleDay(weekday: number) {
@@ -72,6 +79,11 @@ export function AdminDashboard() {
     setMessage(response.ok ? "Appointment updated." : "Could not update appointment."); if (response.ok) await load();
   }
 
+  const activeAppointmentGroups = groupAppointmentsByCustomer(appointments.filter((appointment) => appointment.status !== "completed"));
+  const completedAppointments = appointments
+    .filter((appointment) => appointment.status === "completed")
+    .sort((first, second) => new Date(second.startsAt).getTime() - new Date(first.startsAt).getTime());
+
   return <main className="admin-page">
     <header className="admin-header"><div><p className="eyebrow">Administration</p><h1>Admin</h1></div></header>
     {message && <p className="admin-message" role="status">{message}</p>}
@@ -92,8 +104,17 @@ export function AdminDashboard() {
       <form className="admin-grid-form" onSubmit={addAppointment}><label>Service<select name="serviceId" required>{services.map((service) => <option value={service.id} key={service.id}>{service.name}</option>)}</select></label><label>Date and time<input name="startsAtLocal" type="datetime-local" required /></label><label>Client name<input name="name" required /></label><label>Email<input name="email" type="email" required /></label><label>Phone<input name="phone" type="tel" inputMode="numeric" pattern="[0-9]*" onInput={(event) => { event.currentTarget.value = event.currentTarget.value.replace(/\D/g, ""); }} /></label><label className="wide">Notes<textarea name="notes" rows={3} /></label><button type="submit">Create appointment</button></form>
     </section>
 
-    <section className="admin-panel"><div className="admin-section-heading"><div><h2>Appointments</h2><p>{appointments.length} total appointments.</p></div></div>
-      <div className="appointment-list">{appointments.map((appointment) => <AppointmentEditor key={appointment.id} appointment={appointment} save={updateAppointment} />)}</div>
+    <section className="admin-panel"><div className="admin-section-heading"><div><h2>Appointments</h2><p>{appointments.length} total appointments, grouped by client.</p></div></div>
+      <div className="appointment-groups">
+        {activeAppointmentGroups.length ? activeAppointmentGroups.map((group) => <section className="appointment-group" key={group.email}>
+          <header><div><h3>{group.name}</h3><a href={`mailto:${group.email}`}>{group.email}</a></div><span>{group.appointments.length} appointment{group.appointments.length === 1 ? "" : "s"}</span></header>
+          <div className="appointment-list">{group.appointments.map((appointment) => <AppointmentEditor key={appointment.id} appointment={appointment} save={updateAppointment} showCustomer={false} />)}</div>
+        </section>) : <p className="empty-state">No current appointments.</p>}
+      </div>
+      <details className="completed-appointments">
+        <summary><span>Completed appointments</span><small>{completedAppointments.length}</small></summary>
+        {completedAppointments.length ? <div className="appointment-list">{completedAppointments.map((appointment) => <AppointmentEditor key={appointment.id} appointment={appointment} save={updateAppointment} />)}</div> : <p className="empty-state">No completed appointments yet.</p>}
+      </details>
     </section>
 
     <section className="admin-panel"><div className="admin-section-heading"><div><h2>Clients</h2><p>Guest and phone-booked clients are tracked by email.</p></div></div>
@@ -102,11 +123,24 @@ export function AdminDashboard() {
   </main>;
 }
 
-function AppointmentEditor({ appointment, save }: { appointment: Appointment; save: (id: string, notes: string, status: string) => Promise<void> }) {
+function AppointmentEditor({ appointment, save, showCustomer = true }: { appointment: Appointment; save: (id: string, notes: string, status: string) => Promise<void>; showCustomer?: boolean }) {
   const [notes, setNotes] = useState(appointment.notes); const [status, setStatus] = useState(appointment.status);
-  return <article><div className="appointment-summary"><div><strong>{appointment.customerName}</strong><span>{appointment.serviceName} · {formatDate(appointment.startsAt)}</span><a href={`mailto:${appointment.customerEmail}`}>{appointment.customerEmail}</a></div><small>{appointment.source}</small></div>
+  return <article><div className="appointment-summary"><div>{showCustomer && <strong>{appointment.customerName}</strong>}<span>{appointment.serviceName} · {formatDate(appointment.startsAt)}</span>{showCustomer && <a href={`mailto:${appointment.customerEmail}`}>{appointment.customerEmail}</a>}</div><small>{appointment.source}</small></div>
     <div className="appointment-controls"><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="confirmed">Confirmed</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="no_show">No show</option></select><textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} placeholder="Appointment notes" /><button onClick={() => save(appointment.id, notes, status)}>Save</button></div>
   </article>;
+}
+
+function groupAppointmentsByCustomer(items: Appointment[]) {
+  const groups = new Map<string, { name: string; email: string; appointments: Appointment[] }>();
+  for (const appointment of items) {
+    const key = appointment.customerEmail.toLowerCase();
+    const group = groups.get(key) ?? { name: appointment.customerName, email: appointment.customerEmail, appointments: [] };
+    group.appointments.push(appointment);
+    groups.set(key, group);
+  }
+  return [...groups.values()]
+    .sort((first, second) => first.name.localeCompare(second.name))
+    .map((group) => ({ ...group, appointments: group.appointments.sort((first, second) => new Date(first.startsAt).getTime() - new Date(second.startsAt).getTime()) }));
 }
 
 function formatDate(value: string) { return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }); }

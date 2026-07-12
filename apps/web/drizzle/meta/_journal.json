@@ -22,6 +22,13 @@
       "when": 1784008800000,
       "tag": "0002_customer_addresses",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784012400000,
+      "tag": "0003_personal_tech_help",
+      "breakpoints": true
     }
   ]
 }

@@ -5,10 +5,14 @@ import { requireAdmin } from "../../../../lib/admin-auth";
 import { getDb } from "../../../../lib/db";
 import { businessSettings, weeklyHours } from "../../../../lib/db/schema";
 
+const localTimeSchema = z.string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/)
+  .transform((value) => value.slice(0, 5));
+
 const hoursSchema = z.object({ hours: z.array(z.object({
   weekday: z.number().int().min(0).max(6),
-  startsAtLocal: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
-  endsAtLocal: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  startsAtLocal: localTimeSchema,
+  endsAtLocal: localTimeSchema,
 }).refine((value) => value.startsAtLocal < value.endsAtLocal, "End time must be after start time.")) });
 
 export async function GET() {

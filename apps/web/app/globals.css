@@ -35,7 +35,7 @@ a { color: inherit; }
 .site-home-link:hover { border-color: #8279e5; color: var(--ink); }
 .landing-scene-shell { width: min(100%, 760px); }
 .landing-scene-shell .stage { box-shadow: 0 32px 90px #0008; }
-.landing-scene-shell .name-ph { color: #f4a04f !important; font-size: .78rem !important; font-weight: 700 !important; letter-spacing: .19em; text-transform: uppercase; }
+.landing-scene-shell .name-ph { color: #f4a04f !important; font-size: .95rem !important; font-weight: 700 !important; letter-spacing: .19em; text-transform: uppercase; }
 .landing-scene-shell .cta-row { padding-top: 18px; }
 .landing-scene-shell .cta-row [data-action="contact"] { display: none; }
 .landing-scene-shell .cta-row button {
@@ -189,6 +189,21 @@ a { color: inherit; }
 .client-table article > div { display: flex; flex-wrap: wrap; gap: 8px 18px; }
 .client-table a { color: var(--muted); }
 .appointment-list > article { padding: 18px; border: 1px solid #2b334f; border-radius: 8px; background: #0d1120; }
+.appointment-groups { display: grid; gap: 18px; }
+.appointment-group { padding: 18px; border: 1px solid #343c5b; border-radius: 9px; background: #0c101d; }
+.appointment-group > header { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 0 2px 15px; border-bottom: 1px solid #29304a; }
+.appointment-group > header div { display: grid; gap: 5px; }
+.appointment-group > header h3 { margin: 0; font-size: 1.05rem; }
+.appointment-group > header a, .appointment-group > header span { color: var(--muted); font-size: .8rem; }
+.appointment-group .appointment-list { margin-top: 14px; }
+.completed-appointments { margin-top: 24px; border: 1px solid #343c5b; border-radius: 9px; background: #0c101d; }
+.completed-appointments > summary { display: flex; justify-content: space-between; align-items: center; padding: 17px 19px; cursor: pointer; font-weight: 800; list-style: none; }
+.completed-appointments > summary::-webkit-details-marker { display: none; }
+.completed-appointments > summary::before { content: "+"; width: 24px; color: #f4a04f; font-size: 1.2rem; }
+.completed-appointments[open] > summary::before { content: "−"; }
+.completed-appointments > summary span { flex: 1; }
+.completed-appointments > summary small { min-width: 28px; padding: 4px 8px; border-radius: 999px; background: #242c48; color: var(--muted); text-align: center; }
+.completed-appointments > .appointment-list, .completed-appointments > .empty-state { margin: 0 18px 18px; padding-top: 16px; border-top: 1px solid #29304a; }
 .appointment-summary { display: flex; justify-content: space-between; margin-bottom: 15px; }
 .appointment-summary > div { display: grid; gap: 5px; }
 .appointment-summary span, .appointment-summary a, .appointment-summary small { color: var(--muted); }

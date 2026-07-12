@@ -1,5 +1,6 @@
 "use client";
 
+import { mdiCctv } from "@mdi/js";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
@@ -49,6 +50,17 @@ export function LandingScene() {
         .vacuum-wifi-wave.wave-outer { animation-delay: .35s; }
         .scene-root.lit .robot-vacuum-runner,
         .scene-root.lit .vacuum-wifi-wave { animation-play-state: running; }
+        .camera-wifi-wave {
+          animation: cameraWifi 3.2s ease-out infinite;
+          animation-play-state: paused;
+          fill: none;
+          opacity: 0;
+          stroke: #c7cad5;
+          stroke-linecap: round;
+          stroke-width: 1.15;
+        }
+        .camera-wifi-wave.wave-outer { animation-delay: .32s; }
+        .scene-root.lit .camera-wifi-wave { animation-play-state: running; }
         @keyframes vacuumPatrol {
           0%, 8% { transform: translateX(0); }
           44%, 56% { transform: translateX(132px); }
@@ -62,6 +74,11 @@ export function LandingScene() {
           0%, 15%, 100% { opacity: 0; transform: translateY(2px); }
           35%, 65% { opacity: .9; }
           82% { opacity: 0; transform: translateY(-3px); }
+        }
+        @keyframes cameraWifi {
+          0%, 18%, 100% { opacity: 0; transform: translateY(1px); }
+          38%, 62% { opacity: .82; }
+          80% { opacity: 0; transform: translateY(-2px); }
         }
       `;
       root.append(vacuumStyles);
@@ -79,6 +96,15 @@ export function LandingScene() {
               <path class="vacuum-wifi-wave" d="M-4 -4 Q0 -8 4 -4" />
               <path class="vacuum-wifi-wave wave-outer" d="M-8 -7 Q0 -15 8 -7" />
             </g>
+          </g>
+        </g>
+        <g class="bathroom-camera" transform="translate(483 306) scale(1.15)">
+          <g transform="translate(24 0) scale(-1 1)">
+            <path d="${mdiCctv}" fill="#7f77dd" />
+          </g>
+          <g transform="translate(15 1)">
+            <path class="camera-wifi-wave" d="M-2.5 -1.5 Q0 -4 2.5 -1.5" />
+            <path class="camera-wifi-wave wave-outer" d="M-5 -3 Q0 -8 5 -3" />
           </g>
         </g>`,
       );
