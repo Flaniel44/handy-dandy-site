@@ -24,6 +24,66 @@ export function LandingScene() {
     const chain = root?.querySelector<SVGGElement>("[data-action='toggle-light']");
     if (!container || !root || !chain) return;
 
+    const houseScene = root.querySelector<SVGGElement>(".house-scene");
+    if (houseScene && !houseScene.querySelector(".robot-vacuum-runner")) {
+      const vacuumStyles = document.createElement("style");
+      vacuumStyles.textContent = `
+        .robot-vacuum-runner {
+          animation: vacuumPatrol 14s linear infinite;
+          animation-play-state: paused;
+        }
+        .robot-vacuum-body {
+          animation: vacuumFace 14s steps(1, end) infinite;
+          transform-box: fill-box;
+          transform-origin: center;
+        }
+        .vacuum-wifi-wave {
+          animation: vacuumWifi 2.4s ease-out infinite;
+          animation-play-state: paused;
+          fill: none;
+          opacity: 0;
+          stroke: #c7cad5;
+          stroke-linecap: round;
+          stroke-width: 1.8;
+        }
+        .vacuum-wifi-wave.wave-outer { animation-delay: .35s; }
+        .scene-root.lit .robot-vacuum-runner,
+        .scene-root.lit .vacuum-wifi-wave { animation-play-state: running; }
+        @keyframes vacuumPatrol {
+          0%, 8% { transform: translateX(0); }
+          44%, 56% { transform: translateX(132px); }
+          92%, 100% { transform: translateX(0); }
+        }
+        @keyframes vacuumFace {
+          0%, 49.99% { transform: scaleX(1); }
+          50%, 99.99% { transform: scaleX(-1); }
+        }
+        @keyframes vacuumWifi {
+          0%, 15%, 100% { opacity: 0; transform: translateY(2px); }
+          35%, 65% { opacity: .9; }
+          82% { opacity: 0; transform: translateY(-3px); }
+        }
+      `;
+      root.append(vacuumStyles);
+      houseScene.insertAdjacentHTML(
+        "beforeend",
+        `<g transform="translate(317 385)">
+          <g class="robot-vacuum-runner">
+            <g class="robot-vacuum-body">
+              <rect x="0" y="4" width="30" height="10" rx="2.5" fill="#151a2c" stroke="#7f77dd" stroke-width="2.2" />
+              <path d="M2 5 Q15 1 28 5" fill="none" stroke="#7f77dd" stroke-width="1.6" />
+              <rect x="11" y="2" width="8" height="3" rx="1.5" fill="#5a6080" />
+              <circle cx="24" cy="8" r="1.6" fill="#f59842" />
+            </g>
+            <g transform="translate(15 0)">
+              <path class="vacuum-wifi-wave" d="M-4 -4 Q0 -8 4 -4" />
+              <path class="vacuum-wifi-wave wave-outer" d="M-8 -7 Q0 -15 8 -7" />
+            </g>
+          </g>
+        </g>`,
+      );
+    }
+
     const demosButton = root.querySelector<HTMLButtonElement>("[data-action='demos']");
     if (demosButton) demosButton.textContent = "What's Possible?";
 
