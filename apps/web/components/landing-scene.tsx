@@ -119,16 +119,20 @@ export function LandingScene() {
     syncSceneViewport();
     mobileScene.addEventListener("change", syncSceneViewport);
 
-    const hitArea = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    hitArea.setAttribute("x", "280");
-    hitArea.setAttribute("y", "-45");
-    hitArea.setAttribute("width", "120");
-    hitArea.setAttribute("height", "175");
-    hitArea.setAttribute("rx", "30");
-    hitArea.setAttribute("fill", "transparent");
-    hitArea.setAttribute("pointer-events", "all");
-    hitArea.setAttribute("aria-hidden", "true");
-    chain.prepend(hitArea);
+    let hitArea = chain.querySelector<SVGRectElement>(":scope > rect[data-chain-hit-area]");
+    if (!hitArea) {
+      hitArea = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      hitArea.setAttribute("data-chain-hit-area", "true");
+      hitArea.setAttribute("x", "280");
+      hitArea.setAttribute("y", "-45");
+      hitArea.setAttribute("width", "120");
+      hitArea.setAttribute("height", "175");
+      hitArea.setAttribute("rx", "30");
+      hitArea.setAttribute("fill", "transparent");
+      hitArea.setAttribute("pointer-events", "all");
+      hitArea.setAttribute("aria-hidden", "true");
+      chain.prepend(hitArea);
+    }
 
     let restored = false;
     try {
@@ -171,7 +175,7 @@ export function LandingScene() {
       target instanceof Element ? target.closest<HTMLElement>("[data-action]")?.dataset.action : undefined;
 
     const beads = Array.from(chain.querySelectorAll<SVGCircleElement>(":scope > circle"));
-    const handle = Array.from(chain.querySelectorAll<SVGRectElement>(":scope > rect")).find((rect) => rect !== hitArea);
+    const handle = chain.querySelector<SVGRectElement>(":scope > rect:not([data-chain-hit-area])");
     const points = [
       ...beads.map((bead) => ({ x: Number(bead.getAttribute("cx")), y: Number(bead.getAttribute("cy")), oldX: Number(bead.getAttribute("cx")), oldY: Number(bead.getAttribute("cy")) })),
       { x: 340, y: 103, oldX: 340, oldY: 103 },
