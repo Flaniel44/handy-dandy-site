@@ -8,6 +8,7 @@ type Block = { id: string; startsAt: string; endsAt: string; reason: string };
 type Client = { id: string; name: string; email: string; phone?: string; appointmentCount: number };
 type Appointment = { id: string; status: string; notes: string; startsAt: string; endsAt: string; customerName: string; customerEmail: string; customerPhone?: string; serviceName: string; source: string };
 type Service = { id: string; name: string };
+type CalendarStatus = { configured: boolean; connected: boolean; connection: { calendarId: string; updatedAt: string } | null };
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export function AdminDashboard() {
@@ -18,13 +19,14 @@ export function AdminDashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [timezone, setTimezone] = useState("");
+  const [calendarStatus, setCalendarStatus] = useState<CalendarStatus>({ configured: false, connected: false, connection: null });
   const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
-    const endpoints = ["/api/admin/working-hours", "/api/admin/blocks", "/api/admin/clients", "/api/admin/appointments", "/api/services"];
+    const endpoints = ["/api/admin/working-hours", "/api/admin/blocks", "/api/admin/clients", "/api/admin/appointments", "/api/services", "/api/admin/google-calendar"];
     const responses = await Promise.all(endpoints.map((url) => fetch(url)));
     if (responses.some((response) => response.status === 401)) { router.replace("/admin/login"); return; }
-    const [hoursBody, blocksBody, clientsBody, appointmentsBody, servicesBody] = await Promise.all(responses.map((response) => response.json()));
+    const [hoursBody, blocksBody, clientsBody, appointmentsBody, servicesBody, calendarBody] = await Promise.all(responses.map((response) => response.json()));
     setHours((hoursBody.hours ?? []).map((item: Hours) => ({
       ...item,
       startsAtLocal: item.startsAtLocal.slice(0, 5),
@@ -32,6 +34,7 @@ export function AdminDashboard() {
     })));
     setTimezone(hoursBody.timezone ?? ""); setBlocks(blocksBody.blocks ?? []);
     setClients(clientsBody.clients ?? []); setAppointments(appointmentsBody.appointments ?? []); setServices(servicesBody.services ?? []);
+    setCalendarStatus(calendarBody);
   }, [router]);
 
   useEffect(() => {
@@ -79,6 +82,13 @@ export function AdminDashboard() {
     setMessage(response.ok ? "Appointment updated." : "Could not update appointment."); if (response.ok) await load();
   }
 
+  async function disconnectCalendar() {
+    if (!window.confirm("Disconnect Google Calendar? Calendar events will no longer block booking availability.")) return;
+    const response = await fetch("/api/admin/google-calendar", { method: "DELETE" });
+    setMessage(response.ok ? "Google Calendar disconnected." : "Could not disconnect Google Calendar.");
+    if (response.ok) await load();
+  }
+
   const activeAppointmentGroups = groupAppointmentsByCustomer(appointments.filter((appointment) => !["completed", "cancelled"].includes(appointment.status)));
   const completedAppointments = appointments
     .filter((appointment) => appointment.status === "completed")
@@ -101,6 +111,13 @@ export function AdminDashboard() {
     <section className="admin-panel admin-blocks-panel"><div className="admin-section-heading"><div><h2>Vacation and manual blocks</h2><p>Blocked periods are removed from public availability.</p></div></div>
       <form className="admin-inline-form" onSubmit={addBlock}><label>Starts<input name="startsAtLocal" type="datetime-local" required /></label><label>Ends<input name="endsAtLocal" type="datetime-local" required /></label><label>Reason<input name="reason" defaultValue="Vacation" required /></label><button type="submit">Add block</button></form>
       <div className="admin-list">{blocks.map((block) => <article key={block.id}><div><strong>{block.reason}</strong><p>{formatDate(block.startsAt)} → {formatDate(block.endsAt)}</p></div><button onClick={() => deleteBlock(block.id)}>Remove</button></article>)}</div>
+    </section>
+
+    <section className="admin-panel admin-calendar-panel"><div className="admin-section-heading"><div><h2>Google Calendar</h2><p>Timed events block availability and confirmed appointments sync back to your calendar.</p></div></div>
+      <div className="calendar-connection">
+        <div><strong>{calendarStatus.connected ? "Connected" : "Not connected"}</strong><p>{calendarStatus.connected ? `Calendar: ${calendarStatus.connection?.calendarId}` : calendarStatus.configured ? "Connect the Google account that owns your business calendar." : "Complete the Google Calendar environment variables first."}</p></div>
+        {calendarStatus.connected ? <button onClick={disconnectCalendar}>Disconnect</button> : <a className={`admin-action-link${calendarStatus.configured ? "" : " disabled"}`} href={calendarStatus.configured ? "/api/admin/google-calendar/connect" : undefined}>Connect Google Calendar</a>}
+      </div>
     </section>
 
     <details className="admin-panel admin-collapsible-panel admin-phone-panel"><summary><span><strong>Add a phone appointment</strong><small>Create a confirmed appointment for a phone-booked client.</small></span></summary>

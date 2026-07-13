@@ -19,7 +19,8 @@ experience and a database-backed guest booking flow. PostgreSQL stores services,
 working hours, blocks, customers, holds, and appointments. Guest bookings are confirmed
 without online payment. The protected admin area manages schedules, vacations, clients,
 appointments, and notes. Optional customer accounts provide appointment history and
-customer-editable notes. Google Calendar and payments are not connected yet.
+customer-editable notes. The admin can connect Google Calendar through OAuth; timed
+events block availability and confirmed appointments sync back. Payments are not connected yet.
 
 ## Database commands
 
@@ -54,6 +55,15 @@ cancels a valid appointment.
 Incoming addresses such as `hello@whatisthis.place` can be forwarded to a personal Gmail account with
 Cloudflare Email Routing. Configure the same address under Gmail's **Send mail as** setting using Resend's
 SMTP host so manual replies retain the business address.
+
+## Google Calendar
+
+Enable the Google Calendar API and create a Web application OAuth client. Configure
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALENDAR_ID`,
+`GOOGLE_OAUTH_REDIRECT_URI`, and a base64-encoded 32-byte `GOOGLE_TOKEN_ENCRYPTION_KEY`.
+The redirect URI must exactly match `/api/admin/google-calendar/callback` on the running app.
+Connect or disconnect from the admin dashboard. Refresh tokens are encrypted at rest;
+changing the encryption key requires reconnecting the calendar.
 
 ## Repository layout
 

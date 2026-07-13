@@ -5,6 +5,7 @@ import { requireAdmin } from "../../../../../lib/admin-auth";
 import { getDb } from "../../../../../lib/db";
 import { appointments, bookingSlots, customers, services } from "../../../../../lib/db/schema";
 import { sendAppointmentCancelled } from "../../../../../lib/email";
+import { deleteGoogleEvent } from "../../../../../lib/google-calendar";
 
 const updateSchema = z.object({
   notes: z.string().trim().max(2000).optional(),
@@ -24,6 +25,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     customerEmail: customers.email,
     customerName: customers.name,
     serviceName: services.name,
+    googleEventId: appointments.googleEventId,
   }).from(appointments)
     .innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(customers, eq(customers.id, appointments.customerId))
@@ -42,6 +44,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     } catch (emailError) {
       console.error("Appointment cancelled by admin but confirmation email failed", emailError);
     }
+    try { await deleteGoogleEvent(existing.googleEventId); }
+    catch (calendarError) { console.error("Appointment cancelled by admin but Google Calendar sync failed", calendarError); }
   }
   return Response.json({ ok: true });
 }

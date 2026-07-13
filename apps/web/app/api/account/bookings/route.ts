@@ -5,6 +5,7 @@ import { getAvailabilityForDate } from "../../../../lib/availability";
 import { getDb } from "../../../../lib/db";
 import { appointments, bookingSlots } from "../../../../lib/db/schema";
 import { sendBookingConfirmation } from "../../../../lib/email";
+import { createGoogleEventForAppointment } from "../../../../lib/google-calendar";
 
 const schema = z.object({
   serviceId: z.uuid(), date: z.iso.date(), startsAt: z.iso.datetime({ offset: true }),
@@ -35,6 +36,8 @@ export async function POST(request: Request) {
     } catch (emailError) {
       console.error("Account booking created but confirmation email failed", emailError);
     }
+    try { await createGoogleEventForAppointment(appointment.id); }
+    catch (calendarError) { console.error("Account booking created but Google Calendar sync failed", calendarError); }
     return Response.json({ appointmentId: appointment.id }, { status: 201 });
   } catch (error) {
     if (typeof error === "object" && error && "code" in error && error.code === "23P01") {

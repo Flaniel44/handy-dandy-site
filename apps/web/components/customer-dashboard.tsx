@@ -60,10 +60,13 @@ function AccountScheduler({ onBooked, onMessage }: { onBooked: () => Promise<voi
     Promise.all(Array.from({ length: 7 }, async (_, index) => {
       const dateText = formatDateInput(addDays(week, index));
       const response = await fetch(`/api/availability?date=${dateText}&serviceId=${serviceId}`, { signal: controller.signal });
-      const body = await response.json(); return [dateText, body.slots ?? []] as const;
-    })).then((entries) => setAvailability(Object.fromEntries(entries))).catch(() => undefined).finally(() => setLoading(false));
+      const body = await response.json(); if (!response.ok) throw new Error(body.error ?? "Availability is temporarily unavailable.");
+      return [dateText, body.slots ?? []] as const;
+    })).then((entries) => setAvailability(Object.fromEntries(entries))).catch((error) => {
+      if (error.name !== "AbortError") { setAvailability({}); onMessage(error.message ?? "Availability is temporarily unavailable."); }
+    }).finally(() => setLoading(false));
     return () => controller.abort();
-  }, [open, serviceId, week]);
+  }, [open, serviceId, week, onMessage]);
 
   function changeWeek(amount: number) { setWeek((value) => addDays(value, amount * 7)); setSelected(undefined); setLoading(true); }
   async function book() {
@@ -124,10 +127,13 @@ function AppointmentRescheduler({ appointment, onChanged, onMessage }: { appoint
     Promise.all(weekDates.map(async (date) => {
       const dateText = formatDateInput(date);
       const response = await fetch(`/api/availability?date=${dateText}&serviceId=${appointment.serviceId}`, { signal: controller.signal });
-      const body = await response.json(); return [dateText, body.slots ?? []] as const;
-    })).then((entries) => setAvailability(Object.fromEntries(entries))).catch(() => undefined).finally(() => setLoading(false));
+      const body = await response.json(); if (!response.ok) throw new Error(body.error ?? "Availability is temporarily unavailable.");
+      return [dateText, body.slots ?? []] as const;
+    })).then((entries) => setAvailability(Object.fromEntries(entries))).catch((error) => {
+      if (error.name !== "AbortError") { setAvailability({}); onMessage(error.message ?? "Availability is temporarily unavailable."); }
+    }).finally(() => setLoading(false));
     return () => controller.abort();
-  }, [open, week, appointment.serviceId]);
+  }, [open, week, appointment.serviceId, onMessage]);
   function changeWeek(amount: number) { setWeek((value) => addDays(value, amount * 7)); setSelected(undefined); }
   async function confirm() {
     if (!selected) return; setLoading(true);

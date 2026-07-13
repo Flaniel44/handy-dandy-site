@@ -26,9 +26,10 @@ export function BookingForm() {
     Promise.all(Array.from({ length: 7 }, async (_, index) => {
       const dateText = formatDateInput(addDays(week, index));
       const response = await fetch(`/api/availability?date=${dateText}&serviceId=${serviceId}`, { signal: controller.signal });
-      const body = await response.json(); return [dateText, body.slots ?? []] as const;
+      const body = await response.json(); if (!response.ok) throw new Error(body.error ?? "Availability is temporarily unavailable.");
+      return [dateText, body.slots ?? []] as const;
     })).then((entries) => setAvailability(Object.fromEntries(entries))).catch((reason) => {
-      if (reason.name !== "AbortError") setError("Availability is temporarily unavailable.");
+      if (reason.name !== "AbortError") { setAvailability({}); setError(reason.message ?? "Availability is temporarily unavailable."); }
     }).finally(() => setLoading(false));
     return () => controller.abort();
   }, [serviceId, week]);

@@ -6,6 +6,7 @@ import { getAvailabilityForDate } from "../../../../../lib/availability";
 import { getDb } from "../../../../../lib/db";
 import { appointments, bookingSlots, services } from "../../../../../lib/db/schema";
 import { sendAppointmentCancelled, sendAppointmentRescheduled } from "../../../../../lib/email";
+import { deleteGoogleEvent, updateGoogleEventForAppointment } from "../../../../../lib/google-calendar";
 
 const rescheduleSchema = z.object({ date: z.iso.date(), startsAt: z.iso.datetime({ offset: true }) });
 
@@ -22,6 +23,8 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   });
   try { await sendAppointmentCancelled(session.email, session.firstName, current.serviceName, current.startsAt); }
   catch (error) { console.error("Appointment cancelled but email failed", error); }
+  try { await deleteGoogleEvent(current.googleEventId); }
+  catch (error) { console.error("Appointment cancelled but Google Calendar sync failed", error); }
   return Response.json({ ok: true });
 }
 
@@ -53,12 +56,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
   try { await sendAppointmentRescheduled(session.email, session.firstName, current.serviceName, current.startsAt, startsAt); }
   catch (error) { console.error("Appointment rescheduled but email failed", error); }
+  try { await updateGoogleEventForAppointment(id); }
+  catch (error) { console.error("Appointment rescheduled but Google Calendar sync failed", error); }
   return Response.json({ ok: true });
 }
 
 async function findEditableAppointment(id: string, customerId: string) {
   const [row] = await getDb().select({
-    slotId: bookingSlots.id, startsAt: bookingSlots.startsAt, serviceId: bookingSlots.serviceId, serviceName: services.name,
+    slotId: bookingSlots.id, startsAt: bookingSlots.startsAt, serviceId: bookingSlots.serviceId, serviceName: services.name, googleEventId: appointments.googleEventId,
   }).from(appointments)
     .innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(services, eq(services.id, bookingSlots.serviceId))

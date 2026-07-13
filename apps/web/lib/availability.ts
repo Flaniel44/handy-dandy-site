@@ -4,6 +4,7 @@ import { DateTime } from "luxon";
 
 import { getDb } from "./db";
 import { bookingSlots, businessSettings, manualBlocks, services, weeklyHours } from "./db/schema";
+import { getGoogleBusyRanges } from "./google-calendar";
 
 export async function getActiveServices() {
   return getDb().select({
@@ -33,7 +34,7 @@ export async function getAvailabilityForDate(date: string, serviceId: string) {
   const dayEnd = localDay.plus({ days: 1 }).startOf("day").toUTC();
   const now = new Date();
 
-  const [hours, blocks, reserved] = await Promise.all([
+  const [hours, blocks, reserved, googleBusy] = await Promise.all([
     db.select().from(weeklyHours).where(eq(weeklyHours.businessId, settings.id)),
     db.select({ startsAt: manualBlocks.startsAt, endsAt: manualBlocks.endsAt }).from(manualBlocks).where(and(
       eq(manualBlocks.businessId, settings.id),
@@ -48,6 +49,7 @@ export async function getAvailabilityForDate(date: string, serviceId: string) {
         and(eq(bookingSlots.state, "held"), gt(bookingSlots.expiresAt, now)),
       ),
     )),
+    getGoogleBusyRanges(dayStart.toJSDate(), dayEnd.toJSDate()),
   ]);
 
   const slots = calculateAvailability({
@@ -61,7 +63,7 @@ export async function getAvailabilityForDate(date: string, serviceId: string) {
       startsAtLocal: hoursRow.startsAtLocal,
       endsAtLocal: hoursRow.endsAtLocal,
     })),
-    busyRanges: [...blocks, ...reserved].map((range) => ({
+    busyRanges: [...blocks, ...reserved, ...googleBusy].map((range) => ({
       startsAt: range.startsAt.toISOString(),
       endsAt: range.endsAt.toISOString(),
     })),

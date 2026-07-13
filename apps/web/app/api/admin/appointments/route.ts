@@ -6,6 +6,7 @@ import { requireAdmin } from "../../../../lib/admin-auth";
 import { getDb } from "../../../../lib/db";
 import { appointments, bookingSlots, businessSettings, customers, services } from "../../../../lib/db/schema";
 import { sendBookingConfirmation } from "../../../../lib/email";
+import { createGoogleEventForAppointment } from "../../../../lib/google-calendar";
 
 const manualAppointmentSchema = z.object({
   serviceId: z.uuid(), startsAtLocal: z.string().min(1), name: z.string().trim().min(2).max(120),
@@ -61,6 +62,8 @@ export async function POST(request: Request) {
     } catch (emailError) {
       console.error("Manual appointment created but confirmation email failed", emailError);
     }
+    try { await createGoogleEventForAppointment(result.id); }
+    catch (calendarError) { console.error("Manual appointment created but Google Calendar sync failed", calendarError); }
     return Response.json(result, { status: 201 });
   } catch (error) {
     if (typeof error === "object" && error && "code" in error && error.code === "23P01") {
