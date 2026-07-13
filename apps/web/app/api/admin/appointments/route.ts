@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireAdmin } from "../../../../lib/admin-auth";
 import { getDb } from "../../../../lib/db";
 import { appointments, bookingSlots, businessSettings, customers, services } from "../../../../lib/db/schema";
+import { sendBookingConfirmation } from "../../../../lib/email";
 
 const manualAppointmentSchema = z.object({
   serviceId: z.uuid(), startsAtLocal: z.string().min(1), name: z.string().trim().min(2).max(120),
@@ -55,6 +56,11 @@ export async function POST(request: Request) {
       }).returning({ id: appointments.id });
       return appointment;
     });
+    try {
+      await sendBookingConfirmation(parsed.data.email, parsed.data.name, service.name, startsAt.toJSDate());
+    } catch (emailError) {
+      console.error("Manual appointment created but confirmation email failed", emailError);
+    }
     return Response.json(result, { status: 201 });
   } catch (error) {
     if (typeof error === "object" && error && "code" in error && error.code === "23P01") {

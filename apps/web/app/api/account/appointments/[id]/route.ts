@@ -51,7 +51,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     console.error("Unable to reschedule appointment", error);
     return Response.json({ error: "We could not reschedule the appointment." }, { status: 500 });
   }
-  try { await sendAppointmentRescheduled(session.email, session.firstName, current.serviceName, startsAt); }
+  try { await sendAppointmentRescheduled(session.email, session.firstName, current.serviceName, current.startsAt, startsAt); }
   catch (error) { console.error("Appointment rescheduled but email failed", error); }
   return Response.json({ ok: true });
 }

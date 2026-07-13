@@ -3,7 +3,8 @@ import { z } from "zod";
 
 import { requireAdmin } from "../../../../../lib/admin-auth";
 import { getDb } from "../../../../../lib/db";
-import { appointments, bookingSlots } from "../../../../../lib/db/schema";
+import { appointments, bookingSlots, customers, services } from "../../../../../lib/db/schema";
+import { sendAppointmentCancelled } from "../../../../../lib/email";
 
 const updateSchema = z.object({
   notes: z.string().trim().max(2000).optional(),
@@ -16,7 +17,18 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   const body = updateSchema.safeParse(await request.json().catch(() => null));
   if (!id.success || !body.success) return Response.json({ error: "Invalid update." }, { status: 400 });
   const db = getDb();
-  const [existing] = await db.select({ slotId: appointments.slotId }).from(appointments).where(eq(appointments.id, id.data)).limit(1);
+  const [existing] = await db.select({
+    slotId: appointments.slotId,
+    status: appointments.status,
+    startsAt: bookingSlots.startsAt,
+    customerEmail: customers.email,
+    customerName: customers.name,
+    serviceName: services.name,
+  }).from(appointments)
+    .innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
+    .innerJoin(customers, eq(customers.id, appointments.customerId))
+    .innerJoin(services, eq(services.id, bookingSlots.serviceId))
+    .where(eq(appointments.id, id.data)).limit(1);
   if (!existing) return Response.json({ error: "Appointment not found." }, { status: 404 });
   await db.transaction(async (tx) => {
     await tx.update(appointments).set({ ...body.data, updatedAt: new Date() }).where(eq(appointments.id, id.data));
@@ -24,5 +36,12 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       state: body.data.status === "confirmed" ? "confirmed" : "released", updatedAt: new Date(),
     }).where(eq(bookingSlots.id, existing.slotId));
   });
+  if (body.data.status === "cancelled" && existing.status !== "cancelled") {
+    try {
+      await sendAppointmentCancelled(existing.customerEmail, existing.customerName, existing.serviceName, existing.startsAt);
+    } catch (emailError) {
+      console.error("Appointment cancelled by admin but confirmation email failed", emailError);
+    }
+  }
   return Response.json({ ok: true });
 }

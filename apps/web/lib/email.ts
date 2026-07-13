@@ -61,12 +61,13 @@ export async function sendAppointmentCancelled(to: string, name: string, service
   });
 }
 
-export async function sendAppointmentRescheduled(to: string, name: string, serviceName: string, startsAt: Date) {
+export async function sendAppointmentRescheduled(to: string, name: string, serviceName: string, previousStartsAt: Date, startsAt: Date) {
+  const previousFormatted = formatAppointmentTime(previousStartsAt);
   const formatted = formatAppointmentTime(startsAt);
   await sendTransactionalEmail({
     to, subject: "Your Handy Dandy appointment was rescheduled",
-    text: `Hi ${name},\n\nYour ${serviceName} appointment is now scheduled for ${formatted}.`,
-    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment is now scheduled for:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p>`,
+    text: `Hi ${name},\n\nYour ${serviceName} appointment was moved from ${previousFormatted} to ${formatted}.\n\nReply to this email if you need help.`,
+    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment was rescheduled.</p><p><span style="text-decoration:line-through">${escapeHtml(previousFormatted)}</span><br><strong style="font-size:18px">${escapeHtml(formatted)}</strong></p><p>Reply to this email if you need help.</p>`,
   });
 }
 
