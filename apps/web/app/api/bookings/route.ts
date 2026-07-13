@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { getAvailabilityForDate } from "../../../lib/availability";
+import { areNewBookingsEnabled, bookingsClosedResponse } from "../../../lib/booking-status";
 import { getDb } from "../../../lib/db";
 import { hasDatabaseErrorCode } from "../../../lib/db/errors";
 import { appointments, bookingSlots, customers } from "../../../lib/db/schema";
@@ -20,6 +21,7 @@ const bookingSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  if (!areNewBookingsEnabled()) return bookingsClosedResponse();
   const rateLimit = await checkRateLimit(request, "guest-booking", 20, 60 * 60);
   if (!rateLimit.allowed) return rateLimitResponse(rateLimit);
   const parsed = bookingSchema.safeParse(await request.json().catch(() => null));

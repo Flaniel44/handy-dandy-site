@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { requireCustomer } from "../../../../lib/admin-auth";
 import { getAvailabilityForDate } from "../../../../lib/availability";
+import { areNewBookingsEnabled, bookingsClosedResponse } from "../../../../lib/booking-status";
 import { getDb } from "../../../../lib/db";
 import { appointments, bookingSlots } from "../../../../lib/db/schema";
 import { sendBookingConfirmation } from "../../../../lib/email";
@@ -14,6 +15,7 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  if (!areNewBookingsEnabled()) return bookingsClosedResponse();
   const rateLimit = await checkRateLimit(request, "account-booking", 20, 60 * 60);
   if (!rateLimit.allowed) return rateLimitResponse(rateLimit);
   const session = await requireCustomer();

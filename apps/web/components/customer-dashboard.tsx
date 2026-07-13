@@ -8,7 +8,7 @@ type Service = { id: string; name: string; durationMinutes: number };
 type Slot = { startsAt: string; endsAt: string; label: string };
 type Profile = { firstName: string; lastName: string; email: string; phone: string; streetAddress: string; unit: string; city: string; postalCode: string; country: string };
 
-export function CustomerDashboard({ firstName }: { firstName: string }) {
+export function CustomerDashboard({ firstName, bookingsEnabled }: { firstName: string; bookingsEnabled: boolean }) {
   const router = useRouter(); const [appointments, setAppointments] = useState<Appointment[]>([]); const [message, setMessage] = useState("");
   const [now] = useState(() => Date.now());
   const load = useCallback(async () => {
@@ -34,7 +34,9 @@ export function CustomerDashboard({ firstName }: { firstName: string }) {
   const past = appointments.filter((item) => new Date(item.endsAt).getTime() < now || item.status !== "confirmed");
   return <main className="account-page"><header className="account-header"><div><p className="eyebrow">Your account</p><h1>Greetings, {firstName}.</h1></div></header>
     {message && <p className="admin-message">{message}</p>}
-    <AccountScheduler onBooked={load} onMessage={setMessage} />
+    {bookingsEnabled
+      ? <AccountScheduler onBooked={load} onMessage={setMessage} />
+      : <section className="account-panel scheduler-panel"><p className="eyebrow">Coming soon</p><h2>Online booking is not open yet.</h2><p>Please check back soon. Your existing appointments are still available below.</p></section>}
     <section className="account-panel"><h2>Upcoming appointments</h2>{upcoming.length === 0 ? <p className="empty-state">You have no upcoming appointments.</p> : <div className="customer-appointments">{upcoming.map((appointment) => <UpcomingAppointment key={appointment.id} appointment={appointment} save={saveNotes} cancel={cancelAppointment} onChanged={load} onMessage={setMessage} />)}</div>}</section>
     <section className="account-panel"><h2>Past appointments</h2>{past.length === 0 ? <p className="empty-state">Your appointment history will appear here.</p> : <div className="customer-appointments">{past.map((appointment) => <article key={appointment.id}><AppointmentHeading appointment={appointment} />{appointment.adminNotes && <div className="shared-notes"><strong>Notes from Handy Dandy</strong><p>{appointment.adminNotes}</p></div>}{appointment.clientNotes && <div className="shared-notes"><strong>Your notes</strong><p>{appointment.clientNotes}</p></div>}</article>)}</div>}</section>
     <CustomerProfile onMessage={setMessage} />

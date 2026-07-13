@@ -5,23 +5,25 @@ import { FormEvent, useEffect, useState } from "react";
 type Service = { id: string; name: string; description: string; durationMinutes: number; priceCents: number };
 type Slot = { startsAt: string; endsAt: string; label: string };
 
-export function BookingForm() {
+export function BookingForm({ bookingsEnabled }: { bookingsEnabled: boolean }) {
   const [services, setServices] = useState<Service[]>([]); const [serviceId, setServiceId] = useState("");
   const [currentWeek] = useState(startOfWeek); const [week, setWeek] = useState(startOfWeek);
   const [availability, setAvailability] = useState<Record<string, Slot[]>>({});
   const [timezone, setTimezone] = useState("");
   const [selected, setSelected] = useState<{ date: string; slot: Slot }>();
-  const [loading, setLoading] = useState(true); const [error, setError] = useState(""); const [confirmation, setConfirmation] = useState<{ appointmentId: string }>();
+  const [loading, setLoading] = useState(bookingsEnabled); const [error, setError] = useState(""); const [confirmation, setConfirmation] = useState<{ appointmentId: string }>();
   const dates = Array.from({ length: 7 }, (_, index) => addDays(week, index));
 
   useEffect(() => {
+    if (!bookingsEnabled) return;
     fetch("/api/services").then(async (response) => {
       const body = await response.json(); if (!response.ok) throw new Error(body.error);
       setServices(body.services); setServiceId(body.services[0]?.id ?? "");
     }).catch((reason) => { setError(reason.message ?? "Services are unavailable."); setLoading(false); });
-  }, []);
+  }, [bookingsEnabled]);
 
   useEffect(() => {
+    if (!bookingsEnabled) return;
     if (!serviceId) return;
     const controller = new AbortController();
     Promise.all(Array.from({ length: 7 }, async (_, index) => {
@@ -33,7 +35,7 @@ export function BookingForm() {
       if (reason.name !== "AbortError") { setAvailability({}); setError(reason.message ?? "Availability is temporarily unavailable."); }
     }).finally(() => setLoading(false));
     return () => controller.abort();
-  }, [serviceId, week]);
+  }, [bookingsEnabled, serviceId, week]);
 
   function changeWeek(amount: number) { setWeek((value) => addDays(value, amount * 7)); setSelected(undefined); setLoading(true); setError(""); }
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -47,6 +49,7 @@ export function BookingForm() {
     setConfirmation(body);
   }
 
+  if (!bookingsEnabled) return <section className="booking-card"><p className="eyebrow">Coming soon</p><h2>Online booking is not open yet.</h2><p>I&apos;m putting the finishing touches on the service. Please check back soon.</p></section>;
   if (confirmation) return <section className="booking-card booking-success"><p className="eyebrow">Booking confirmed</p><h2>Your consultation is booked.</h2><p>No payment is required online. Your appointment reference is <strong>{confirmation.appointmentId}</strong>.</p></section>;
   const service = services.find((item) => item.id === serviceId);
   return <form className="booking-card" onSubmit={submit}>
