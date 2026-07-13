@@ -16,6 +16,18 @@ export function LandingScene() {
   useEffect(() => {
     fetch("/api/auth/me").then((response) => response.json()).then((body) => {
       bookingPathRef.current = body.user?.role === "customer" ? "/account" : "/book";
+      const actions = containerRef.current?.querySelector<HTMLElement>(".cta-row");
+      const existingAdminButton = actions?.querySelector<HTMLButtonElement>("[data-action='admin']");
+
+      if (body.user?.role === "admin" && actions && !existingAdminButton) {
+        const adminButton = document.createElement("button");
+        adminButton.type = "button";
+        adminButton.dataset.action = "admin";
+        adminButton.textContent = "Admin";
+        actions.append(adminButton);
+      } else if (body.user?.role !== "admin") {
+        existingAdminButton?.remove();
+      }
     }).catch(() => undefined);
   }, []);
   useEffect(() => {
@@ -198,6 +210,7 @@ export function LandingScene() {
       if (action === "toggle-light") setPowered(!root.classList.contains("lit"));
       if (action === "book") router.push(bookingPathRef.current);
       if (action === "demos") router.push("/demos");
+      if (action === "admin") router.push("/admin");
       if (action === "contact") window.location.href = "mailto:hello@example.com";
     };
 
