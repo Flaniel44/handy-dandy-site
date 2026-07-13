@@ -44,7 +44,7 @@ services:
       APP_URL: https://whatisthis.place
       GOOGLE_OAUTH_REDIRECT_URI: https://whatisthis.place/api/admin/google-calendar/callback
     ports:
-      - "${HANDY_DANDY_BIND_IP:-10.10.0.2}:${HANDY_DANDY_PORT:-3010}:3000"
+      - "${HANDY_DANDY_BIND_IP:-0.0.0.0}:${HANDY_DANDY_PORT:-3010}:3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,7 +57,7 @@ services:
       retries: 5
       start_period: 30s
     restart: unless-stopped
-    networks: [backend]
+    networks: [frontend, backend]
 
   reminder-worker:
     build:
@@ -77,6 +77,8 @@ volumes:
     name: handy_dandy_postgres_data
 
 networks:
+  frontend:
+    name: handy_dandy_frontend
   backend:
     name: handy_dandy_backend
     internal: true

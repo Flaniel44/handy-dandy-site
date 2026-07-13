@@ -49,7 +49,7 @@ const generated = new Map(source);
 generated.set("POSTGRES_DB", "handy_dandy");
 generated.set("POSTGRES_USER", "handy_dandy");
 generated.set("POSTGRES_PASSWORD", secret(32));
-generated.set("HANDY_DANDY_BIND_IP", "10.10.0.2");
+generated.set("HANDY_DANDY_BIND_IP", "0.0.0.0");
 generated.set("HANDY_DANDY_PORT", "3010");
 generated.set("HANDY_DANDY_ENV_FILE", "apps/web/.env.production");
 generated.set("APP_ENCRYPTION_KEY", secret(32));
