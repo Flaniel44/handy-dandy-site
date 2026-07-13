@@ -79,45 +79,52 @@ export function AdminDashboard() {
     setMessage(response.ok ? "Appointment updated." : "Could not update appointment."); if (response.ok) await load();
   }
 
-  const activeAppointmentGroups = groupAppointmentsByCustomer(appointments.filter((appointment) => appointment.status !== "completed"));
+  const activeAppointmentGroups = groupAppointmentsByCustomer(appointments.filter((appointment) => !["completed", "cancelled"].includes(appointment.status)));
   const completedAppointments = appointments
     .filter((appointment) => appointment.status === "completed")
+    .sort((first, second) => new Date(second.startsAt).getTime() - new Date(first.startsAt).getTime());
+  const cancelledAppointments = appointments
+    .filter((appointment) => appointment.status === "cancelled")
     .sort((first, second) => new Date(second.startsAt).getTime() - new Date(first.startsAt).getTime());
 
   return <main className="admin-page">
     <header className="admin-header"><div><p className="eyebrow">Administration</p><h1>Admin</h1></div></header>
     {message && <p className="admin-message" role="status">{message}</p>}
 
-    <section className="admin-panel"><div className="admin-section-heading"><div><h2>Working hours</h2><p>Recurring availability in {timezone || "your business timezone"}.</p></div><button onClick={saveHours}>Save hours</button></div>
+    <details className="admin-panel admin-collapsible-panel admin-working-panel"><summary><span><strong>Working hours</strong><small>Recurring availability in {timezone || "your business timezone"}.</small></span></summary><div className="collapsible-panel-heading"><button onClick={saveHours}>Save hours</button></div>
       <div className="hours-list">{DAYS.map((day, weekday) => { const row = hours.find((item) => item.weekday === weekday); return <div className="hours-row" key={day}>
         <label><input type="checkbox" checked={Boolean(row)} onChange={() => toggleDay(weekday)} /> {day}</label>
         {row ? <div><input type="time" value={row.startsAtLocal.slice(0, 5)} onChange={(event) => updateHours(weekday, "startsAtLocal", event.target.value)} /><span>to</span><input type="time" value={row.endsAtLocal.slice(0, 5)} onChange={(event) => updateHours(weekday, "endsAtLocal", event.target.value)} /></div> : <span>Closed</span>}
       </div>; })}</div>
-    </section>
+    </details>
 
-    <section className="admin-panel"><div className="admin-section-heading"><div><h2>Vacation and manual blocks</h2><p>Blocked periods are removed from public availability.</p></div></div>
+    <section className="admin-panel admin-blocks-panel"><div className="admin-section-heading"><div><h2>Vacation and manual blocks</h2><p>Blocked periods are removed from public availability.</p></div></div>
       <form className="admin-inline-form" onSubmit={addBlock}><label>Starts<input name="startsAtLocal" type="datetime-local" required /></label><label>Ends<input name="endsAtLocal" type="datetime-local" required /></label><label>Reason<input name="reason" defaultValue="Vacation" required /></label><button type="submit">Add block</button></form>
       <div className="admin-list">{blocks.map((block) => <article key={block.id}><div><strong>{block.reason}</strong><p>{formatDate(block.startsAt)} → {formatDate(block.endsAt)}</p></div><button onClick={() => deleteBlock(block.id)}>Remove</button></article>)}</div>
     </section>
 
-    <section className="admin-panel"><div className="admin-section-heading"><div><h2>Add a phone appointment</h2><p>This creates a confirmed appointment without payment.</p></div></div>
+    <details className="admin-panel admin-collapsible-panel admin-phone-panel"><summary><span><strong>Add a phone appointment</strong><small>Create a confirmed appointment for a phone-booked client.</small></span></summary>
       <form className="admin-grid-form" onSubmit={addAppointment}><label>Service<select name="serviceId" required>{services.map((service) => <option value={service.id} key={service.id}>{service.name}</option>)}</select></label><label>Date and time<input name="startsAtLocal" type="datetime-local" required /></label><label>Client name<input name="name" required /></label><label>Email<input name="email" type="email" required /></label><label>Phone<input name="phone" type="tel" inputMode="numeric" pattern="[0-9]*" onInput={(event) => { event.currentTarget.value = event.currentTarget.value.replace(/\D/g, ""); }} /></label><label className="wide">Notes<textarea name="notes" rows={3} /></label><button type="submit">Create appointment</button></form>
-    </section>
+    </details>
 
-    <section className="admin-panel"><div className="admin-section-heading"><div><h2>Appointments</h2><p>{appointments.length} total appointments, grouped by client.</p></div></div>
+    <section className="admin-panel admin-appointments-panel"><div className="admin-section-heading"><div><h2>Appointments</h2><p>{appointments.length} total appointments, grouped by client.</p></div></div>
       <div className="appointment-groups">
         {activeAppointmentGroups.length ? activeAppointmentGroups.map((group) => <section className="appointment-group" key={group.email}>
           <header><div><h3>{group.name}</h3><a href={`mailto:${group.email}`}>{group.email}</a></div><span>{group.appointments.length} appointment{group.appointments.length === 1 ? "" : "s"}</span></header>
           <div className="appointment-list">{group.appointments.map((appointment) => <AppointmentEditor key={appointment.id} appointment={appointment} save={updateAppointment} showCustomer={false} />)}</div>
         </section>) : <p className="empty-state">No current appointments.</p>}
       </div>
-      <details className="completed-appointments">
+      <details className="appointment-archive">
         <summary><span>Completed appointments</span><small>{completedAppointments.length}</small></summary>
         {completedAppointments.length ? <div className="appointment-list">{completedAppointments.map((appointment) => <AppointmentEditor key={appointment.id} appointment={appointment} save={updateAppointment} />)}</div> : <p className="empty-state">No completed appointments yet.</p>}
       </details>
+      <details className="appointment-archive">
+        <summary><span>Cancelled appointments</span><small>{cancelledAppointments.length}</small></summary>
+        {cancelledAppointments.length ? <div className="appointment-list">{cancelledAppointments.map((appointment) => <AppointmentEditor key={appointment.id} appointment={appointment} save={updateAppointment} />)}</div> : <p className="empty-state">No cancelled appointments yet.</p>}
+      </details>
     </section>
 
-    <section className="admin-panel"><div className="admin-section-heading"><div><h2>Clients</h2><p>Guest and phone-booked clients are tracked by email.</p></div></div>
+    <section className="admin-panel admin-clients-panel"><div className="admin-section-heading"><div><h2>Clients</h2><p>Guest and phone-booked clients are tracked by email.</p></div></div>
       <div className="client-table">{clients.map((client) => <article key={client.id}><div><strong>{client.name}</strong><a href={`mailto:${client.email}`}>{client.email}</a>{client.phone && <a href={`tel:${client.phone}`}>{client.phone}</a>}</div><span>{client.appointmentCount} appointment{client.appointmentCount === 1 ? "" : "s"}</span></article>)}</div>
     </section>
   </main>;

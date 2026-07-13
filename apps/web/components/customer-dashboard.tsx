@@ -12,7 +12,7 @@ export function CustomerDashboard({ firstName }: { firstName: string }) {
   const router = useRouter(); const [appointments, setAppointments] = useState<Appointment[]>([]); const [message, setMessage] = useState("");
   const [now] = useState(() => Date.now());
   const load = useCallback(async () => {
-    const response = await fetch("/api/account/appointments");
+    const response = await fetch("/api/account/appointments", { cache: "no-store" });
     if (response.status === 401) return router.replace("/login");
     setAppointments((await response.json()).appointments ?? []);
   }, [router]);
@@ -25,10 +25,13 @@ export function CustomerDashboard({ firstName }: { firstName: string }) {
     if (!window.confirm("Cancel this appointment? The time will become available to other clients.")) return;
     const response = await fetch(`/api/account/appointments/${id}`, { method: "DELETE" });
     const body = await response.json(); setMessage(response.ok ? "Your appointment was cancelled." : body.error ?? "Could not cancel the appointment.");
-    if (response.ok) await load();
+    if (response.ok) {
+      setAppointments((items) => items.map((item) => item.id === id ? { ...item, status: "cancelled" } : item));
+      await load();
+    }
   }
-  const upcoming = appointments.filter((item) => new Date(item.endsAt).getTime() >= now && item.status !== "cancelled").reverse();
-  const past = appointments.filter((item) => new Date(item.endsAt).getTime() < now || item.status === "cancelled");
+  const upcoming = appointments.filter((item) => new Date(item.endsAt).getTime() >= now && item.status === "confirmed").reverse();
+  const past = appointments.filter((item) => new Date(item.endsAt).getTime() < now || item.status !== "confirmed");
   return <main className="account-page"><header className="account-header"><div><p className="eyebrow">Your account</p><h1>Greetings, {firstName}.</h1></div></header>
     {message && <p className="admin-message">{message}</p>}
     <AccountScheduler onBooked={load} onMessage={setMessage} />

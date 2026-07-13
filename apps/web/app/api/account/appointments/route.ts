@@ -5,6 +5,9 @@ import { requireCustomer } from "../../../../lib/admin-auth";
 import { getDb } from "../../../../lib/db";
 import { appointments, bookingSlots, services } from "../../../../lib/db/schema";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   const session = await requireCustomer();
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -14,7 +17,7 @@ export async function GET() {
   }).from(appointments).innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(services, eq(services.id, bookingSlots.serviceId))
     .where(eq(appointments.customerId, session.customerId)).orderBy(desc(bookingSlots.startsAt));
-  return Response.json({ appointments: rows });
+  return Response.json({ appointments: rows }, { headers: { "Cache-Control": "private, no-store, max-age=0" } });
 }
 
 const patchSchema = z.object({ id: z.uuid(), clientNotes: z.string().trim().max(2000) });
