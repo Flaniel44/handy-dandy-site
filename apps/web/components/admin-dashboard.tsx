@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 type Hours = { weekday: number; startsAtLocal: string; endsAtLocal: string };
 type Block = { id: string; startsAt: string; endsAt: string; reason: string };
 type Client = { id: string; name: string; email: string; phone?: string; appointmentCount: number };
+type ClientPagination = { page: number; pageSize: number; total: number; totalPages: number };
 type Appointment = { id: string; status: string; notes: string; startsAt: string; endsAt: string; customerName: string; customerEmail: string; customerPhone?: string; serviceName: string; source: string };
 type Service = { id: string; name: string };
 type CalendarEvent = { id: string; name: string; startsAt: string; endsAt: string; isAllDay: boolean; googleBusy: boolean; override: "available" | "unavailable" | null; blocksAvailability: boolean };
@@ -17,6 +18,8 @@ export function AdminDashboard() {
   const [hours, setHours] = useState<Hours[]>([]);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [clientPagination, setClientPagination] = useState<ClientPagination>({ page: 1, pageSize: 20, total: 0, totalPages: 1 });
+  const [clientsLoading, setClientsLoading] = useState(true);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [timezone, setTimezone] = useState("");
@@ -25,24 +28,34 @@ export function AdminDashboard() {
   const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
-    const endpoints = ["/api/admin/working-hours", "/api/admin/blocks", "/api/admin/clients", "/api/admin/appointments", "/api/services", "/api/admin/google-calendar"];
+    const endpoints = ["/api/admin/working-hours", "/api/admin/blocks", "/api/admin/appointments", "/api/services", "/api/admin/google-calendar"];
     const responses = await Promise.all(endpoints.map((url) => fetch(url)));
     if (responses.some((response) => response.status === 401)) { router.replace("/admin/login"); return; }
-    const [hoursBody, blocksBody, clientsBody, appointmentsBody, servicesBody, calendarBody] = await Promise.all(responses.map((response) => response.json()));
+    const [hoursBody, blocksBody, appointmentsBody, servicesBody, calendarBody] = await Promise.all(responses.map((response) => response.json()));
     setHours((hoursBody.hours ?? []).map((item: Hours) => ({
       ...item,
       startsAtLocal: item.startsAtLocal.slice(0, 5),
       endsAtLocal: item.endsAtLocal.slice(0, 5),
     })));
     setTimezone(hoursBody.timezone ?? ""); setBlocks(blocksBody.blocks ?? []);
-    setClients(clientsBody.clients ?? []); setAppointments(appointmentsBody.appointments ?? []); setServices(servicesBody.services ?? []);
+    setAppointments(appointmentsBody.appointments ?? []); setServices(servicesBody.services ?? []);
     setCalendarStatus(calendarBody);
   }, [router]);
 
+  const loadClients = useCallback(async (page = 1) => {
+    setClientsLoading(true);
+    const response = await fetch(`/api/admin/clients?page=${page}&pageSize=20`, { cache: "no-store" });
+    if (response.status === 401) { router.replace("/admin/login"); return; }
+    const body = await response.json();
+    if (response.ok) { setClients(body.clients ?? []); setClientPagination(body.pagination); }
+    else setMessage(body.error ?? "Could not load clients.");
+    setClientsLoading(false);
+  }, [router]);
+
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
+    const timer = window.setTimeout(() => { void load(); void loadClients(); }, 0);
     return () => window.clearTimeout(timer);
-  }, [load]);
+  }, [load, loadClients]);
 
   async function saveHours() {
     const response = await fetch("/api/admin/working-hours", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hours }) });
@@ -76,7 +89,7 @@ export function AdminDashboard() {
     event.preventDefault(); const form = new FormData(event.currentTarget);
     const response = await fetch("/api/admin/appointments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(form)) });
     const body = await response.json(); setMessage(response.ok ? "Phone appointment created." : body.error);
-    if (response.ok) { event.currentTarget.reset(); await load(); }
+    if (response.ok) { event.currentTarget.reset(); await Promise.all([load(), loadClients(clientPagination.page)]); }
   }
 
   async function updateAppointment(id: string, notes: string, status: string) {
@@ -165,9 +178,22 @@ export function AdminDashboard() {
     </section>
 
     <section className="admin-panel admin-clients-panel"><div className="admin-section-heading"><div><h2>Clients</h2><p>Guest and phone-booked clients are tracked by email.</p></div></div>
-      <div className="client-table">{clients.map((client) => <article key={client.id}><div><strong>{client.name}</strong><a href={`mailto:${client.email}`}>{client.email}</a>{client.phone && <a href={`tel:${client.phone}`}>{client.phone}</a>}</div><span>{client.appointmentCount} appointment{client.appointmentCount === 1 ? "" : "s"}</span></article>)}</div>
+      <div className="client-table" aria-busy={clientsLoading}>{clientsLoading ? <p className="empty-state">Loading clients…</p> : clients.map((client) => <ClientHistory key={client.id} client={client} save={updateAppointment} />)}</div>
+      <div className="client-pagination"><button disabled={clientsLoading || clientPagination.page <= 1} onClick={() => loadClients(clientPagination.page - 1)}>Previous</button><span>Page {clientPagination.page} of {clientPagination.totalPages} · {clientPagination.total} clients</span><button disabled={clientsLoading || clientPagination.page >= clientPagination.totalPages} onClick={() => loadClients(clientPagination.page + 1)}>Next</button></div>
     </section>
   </main>;
+}
+
+function ClientHistory({ client, save }: { client: Client; save: (id: string, notes: string, status: string) => Promise<void> }) {
+  const [open, setOpen] = useState(false); const [appointments, setAppointments] = useState<Appointment[]>(); const [error, setError] = useState("");
+  async function loadHistory() {
+    setError(""); const response = await fetch(`/api/admin/clients/${client.id}/appointments`, { cache: "no-store" }); const body = await response.json();
+    if (response.ok) setAppointments(body.appointments ?? []); else setError(body.error ?? "Could not load appointment history.");
+  }
+  async function saveAndReload(id: string, notes: string, status: string) { await save(id, notes, status); await loadHistory(); }
+  return <details className="client-history" onToggle={(event) => { const nextOpen = event.currentTarget.open; setOpen(nextOpen); if (nextOpen && !appointments) void loadHistory(); }}><summary><div><strong>{client.name}</strong><a href={`mailto:${client.email}`} onClick={(event) => event.stopPropagation()}>{client.email}</a>{client.phone && <a href={`tel:${client.phone}`} onClick={(event) => event.stopPropagation()}>{client.phone}</a>}</div><span>{client.appointmentCount} appointment{client.appointmentCount === 1 ? "" : "s"}</span></summary>
+    {open && <div className="client-appointment-history">{error ? <p className="form-error">{error}</p> : !appointments ? <p className="empty-state">Loading appointment history…</p> : appointments.length ? appointments.map((appointment) => <AppointmentEditor key={appointment.id} appointment={appointment} save={saveAndReload} showCustomer={false} />) : <p className="empty-state">No appointments found for this client.</p>}</div>}
+  </details>;
 }
 
 function AppointmentEditor({ appointment, save, showCustomer = true }: { appointment: Appointment; save: (id: string, notes: string, status: string) => Promise<void>; showCustomer?: boolean }) {
