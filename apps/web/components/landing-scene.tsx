@@ -148,6 +148,18 @@ export function LandingScene() {
     if (demosButton) demosButton.textContent = "What's Possible?";
 
     const sceneSvg = root.querySelector<SVGSVGElement>(".stage > svg");
+    let chainHint = sceneSvg?.querySelector<SVGGElement>(".chain-hint");
+    if (sceneSvg && !chainHint) {
+      chainHint = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      chainHint.setAttribute("class", "chain-hint");
+      chainHint.setAttribute("aria-hidden", "true");
+      chainHint.innerHTML = `
+        <text x="390" y="67" transform="rotate(-5 390 67)">(pull me)</text>
+        <path d="M389 75 C374 77 359 85 350 101" />
+        <path d="M350 101 L351 91 M350 101 L360 97" />
+      `;
+      sceneSvg.append(chainHint);
+    }
     const cameraTrackers = Array.from(root.querySelectorAll<SVGGElement>(".tracking-camera")).map((camera, index) => ({
       camera,
       aim: camera.querySelector<SVGGElement>(".camera-aim"),
@@ -187,11 +199,17 @@ export function LandingScene() {
     document.body.classList.toggle("landing-lights-off", !restored);
 
     let readyTimer: number | undefined;
+    let hintTimer: number | undefined;
+    if (!restored) hintTimer = window.setTimeout(() => root.classList.add("chain-hint-visible"), 10_000);
     const setPowered = (powered: boolean) => {
       root.classList.toggle("lit", powered);
       document.body.classList.toggle("landing-lights-off", !powered);
       chain.setAttribute("aria-label", powered ? "Turn the house lights off" : "Turn the house lights on");
       window.clearTimeout(readyTimer);
+      if (powered) {
+        window.clearTimeout(hintTimer);
+        root.classList.remove("chain-hint-visible");
+      }
       if (powered && !root.classList.contains("session-restored")) {
         root.classList.remove("ambient-ready");
         readyTimer = window.setTimeout(() => root.classList.add("ambient-ready"), 1900);
@@ -489,7 +507,9 @@ export function LandingScene() {
       window.clearInterval(ambientTimer);
       if (ropeFrame !== undefined) window.cancelAnimationFrame(ropeFrame);
       if (readyTimer) window.clearTimeout(readyTimer);
+      if (hintTimer) window.clearTimeout(hintTimer);
       if (cameraFrame !== undefined) window.cancelAnimationFrame(cameraFrame);
+      chainHint?.remove();
     };
   });
 
@@ -509,6 +529,26 @@ export function LandingScene() {
         .scene-root.lit.ambient-ready .lamp { animation: none !important; }
         .scene-root.lit.session-restored .hide { animation: none !important; opacity: 1; }
         .scene-root .data-wire-flow { animation-duration: 1.85s !important; }
+        .scene-root .chain-hint {
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity .45s ease;
+        }
+        .scene-root.chain-hint-visible:not(.lit) .chain-hint { opacity: .82; }
+        .scene-root .chain-hint text {
+          fill: #d7d1c5;
+          font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+          font-size: 17px;
+          font-weight: 600;
+          letter-spacing: .02em;
+        }
+        .scene-root .chain-hint path {
+          fill: none;
+          stroke: #d7d1c5;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-width: 2;
+        }
       `}</style>
     </main>
   );
