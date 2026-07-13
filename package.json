@@ -9,6 +9,7 @@
     "lint": "npm run lint --workspace=@handy-dani/web",
     "typecheck": "npm run typecheck --workspace=@handy-dani/domain && npm run typecheck --workspace=@handy-dani/web",
     "test": "npm run test --workspace=@handy-dani/domain",
+    "test:integration": "npm run test:integration --workspace=@handy-dani/web",
     "db:generate": "npm run db:generate --workspace=@handy-dani/web",
     "db:migrate": "npm run db:migrate --workspace=@handy-dani/web",
     "db:studio": "npm run db:studio --workspace=@handy-dani/web"

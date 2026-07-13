@@ -69,5 +69,11 @@ export async function POST(request: Request) {
 }
 
 function isOverlapError(error: unknown) {
-  return typeof error === "object" && error !== null && "code" in error && error.code === "23P01";
+  let current = error;
+  while (typeof current === "object" && current !== null) {
+    if ("code" in current && current.code === "23P01") return true;
+    if (!("cause" in current)) return false;
+    current = current.cause;
+  }
+  return false;
 }
