@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-type Appointment = { id: string; status: string; adminNotes: string; clientNotes: string; startsAt: string; endsAt: string; serviceName: string };
+type Appointment = { id: string; status: string; adminNotes: string; clientNotes: string; startsAt: string; endsAt: string; serviceId: string; serviceName: string };
 type Service = { id: string; name: string; durationMinutes: number };
 type Slot = { startsAt: string; endsAt: string; label: string };
 type Profile = { firstName: string; lastName: string; email: string; phone: string; streetAddress: string; unit: string; city: string; postalCode: string; country: string };
@@ -21,12 +21,18 @@ export function CustomerDashboard({ firstName }: { firstName: string }) {
     const response = await fetch("/api/account/appointments", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, clientNotes }) });
     setMessage(response.ok ? "Your notes were saved." : "Could not save your notes."); if (response.ok) await load();
   }
+  async function cancelAppointment(id: string) {
+    if (!window.confirm("Cancel this appointment? The time will become available to other clients.")) return;
+    const response = await fetch(`/api/account/appointments/${id}`, { method: "DELETE" });
+    const body = await response.json(); setMessage(response.ok ? "Your appointment was cancelled." : body.error ?? "Could not cancel the appointment.");
+    if (response.ok) await load();
+  }
   const upcoming = appointments.filter((item) => new Date(item.endsAt).getTime() >= now && item.status !== "cancelled").reverse();
   const past = appointments.filter((item) => new Date(item.endsAt).getTime() < now || item.status === "cancelled");
   return <main className="account-page"><header className="account-header"><div><p className="eyebrow">Your account</p><h1>Greetings, {firstName}.</h1></div></header>
     {message && <p className="admin-message">{message}</p>}
     <AccountScheduler onBooked={load} onMessage={setMessage} />
-    <section className="account-panel"><h2>Upcoming appointments</h2>{upcoming.length === 0 ? <p className="empty-state">You have no upcoming appointments.</p> : <div className="customer-appointments">{upcoming.map((appointment) => <UpcomingAppointment key={appointment.id} appointment={appointment} save={saveNotes} />)}</div>}</section>
+    <section className="account-panel"><h2>Upcoming appointments</h2>{upcoming.length === 0 ? <p className="empty-state">You have no upcoming appointments.</p> : <div className="customer-appointments">{upcoming.map((appointment) => <UpcomingAppointment key={appointment.id} appointment={appointment} save={saveNotes} cancel={cancelAppointment} onChanged={load} onMessage={setMessage} />)}</div>}</section>
     <section className="account-panel"><h2>Past appointments</h2>{past.length === 0 ? <p className="empty-state">Your appointment history will appear here.</p> : <div className="customer-appointments">{past.map((appointment) => <article key={appointment.id}><AppointmentHeading appointment={appointment} />{appointment.adminNotes && <div className="shared-notes"><strong>Notes from Handy Dandy</strong><p>{appointment.adminNotes}</p></div>}{appointment.clientNotes && <div className="shared-notes"><strong>Your notes</strong><p>{appointment.clientNotes}</p></div>}</article>)}</div>}</section>
     <CustomerProfile onMessage={setMessage} />
     <section className="account-contact"><h2>Contact me</h2><div><a href={process.env.NEXT_PUBLIC_WHATSAPP_URL || "#"} aria-label="WhatsApp"><span aria-hidden="true">◉</span>WhatsApp</a><a href={`mailto:${process.env.NEXT_PUBLIC_BUSINESS_EMAIL || "hello@example.com"}`} aria-label="Email"><span aria-hidden="true">✉</span>Email</a><a href={process.env.NEXT_PUBLIC_MESSENGER_URL || "#"} aria-label="Facebook Messenger"><span aria-hidden="true">f</span>Facebook</a></div></section>
@@ -99,9 +105,39 @@ function CustomerProfile({ onMessage }: { onMessage: (message: string) => void }
   </div></section>;
 }
 
-function UpcomingAppointment({ appointment, save }: { appointment: Appointment; save: (id: string, notes: string) => Promise<void> }) {
+function UpcomingAppointment({ appointment, save, cancel, onChanged, onMessage }: { appointment: Appointment; save: (id: string, notes: string) => Promise<void>; cancel: (id: string) => Promise<void>; onChanged: () => Promise<void>; onMessage: (message: string) => void }) {
   const [notes, setNotes] = useState(appointment.clientNotes);
-  return <article><AppointmentHeading appointment={appointment} />{appointment.adminNotes && <div className="shared-notes"><strong>Notes from Handy Dandy</strong><p>{appointment.adminNotes}</p></div>}<label>Your notes<textarea rows={4} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Anything you want me to know before our appointment" /></label><button onClick={() => save(appointment.id, notes)}>Save notes</button></article>;
+  return <article><AppointmentHeading appointment={appointment} />{appointment.adminNotes && <div className="shared-notes"><strong>Notes from Handy Dandy</strong><p>{appointment.adminNotes}</p></div>}<label>Your notes<textarea rows={4} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Anything you want me to know before our appointment" /></label><button onClick={() => save(appointment.id, notes)}>Save notes</button><div className="appointment-change-actions"><AppointmentRescheduler appointment={appointment} onChanged={onChanged} onMessage={onMessage} /><button className="danger-button" onClick={() => cancel(appointment.id)}>Cancel appointment</button></div></article>;
+}
+
+function AppointmentRescheduler({ appointment, onChanged, onMessage }: { appointment: Appointment; onChanged: () => Promise<void>; onMessage: (message: string) => void }) {
+  const [open, setOpen] = useState(false); const [currentWeek] = useState(startOfWeek); const [week, setWeek] = useState(startOfWeek);
+  const [availability, setAvailability] = useState<Record<string, Slot[]>>({}); const [selected, setSelected] = useState<{ date: string; slot: Slot }>(); const [loading, setLoading] = useState(false);
+  const dates = Array.from({ length: 7 }, (_, index) => addDays(week, index));
+  useEffect(() => {
+    if (!open) return;
+    const controller = new AbortController();
+    const weekDates = Array.from({ length: 7 }, (_, index) => addDays(week, index));
+    Promise.all(weekDates.map(async (date) => {
+      const dateText = formatDateInput(date);
+      const response = await fetch(`/api/availability?date=${dateText}&serviceId=${appointment.serviceId}`, { signal: controller.signal });
+      const body = await response.json(); return [dateText, body.slots ?? []] as const;
+    })).then((entries) => setAvailability(Object.fromEntries(entries))).catch(() => undefined).finally(() => setLoading(false));
+    return () => controller.abort();
+  }, [open, week, appointment.serviceId]);
+  function changeWeek(amount: number) { setWeek((value) => addDays(value, amount * 7)); setSelected(undefined); }
+  async function confirm() {
+    if (!selected) return; setLoading(true);
+    const response = await fetch(`/api/account/appointments/${appointment.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date: selected.date, startsAt: selected.slot.startsAt }) });
+    const body = await response.json(); setLoading(false);
+    if (!response.ok) return onMessage(body.error ?? "Could not reschedule the appointment.");
+    onMessage("Your appointment was rescheduled."); setOpen(false); setSelected(undefined); await onChanged();
+  }
+  return <div className="appointment-rescheduler"><button onClick={() => { setOpen((value) => !value); if (!open) setLoading(true); }}>{open ? "Close rescheduling" : "Reschedule"}</button>{open && <div className="reschedule-panel">
+    <div className="week-controls"><button disabled={week.getTime() <= currentWeek.getTime()} onClick={() => changeWeek(-1)} aria-label="Previous week">←</button><strong>{dates[0].toLocaleDateString([], { month: "short", day: "numeric" })} – {dates[6].toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}</strong><button onClick={() => changeWeek(1)} aria-label="Next week">→</button></div>
+    <div className="weekly-availability" aria-busy={loading}>{dates.map((date) => { const dateText = formatDateInput(date); const slots = availability[dateText] ?? []; return <section key={dateText}><header><strong>{date.toLocaleDateString([], { weekday: "short" })}</strong><span>{date.toLocaleDateString([], { month: "short", day: "numeric" })}</span></header><div>{slots.length ? slots.map((slot) => <button className={selected?.slot.startsAt === slot.startsAt ? "is-selected" : ""} key={slot.startsAt} onClick={() => setSelected({ date: dateText, slot })}>{slot.label}</button>) : <small>No times</small>}</div></section>; })}</div>
+    {selected && <button className="reschedule-confirm" disabled={loading} onClick={confirm}>{loading ? "Rescheduling…" : `Move to ${selected.slot.label}`}</button>}
+  </div>}</div>;
 }
 function AppointmentHeading({ appointment }: { appointment: Appointment }) { return <header><div><strong>{appointment.serviceName}</strong><time>{new Date(appointment.startsAt).toLocaleString([], { dateStyle: "full", timeStyle: "short" })}</time></div><span>{appointment.status.replace("_", " ")}</span></header>; }
 function startOfWeek() { const value = new Date(); value.setHours(0, 0, 0, 0); value.setDate(value.getDate() - ((value.getDay() + 6) % 7)); return value; }

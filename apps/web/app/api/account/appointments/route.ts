@@ -10,7 +10,7 @@ export async function GET() {
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const rows = await getDb().select({
     id: appointments.id, status: appointments.status, adminNotes: appointments.notes, clientNotes: appointments.clientNotes,
-    startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt, serviceName: services.name,
+    startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt, serviceId: services.id, serviceName: services.name,
   }).from(appointments).innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(services, eq(services.id, bookingSlots.serviceId))
     .where(eq(appointments.customerId, session.customerId)).orderBy(desc(bookingSlots.startsAt));

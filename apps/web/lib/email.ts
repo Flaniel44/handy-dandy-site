@@ -52,6 +52,28 @@ export async function sendBookingConfirmation(to: string, name: string, serviceN
   });
 }
 
+export async function sendAppointmentCancelled(to: string, name: string, serviceName: string, startsAt: Date) {
+  const formatted = formatAppointmentTime(startsAt);
+  await sendTransactionalEmail({
+    to, subject: "Your Handy Dandy appointment was cancelled",
+    text: `Hi ${name},\n\nYour ${serviceName} appointment for ${formatted} has been cancelled.`,
+    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment for ${escapeHtml(formatted)} has been cancelled.</p>`,
+  });
+}
+
+export async function sendAppointmentRescheduled(to: string, name: string, serviceName: string, startsAt: Date) {
+  const formatted = formatAppointmentTime(startsAt);
+  await sendTransactionalEmail({
+    to, subject: "Your Handy Dandy appointment was rescheduled",
+    text: `Hi ${name},\n\nYour ${serviceName} appointment is now scheduled for ${formatted}.`,
+    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment is now scheduled for:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p>`,
+  });
+}
+
+function formatAppointmentTime(startsAt: Date) {
+  return new Intl.DateTimeFormat("en-CA", { dateStyle: "full", timeStyle: "short", timeZone: process.env.BUSINESS_TIMEZONE ?? "America/Toronto" }).format(startsAt);
+}
+
 function escapeHtml(value: string) {
   return value.replace(/[&<>"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[character]!);
 }
