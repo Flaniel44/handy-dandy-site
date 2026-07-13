@@ -23,6 +23,7 @@ let deleteBlock: typeof import("./blocks/[id]/route").DELETE;
 let getAvailabilityForDate: typeof import("../../../lib/availability").getAvailabilityForDate;
 let getBookingPolicies: typeof import("./booking-policies/route").GET;
 let putBookingPolicies: typeof import("./booking-policies/route").PUT;
+let getAuditLog: typeof import("./audit-log/route").GET;
 
 beforeAll(async () => {
   testSql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
@@ -30,6 +31,7 @@ beforeAll(async () => {
   ({ GET: getBlocks, POST: createBlock } = await import("./blocks/route"));
   ({ DELETE: deleteBlock } = await import("./blocks/[id]/route"));
   ({ GET: getBookingPolicies, PUT: putBookingPolicies } = await import("./booking-policies/route"));
+  ({ GET: getAuditLog } = await import("./audit-log/route"));
   ({ getAvailabilityForDate } = await import("../../../lib/availability"));
 });
 
@@ -53,6 +55,7 @@ describe("admin scheduling controls", () => {
     expect((await deleteBlock(new Request("http://localhost"), context("00000000-0000-4000-8000-000000000000"))).status).toBe(401);
     expect((await getBookingPolicies()).status).toBe(401);
     expect((await putBookingPolicies(jsonRequest("/api/admin/booking-policies", policyData(), "PUT"))).status).toBe(401);
+    expect((await getAuditLog(new Request("http://localhost/api/admin/audit-log"))).status).toBe(401);
   });
 
   it("reads, validates, and saves booking policies", async () => {
@@ -72,6 +75,10 @@ describe("admin scheduling controls", () => {
 
     expect((await putBookingPolicies(jsonRequest("/api/admin/booking-policies", policyData({ timezone: "Toronto" }), "PUT"))).status).toBe(400);
     expect((await putBookingPolicies(jsonRequest("/api/admin/booking-policies", policyData({ bookingWindowDays: 0 }), "PUT"))).status).toBe(400);
+
+    const audit = await (await getAuditLog(new Request("http://localhost/api/admin/audit-log"))).json() as { entries: Array<{ actorId: string; action: string; entityType: string }> };
+    expect(audit.entries).toHaveLength(1);
+    expect(audit.entries[0]).toMatchObject({ actorId: "admin@example.com", action: "booking_policies.updated", entityType: "business" });
   });
 
   it("atomically replaces and normalizes weekly working hours", async () => {

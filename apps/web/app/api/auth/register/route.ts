@@ -5,6 +5,7 @@ import { z } from "zod";
 import { SESSION_COOKIE, adminCookieOptions, createCustomerSessionToken, hashPassword } from "../../../../lib/admin-auth";
 import { getDb } from "../../../../lib/db";
 import { customers } from "../../../../lib/db/schema";
+import { checkRateLimit, rateLimitResponse } from "../../../../lib/rate-limit";
 
 const schema = z.object({
   firstName: z.string().trim().min(1).max(80), lastName: z.string().trim().min(1).max(80),
@@ -16,6 +17,8 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  const rateLimit = await checkRateLimit(request, "registration", 5, 60 * 60);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit);
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Check your account details. Passwords need at least 12 characters." }, { status: 400 });
   if (parsed.data.email === process.env.ADMIN_EMAIL?.toLowerCase()) return Response.json({ error: "That email is already in use." }, { status: 409 });

@@ -10,6 +10,7 @@ type ClientPagination = { page: number; pageSize: number; total: number; totalPa
 type Appointment = { id: string; status: string; notes: string; startsAt: string; endsAt: string; customerName: string; customerEmail: string; customerPhone?: string; serviceName: string; source: string };
 type Service = { id: string; name: string; description: string; durationMinutes: number; priceCents: number; active: boolean; sortOrder: number };
 type BookingPolicies = { timezone: string; slotIntervalMinutes: number; minimumNoticeMinutes: number; bookingWindowDays: number; appointmentBufferMinutes: number; cancellationNoticeMinutes: number };
+type AuditEntry = { id: string; actorId: string | null; action: string; entityType: string; entityId: string; details: Record<string, unknown>; createdAt: string };
 type CalendarEvent = { id: string; name: string; startsAt: string; endsAt: string; isAllDay: boolean; googleBusy: boolean; override: "available" | "unavailable" | null; blocksAvailability: boolean };
 type CalendarStatus = { configured: boolean; connected: boolean; connection: { calendarId: string; updatedAt: string } | null; health?: { pending: number; failed: number; synced: number; lastSyncedAt: string | null }; events?: CalendarEvent[] };
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -27,6 +28,10 @@ export function AdminDashboard() {
   const [timezone, setTimezone] = useState("");
   const [calendarStatus, setCalendarStatus] = useState<CalendarStatus>({ configured: false, connected: false, connection: null });
   const [calendarSyncing, setCalendarSyncing] = useState(false);
+  const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
+  const [auditPagination, setAuditPagination] = useState<ClientPagination>({ page: 1, pageSize: 20, total: 0, totalPages: 1 });
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditLoaded, setAuditLoaded] = useState(false);
   const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
@@ -53,6 +58,16 @@ export function AdminDashboard() {
     if (response.ok) { setClients(body.clients ?? []); setClientPagination(body.pagination); }
     else setMessage(body.error ?? "Could not load clients.");
     setClientsLoading(false);
+  }, [router]);
+
+  const loadAudit = useCallback(async (page = 1) => {
+    setAuditLoading(true);
+    const response = await fetch(`/api/admin/audit-log?page=${page}&pageSize=20`, { cache: "no-store" });
+    if (response.status === 401) { router.replace("/admin/login"); return; }
+    const body = await response.json();
+    if (response.ok) { setAuditEntries(body.entries ?? []); setAuditPagination(body.pagination); setAuditLoaded(true); }
+    else setMessage(body.error ?? "Could not load the audit history.");
+    setAuditLoading(false);
   }, [router]);
 
   useEffect(() => {
@@ -277,6 +292,11 @@ export function AdminDashboard() {
       <div className="client-table" aria-busy={clientsLoading}>{clientsLoading ? <p className="empty-state">Loading clients…</p> : clients.map((client) => <ClientHistory key={client.id} client={client} save={updateAppointment} />)}</div>
       <div className="client-pagination"><button disabled={clientsLoading || clientPagination.page <= 1} onClick={() => loadClients(clientPagination.page - 1)}>Previous</button><span>Page {clientPagination.page} of {clientPagination.totalPages} · {clientPagination.total} clients</span><button disabled={clientsLoading || clientPagination.page >= clientPagination.totalPages} onClick={() => loadClients(clientPagination.page + 1)}>Next</button></div>
     </section>
+
+    <details className="admin-panel admin-collapsible-panel admin-audit-panel" onToggle={(event) => { if (event.currentTarget.open && !auditLoaded) void loadAudit(); }}><summary><span><strong>Security and audit history</strong><small>Recent administrative changes, newest first.</small></span></summary>
+      <div className="admin-list" aria-busy={auditLoading}>{auditLoading ? <p className="empty-state">Loading audit history…</p> : auditEntries.length ? auditEntries.map((entry) => <article key={entry.id}><div><strong>{formatAuditAction(entry.action)}</strong><p>{entry.entityType} · {entry.entityId}</p><small>{entry.actorId || "System"} · {formatDate(entry.createdAt)}</small>{Object.keys(entry.details ?? {}).length > 0 && <small>{formatAuditDetails(entry.details)}</small>}</div></article>) : <p className="empty-state">No administrative changes have been recorded yet.</p>}</div>
+      <div className="client-pagination"><button disabled={auditLoading || auditPagination.page <= 1} onClick={() => loadAudit(auditPagination.page - 1)}>Previous</button><span>Page {auditPagination.page} of {auditPagination.totalPages} · {auditPagination.total} entries</span><button disabled={auditLoading || auditPagination.page >= auditPagination.totalPages} onClick={() => loadAudit(auditPagination.page + 1)}>Next</button></div>
+    </details>
   </main>;
 }
 
@@ -341,6 +361,9 @@ function groupAppointmentsByCustomer(items: Appointment[]) {
     .sort((first, second) => first.name.localeCompare(second.name))
     .map((group) => ({ ...group, appointments: group.appointments.sort((first, second) => new Date(first.startsAt).getTime() - new Date(second.startsAt).getTime()) }));
 }
+
+function formatAuditAction(action: string) { return action.split(".").map((part) => part.replace(/_/g, " ")).join(" · "); }
+function formatAuditDetails(details: Record<string, unknown>) { return Object.entries(details).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : String(value)}`).join(" · "); }
 
 function formatDate(value: string) { return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }); }
 function formatCalendarEvent(event: CalendarEvent) {

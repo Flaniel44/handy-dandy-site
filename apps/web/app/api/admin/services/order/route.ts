@@ -2,13 +2,15 @@ import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireAdmin } from "../../../../../lib/admin-auth";
+import { recordAdminAction } from "../../../../../lib/audit";
 import { getDb } from "../../../../../lib/db";
 import { services } from "../../../../../lib/db/schema";
 
 const orderSchema = z.object({ orderedIds: z.array(z.uuid()).min(1).max(500) });
 
 export async function PUT(request: Request) {
-  if (!await requireAdmin()) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const admin = await requireAdmin();
+  if (!admin) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = orderSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success || new Set(parsed.data.orderedIds).size !== parsed.data.orderedIds.length) {
     return Response.json({ error: "Invalid service order." }, { status: 400 });
@@ -24,5 +26,6 @@ export async function PUT(request: Request) {
       await tx.update(services).set({ sortOrder }).where(eq(services.id, id));
     }
   });
+  await recordAdminAction({ actorId: admin.email, action: "services.reordered", entityType: "service_catalog", entityId: "default", details: { orderedIds: parsed.data.orderedIds } });
   return Response.json({ ok: true });
 }

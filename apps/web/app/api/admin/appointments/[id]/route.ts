@@ -3,6 +3,7 @@ import { z } from "zod";
 import { shouldSendCancellation, slotStateForAppointmentStatus } from "@handy-dani/domain";
 
 import { requireAdmin } from "../../../../../lib/admin-auth";
+import { recordAdminAction } from "../../../../../lib/audit";
 import { getDb } from "../../../../../lib/db";
 import { appointments, bookingSlots, customers, services } from "../../../../../lib/db/schema";
 import { sendAppointmentCancelled } from "../../../../../lib/email";
@@ -14,7 +15,8 @@ const updateSchema = z.object({
 });
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
-  if (!await requireAdmin()) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const admin = await requireAdmin();
+  if (!admin) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const id = z.uuid().safeParse((await context.params).id);
   const body = updateSchema.safeParse(await request.json().catch(() => null));
   if (!id.success || !body.success) return Response.json({ error: "Invalid update." }, { status: 400 });
@@ -48,5 +50,6 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     try { await deleteGoogleEvent(existing.googleEventId, id.data); }
     catch (calendarError) { await markCalendarSyncFailure(id.data, calendarError); console.error("Appointment cancelled by admin but Google Calendar sync failed", calendarError); }
   }
+  await recordAdminAction({ actorId: admin.email, action: "appointment.updated", entityType: "appointment", entityId: id.data, details: { previousStatus: existing.status, ...body.data } });
   return Response.json({ ok: true });
 }

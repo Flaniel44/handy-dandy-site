@@ -180,6 +180,7 @@ a { color: inherit; }
 .admin-calendar-panel { order: 6; }
 .admin-phone-panel { order: 7; }
 .admin-working-panel { order: 8; }
+.admin-audit-panel { order: 9; }
 .admin-section-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 24px; }
 .admin-section-heading h2 { margin: 0 0 5px; }
 .admin-section-heading p, .admin-list p { margin: 0; color: var(--muted); }

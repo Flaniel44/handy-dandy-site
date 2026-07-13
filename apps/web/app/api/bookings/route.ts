@@ -6,6 +6,7 @@ import { hasDatabaseErrorCode } from "../../../lib/db/errors";
 import { appointments, bookingSlots, customers } from "../../../lib/db/schema";
 import { sendBookingConfirmation } from "../../../lib/email";
 import { createGoogleEventForAppointment, markCalendarSyncFailure } from "../../../lib/google-calendar";
+import { checkRateLimit, rateLimitResponse } from "../../../lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,8 @@ const bookingSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const rateLimit = await checkRateLimit(request, "guest-booking", 20, 60 * 60);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit);
   const parsed = bookingSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Please check your booking details." }, { status: 400 });
 

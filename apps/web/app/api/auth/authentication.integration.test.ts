@@ -1,6 +1,8 @@
 import postgres from "postgres";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetTestData } from "../../../test/integration/database";
+import { checkRateLimit } from "../../../lib/rate-limit";
+import { isTrustedMutation } from "../../../lib/request-security";
 
 const cookieJar = vi.hoisted(() => new Map<string, string>());
 const email = vi.hoisted(() => ({
@@ -66,6 +68,28 @@ afterAll(async () => {
 });
 
 describe("authentication routes", () => {
+  it("persistently rate limits repeated requests by client address", async () => {
+    const request = () => new Request("http://localhost/api/auth/login", { method: "POST", headers: { "x-real-ip": "203.0.113.44" } });
+    expect((await checkRateLimit(request(), "test-login", 2, 900)).allowed).toBe(true);
+    expect((await checkRateLimit(request(), "test-login", 2, 900)).allowed).toBe(true);
+    const blocked = await checkRateLimit(request(), "test-login", 2, 900);
+    expect(blocked.allowed).toBe(false);
+    expect(blocked.retryAfterSeconds).toBeGreaterThan(0);
+  });
+
+  it("blocks cross-site mutations while allowing same-origin and server requests", () => {
+    const originalAppUrl = process.env.APP_URL;
+    const originalNodeEnv = process.env.NODE_ENV;
+    vi.stubEnv("NODE_ENV", "production");
+    process.env.APP_URL = "https://whatisthis.place";
+    expect(isTrustedMutation(new Request("https://whatisthis.place/api/bookings", { method: "POST", headers: { origin: "https://whatisthis.place" } }))).toBe(true);
+    expect(isTrustedMutation(new Request("https://whatisthis.place/api/bookings", { method: "POST", headers: { origin: "https://evil.example" } }))).toBe(false);
+    expect(isTrustedMutation(new Request("https://whatisthis.place/api/bookings", { method: "POST", headers: { "sec-fetch-site": "cross-site" } }))).toBe(false);
+    expect(isTrustedMutation(new Request("https://whatisthis.place/api/bookings", { method: "POST" }))).toBe(true);
+    if (originalAppUrl === undefined) delete process.env.APP_URL; else process.env.APP_URL = originalAppUrl;
+    vi.stubEnv("NODE_ENV", originalNodeEnv);
+  });
+
   it("validates registration, creates a normalized account, and rejects duplicates", async () => {
     const invalid = await register(jsonRequest("/api/auth/register", {
       ...registrationData(), password: "short", phone: "555-HELP",

@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireAdmin } from "../../../../lib/admin-auth";
+import { recordAdminAction } from "../../../../lib/audit";
 import { getDb } from "../../../../lib/db";
 import { businessSettings, weeklyHours } from "../../../../lib/db/schema";
 
@@ -24,7 +25,8 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  if (!await requireAdmin()) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const admin = await requireAdmin();
+  if (!admin) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = hoursSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Check the working-hour values." }, { status: 400 });
   const db = getDb();
@@ -34,5 +36,6 @@ export async function PUT(request: Request) {
     await tx.delete(weeklyHours).where(eq(weeklyHours.businessId, settings.id));
     if (parsed.data.hours.length) await tx.insert(weeklyHours).values(parsed.data.hours.map((hours) => ({ ...hours, businessId: settings.id })));
   });
+  await recordAdminAction({ actorId: admin.email, action: "working_hours.updated", entityType: "business", entityId: settings.id, details: { days: parsed.data.hours.map((item) => item.weekday) } });
   return Response.json({ ok: true });
 }

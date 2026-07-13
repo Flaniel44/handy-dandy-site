@@ -7,10 +7,13 @@ import { adminCookieOptions, hashPassword, SESSION_COOKIE } from "../../../../li
 import { getDb } from "../../../../lib/db";
 import { customers, passwordResetTokens } from "../../../../lib/db/schema";
 import { sendPasswordChangedEmail } from "../../../../lib/email";
+import { checkRateLimit, rateLimitResponse } from "../../../../lib/rate-limit";
 
 const schema = z.object({ token: z.string().min(20).max(200), password: z.string().min(12).max(200) });
 
 export async function POST(request: Request) {
+  const rateLimit = await checkRateLimit(request, "reset-password", 10, 60 * 60);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit);
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Use a valid reset link and a password of at least 12 characters." }, { status: 400 });
   const db = getDb();

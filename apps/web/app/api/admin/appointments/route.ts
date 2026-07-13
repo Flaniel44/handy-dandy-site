@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import { z } from "zod";
 
 import { requireAdmin } from "../../../../lib/admin-auth";
+import { recordAdminAction } from "../../../../lib/audit";
 import { getDb } from "../../../../lib/db";
 import { hasDatabaseErrorCode } from "../../../../lib/db/errors";
 import { appointments, bookingSlots, businessSettings, customers, services } from "../../../../lib/db/schema";
@@ -31,7 +32,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (!await requireAdmin()) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const admin = await requireAdmin();
+  if (!admin) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = manualAppointmentSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Check the appointment details." }, { status: 400 });
   const db = getDb();
@@ -65,6 +67,7 @@ export async function POST(request: Request) {
     }
     try { await createGoogleEventForAppointment(result.id); }
     catch (calendarError) { await markCalendarSyncFailure(result.id, calendarError); console.error("Manual appointment created but Google Calendar sync failed", calendarError); }
+    await recordAdminAction({ actorId: admin.email, action: "appointment.created", entityType: "appointment", entityId: result.id, details: { source: "phone", serviceId: service.id, customerEmail: parsed.data.email, startsAt: startsAt.toUTC().toISO() } });
     return Response.json(result, { status: 201 });
   } catch (error) {
     if (hasDatabaseErrorCode(error, "23P01")) {

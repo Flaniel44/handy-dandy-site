@@ -155,4 +155,11 @@ export const auditLog = pgTable("audit_log", {
   entityId: text("entity_id").notNull(),
   details: jsonb("details").notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [index("audit_log_created_at_idx").on(table.createdAt)]);
+
+export const rateLimitBuckets = pgTable("rate_limit_buckets", {
+  key: text("key").primaryKey(),
+  attempts: integer("attempts").notNull().default(1),
+  windowStartedAt: timestamp("window_started_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

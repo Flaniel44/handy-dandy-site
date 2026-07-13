@@ -3,6 +3,7 @@ import { IANAZone } from "luxon";
 import { z } from "zod";
 
 import { requireAdmin } from "../../../../lib/admin-auth";
+import { recordAdminAction } from "../../../../lib/audit";
 import { getDb } from "../../../../lib/db";
 import { businessSettings } from "../../../../lib/db/schema";
 
@@ -32,7 +33,8 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  if (!await requireAdmin()) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const admin = await requireAdmin();
+  if (!admin) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = policySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "Check the booking policies." }, { status: 400 });
   const db = getDb();
@@ -40,5 +42,6 @@ export async function PUT(request: Request) {
   if (!business) return Response.json({ error: "Business settings are missing." }, { status: 500 });
   const [policies] = await db.update(businessSettings).set({ ...parsed.data, updatedAt: new Date() })
     .where(eq(businessSettings.id, business.id)).returning(selection);
+  await recordAdminAction({ actorId: admin.email, action: "booking_policies.updated", entityType: "business", entityId: business.id, details: parsed.data });
   return Response.json({ policies });
 }

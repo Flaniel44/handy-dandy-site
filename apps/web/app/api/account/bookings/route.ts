@@ -6,6 +6,7 @@ import { getDb } from "../../../../lib/db";
 import { appointments, bookingSlots } from "../../../../lib/db/schema";
 import { sendBookingConfirmation } from "../../../../lib/email";
 import { createGoogleEventForAppointment, markCalendarSyncFailure } from "../../../../lib/google-calendar";
+import { checkRateLimit, rateLimitResponse } from "../../../../lib/rate-limit";
 
 const schema = z.object({
   serviceId: z.uuid(), date: z.iso.date(), startsAt: z.iso.datetime({ offset: true }),
@@ -13,6 +14,8 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  const rateLimit = await checkRateLimit(request, "account-booking", 20, 60 * 60);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit);
   const session = await requireCustomer();
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = schema.safeParse(await request.json().catch(() => null));

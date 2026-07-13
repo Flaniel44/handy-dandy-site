@@ -84,6 +84,14 @@ The redirect URI must exactly match `/api/admin/google-calendar/callback` on the
 Connect or disconnect from the admin dashboard. Refresh tokens are encrypted at rest;
 changing the encryption key requires reconnecting the calendar.
 
+## Production security
+
+Authentication, registration, password-reset, and booking endpoints use PostgreSQL-backed rate limits,
+so limits survive application restarts. Browser API mutations reject cross-site requests, and production
+must set `APP_URL` to the exact public HTTPS origin. Responses include anti-framing, MIME-sniffing,
+referrer, permissions, opener, and HSTS headers. Administrative schedule, service, appointment, Calendar,
+and policy changes are recorded in the paginated **Security and audit history** panel.
+
 ## Repository layout
 
 - `apps/web`: Next.js website and future route handlers

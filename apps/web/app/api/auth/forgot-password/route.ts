@@ -5,11 +5,14 @@ import { z } from "zod";
 import { getDb } from "../../../../lib/db";
 import { customers, passwordResetTokens } from "../../../../lib/db/schema";
 import { sendPasswordResetEmail } from "../../../../lib/email";
+import { checkRateLimit, rateLimitResponse } from "../../../../lib/rate-limit";
 
 const schema = z.object({ email: z.email().transform((value) => value.trim().toLowerCase()) });
 const genericMessage = "If an account exists for that email, a reset link is on its way.";
 
 export async function POST(request: Request) {
+  const rateLimit = await checkRateLimit(request, "forgot-password", 5, 60 * 60);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit);
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ message: genericMessage });
 
