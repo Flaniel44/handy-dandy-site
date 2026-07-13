@@ -56,6 +56,8 @@ export async function resetTestData(sql: ReturnType<typeof postgres>) {
   await sql.unsafe(
     "TRUNCATE password_reset_tokens, appointments, booking_slots, customers RESTART IDENTITY CASCADE",
   );
+  await sql`DELETE FROM google_calendar_event_overrides`;
+  await sql`DELETE FROM google_calendar_connections`;
   await sql`DELETE FROM manual_blocks`;
   await sql`DELETE FROM weekly_hours`;
   await sql`
