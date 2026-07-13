@@ -29,6 +29,8 @@ export const businessSettings = pgTable("business_settings", {
   slotIntervalMinutes: integer("slot_interval_minutes").notNull().default(30),
   minimumNoticeMinutes: integer("minimum_notice_minutes").notNull().default(120),
   bookingWindowDays: integer("booking_window_days").notNull().default(60),
+  appointmentBufferMinutes: integer("appointment_buffer_minutes").notNull().default(60),
+  cancellationNoticeMinutes: integer("cancellation_notice_minutes").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

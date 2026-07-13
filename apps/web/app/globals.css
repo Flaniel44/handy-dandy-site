@@ -175,10 +175,11 @@ a { color: inherit; }
 .admin-appointments-panel { order: 1; }
 .admin-clients-panel { order: 2; }
 .admin-services-panel { order: 3; }
-.admin-blocks-panel { order: 4; }
-.admin-calendar-panel { order: 5; }
-.admin-phone-panel { order: 6; }
-.admin-working-panel { order: 7; }
+.admin-policies-panel { order: 4; }
+.admin-blocks-panel { order: 5; }
+.admin-calendar-panel { order: 6; }
+.admin-phone-panel { order: 7; }
+.admin-working-panel { order: 8; }
 .admin-section-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 24px; }
 .admin-section-heading h2 { margin: 0 0 5px; }
 .admin-section-heading p, .admin-list p { margin: 0; color: var(--muted); }

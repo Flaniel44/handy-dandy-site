@@ -9,6 +9,7 @@ type Client = { id: string; name: string; email: string; phone?: string; appoint
 type ClientPagination = { page: number; pageSize: number; total: number; totalPages: number };
 type Appointment = { id: string; status: string; notes: string; startsAt: string; endsAt: string; customerName: string; customerEmail: string; customerPhone?: string; serviceName: string; source: string };
 type Service = { id: string; name: string; description: string; durationMinutes: number; priceCents: number; active: boolean; sortOrder: number };
+type BookingPolicies = { timezone: string; slotIntervalMinutes: number; minimumNoticeMinutes: number; bookingWindowDays: number; appointmentBufferMinutes: number; cancellationNoticeMinutes: number };
 type CalendarEvent = { id: string; name: string; startsAt: string; endsAt: string; isAllDay: boolean; googleBusy: boolean; override: "available" | "unavailable" | null; blocksAvailability: boolean };
 type CalendarStatus = { configured: boolean; connected: boolean; connection: { calendarId: string; updatedAt: string } | null; health?: { pending: number; failed: number; synced: number; lastSyncedAt: string | null }; events?: CalendarEvent[] };
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -22,16 +23,17 @@ export function AdminDashboard() {
   const [clientsLoading, setClientsLoading] = useState(true);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
+  const [policies, setPolicies] = useState<BookingPolicies>();
   const [timezone, setTimezone] = useState("");
   const [calendarStatus, setCalendarStatus] = useState<CalendarStatus>({ configured: false, connected: false, connection: null });
   const [calendarSyncing, setCalendarSyncing] = useState(false);
   const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
-    const endpoints = ["/api/admin/working-hours", "/api/admin/blocks", "/api/admin/appointments", "/api/admin/services", "/api/admin/google-calendar"];
+    const endpoints = ["/api/admin/working-hours", "/api/admin/blocks", "/api/admin/appointments", "/api/admin/services", "/api/admin/booking-policies", "/api/admin/google-calendar"];
     const responses = await Promise.all(endpoints.map((url) => fetch(url)));
     if (responses.some((response) => response.status === 401)) { router.replace("/admin/login"); return; }
-    const [hoursBody, blocksBody, appointmentsBody, servicesBody, calendarBody] = await Promise.all(responses.map((response) => response.json()));
+    const [hoursBody, blocksBody, appointmentsBody, servicesBody, policiesBody, calendarBody] = await Promise.all(responses.map((response) => response.json()));
     setHours((hoursBody.hours ?? []).map((item: Hours) => ({
       ...item,
       startsAtLocal: item.startsAtLocal.slice(0, 5),
@@ -39,6 +41,7 @@ export function AdminDashboard() {
     })));
     setTimezone(hoursBody.timezone ?? ""); setBlocks(blocksBody.blocks ?? []);
     setAppointments(appointmentsBody.appointments ?? []); setServices(servicesBody.services ?? []);
+    setPolicies(policiesBody.policies);
     setCalendarStatus(calendarBody);
   }, [router]);
 
@@ -150,6 +153,23 @@ export function AdminDashboard() {
     if (!response.ok) await load();
   }
 
+  async function savePolicies(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!policies) return;
+    const response = await fetch("/api/admin/booking-policies", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(policies),
+    });
+    const body = await response.json().catch(() => ({}));
+    setMessage(response.ok ? "Booking policies saved." : body.error ?? "Could not save booking policies.");
+    if (response.ok) await load();
+  }
+
+  function updatePolicy(key: keyof BookingPolicies, value: string) {
+    setPolicies((current) => current ? { ...current, [key]: key === "timezone" ? value : Number(value) } : current);
+  }
+
   async function disconnectCalendar() {
     if (!window.confirm("Disconnect Google Calendar? Calendar events will no longer block booking availability.")) return;
     const response = await fetch("/api/admin/google-calendar", { method: "DELETE" });
@@ -201,6 +221,18 @@ export function AdminDashboard() {
         <button type="submit">Create service</button>
       </form>
       <div className="service-admin-list">{services.map((service, index) => <ServiceEditor key={service.id} service={service} save={updateService} canMoveUp={index > 0} canMoveDown={index < services.length - 1} moveUp={() => moveService(service.id, -1)} moveDown={() => moveService(service.id, 1)} />)}</div>
+    </details>
+
+    <details className="admin-panel admin-collapsible-panel admin-policies-panel"><summary><span><strong>Booking policies</strong><small>Control notice, scheduling range, buffers, cancellations, and timezone.</small></span></summary>
+      {policies && <form className="admin-grid-form" onSubmit={savePolicies}>
+        <label className="wide">Business timezone<input list="business-timezones" value={policies.timezone} onChange={(event) => updatePolicy("timezone", event.target.value)} required /><datalist id="business-timezones"><option value="America/Toronto" /><option value="America/Vancouver" /><option value="America/Edmonton" /><option value="America/Winnipeg" /><option value="America/Halifax" /><option value="America/St_Johns" /></datalist><small>Use an IANA timezone such as America/Toronto.</small></label>
+        <label>Minimum booking notice (minutes)<input type="number" min="0" max="43200" step="15" value={policies.minimumNoticeMinutes} onChange={(event) => updatePolicy("minimumNoticeMinutes", event.target.value)} required /></label>
+        <label>Maximum advance window (days)<input type="number" min="1" max="730" value={policies.bookingWindowDays} onChange={(event) => updatePolicy("bookingWindowDays", event.target.value)} required /></label>
+        <label>Time-slot interval (minutes)<input type="number" min="5" max="240" step="5" value={policies.slotIntervalMinutes} onChange={(event) => updatePolicy("slotIntervalMinutes", event.target.value)} required /></label>
+        <label>Buffer after appointments/events (minutes)<input type="number" min="0" max="1440" step="15" value={policies.appointmentBufferMinutes} onChange={(event) => updatePolicy("appointmentBufferMinutes", event.target.value)} required /></label>
+        <label>Cancellation/rescheduling notice (minutes)<input type="number" min="0" max="43200" step="15" value={policies.cancellationNoticeMinutes} onChange={(event) => updatePolicy("cancellationNoticeMinutes", event.target.value)} required /></label>
+        <button type="submit">Save booking policies</button>
+      </form>}
     </details>
 
     <section className="admin-panel admin-blocks-panel"><div className="admin-section-heading"><div><h2>Vacation and manual blocks</h2><p>Blocked periods are removed from public availability.</p></div></div>

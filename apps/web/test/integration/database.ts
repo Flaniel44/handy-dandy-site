@@ -60,6 +60,12 @@ export async function resetTestData(sql: ReturnType<typeof postgres>) {
   await sql`DELETE FROM google_calendar_connections`;
   await sql`DELETE FROM manual_blocks`;
   await sql`DELETE FROM weekly_hours`;
+  await sql`
+    UPDATE business_settings SET timezone = 'America/Toronto', slot_interval_minutes = 30,
+      minimum_notice_minutes = 120, booking_window_days = 60,
+      appointment_buffer_minutes = 60, cancellation_notice_minutes = 0
+    WHERE id = '11111111-1111-4111-8111-111111111111'
+  `;
   await sql`DELETE FROM services WHERE id NOT IN ('22222222-2222-4222-8222-222222222222', '33333333-3333-4333-8333-333333333333')`;
   await sql`
     UPDATE services SET name = 'Smart-home consultation',

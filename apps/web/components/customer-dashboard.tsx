@@ -46,6 +46,7 @@ function AccountScheduler({ onBooked, onMessage }: { onBooked: () => Promise<voi
   const [open, setOpen] = useState(false); const [services, setServices] = useState<Service[]>([]); const [serviceId, setServiceId] = useState("");
   const [currentWeek] = useState(startOfWeek); const [week, setWeek] = useState(startOfWeek);
   const [availability, setAvailability] = useState<Record<string, Slot[]>>({});
+  const [timezone, setTimezone] = useState("");
   const [selected, setSelected] = useState<{ date: string; slot: Slot }>(); const [notes, setNotes] = useState(""); const [loading, setLoading] = useState(false);
   const dates = Array.from({ length: 7 }, (_, index) => addDays(week, index));
 
@@ -61,8 +62,8 @@ function AccountScheduler({ onBooked, onMessage }: { onBooked: () => Promise<voi
       const dateText = formatDateInput(addDays(week, index));
       const response = await fetch(`/api/availability?date=${dateText}&serviceId=${serviceId}`, { signal: controller.signal });
       const body = await response.json(); if (!response.ok) throw new Error(body.error ?? "Availability is temporarily unavailable.");
-      return [dateText, body.slots ?? []] as const;
-    })).then((entries) => setAvailability(Object.fromEntries(entries))).catch((error) => {
+      return { dateText, slots: body.slots ?? [], timezone: body.timezone as string };
+    })).then((entries) => { setAvailability(Object.fromEntries(entries.map((entry) => [entry.dateText, entry.slots]))); setTimezone(entries[0]?.timezone ?? ""); }).catch((error) => {
       if (error.name !== "AbortError") { setAvailability({}); onMessage(error.message ?? "Availability is temporarily unavailable."); }
     }).finally(() => setLoading(false));
     return () => controller.abort();
@@ -79,6 +80,7 @@ function AccountScheduler({ onBooked, onMessage }: { onBooked: () => Promise<voi
 
   return <section className="account-panel scheduler-panel"><button className="scheduler-toggle" onClick={() => { setOpen((value) => !value); setLoading(!open); }}>{open ? "Close appointment scheduler" : "Schedule new appointment"}</button>{open && <div className="scheduler-content">
     <label>Service<select value={serviceId} onChange={(event) => { setServiceId(event.target.value); setSelected(undefined); setLoading(true); }}>{services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}</select></label>
+    <p className="service-summary">Times use {timezone || "the business timezone"}.</p>
     <div className="week-controls"><button disabled={week.getTime() <= currentWeek.getTime()} onClick={() => changeWeek(-1)} aria-label="Previous week">←</button><strong>{dates[0].toLocaleDateString([], { month: "short", day: "numeric" })} – {dates[6].toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}</strong><button onClick={() => changeWeek(1)} aria-label="Next week">→</button></div>
     <div className="weekly-availability" aria-busy={loading}>{dates.map((date) => { const dateText = formatDateInput(date); const slots = availability[dateText] ?? []; return <section key={dateText}><header><strong>{date.toLocaleDateString([], { weekday: "short" })}</strong><span>{date.toLocaleDateString([], { month: "short", day: "numeric" })}</span></header><div>{slots.length ? slots.map((slot) => <button className={selected?.slot.startsAt === slot.startsAt ? "is-selected" : ""} key={slot.startsAt} onClick={() => setSelected({ date: dateText, slot })}>{slot.label}</button>) : <small>No times</small>}</div></section>; })}</div>
     {selected && <div className="scheduler-confirm"><label>Notes for this appointment<textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} /></label><button disabled={loading} onClick={book}>{loading ? "Scheduling…" : `Confirm ${selected.slot.label}`}</button></div>}
@@ -119,6 +121,7 @@ function UpcomingAppointment({ appointment, save, cancel, onChanged, onMessage }
 function AppointmentRescheduler({ appointment, onChanged, onMessage }: { appointment: Appointment; onChanged: () => Promise<void>; onMessage: (message: string) => void }) {
   const [open, setOpen] = useState(false); const [currentWeek] = useState(startOfWeek); const [week, setWeek] = useState(startOfWeek);
   const [availability, setAvailability] = useState<Record<string, Slot[]>>({}); const [selected, setSelected] = useState<{ date: string; slot: Slot }>(); const [loading, setLoading] = useState(false);
+  const [timezone, setTimezone] = useState("");
   const dates = Array.from({ length: 7 }, (_, index) => addDays(week, index));
   useEffect(() => {
     if (!open) return;
@@ -128,8 +131,8 @@ function AppointmentRescheduler({ appointment, onChanged, onMessage }: { appoint
       const dateText = formatDateInput(date);
       const response = await fetch(`/api/availability?date=${dateText}&serviceId=${appointment.serviceId}`, { signal: controller.signal });
       const body = await response.json(); if (!response.ok) throw new Error(body.error ?? "Availability is temporarily unavailable.");
-      return [dateText, body.slots ?? []] as const;
-    })).then((entries) => setAvailability(Object.fromEntries(entries))).catch((error) => {
+      return { dateText, slots: body.slots ?? [], timezone: body.timezone as string };
+    })).then((entries) => { setAvailability(Object.fromEntries(entries.map((entry) => [entry.dateText, entry.slots]))); setTimezone(entries[0]?.timezone ?? ""); }).catch((error) => {
       if (error.name !== "AbortError") { setAvailability({}); onMessage(error.message ?? "Availability is temporarily unavailable."); }
     }).finally(() => setLoading(false));
     return () => controller.abort();
@@ -143,6 +146,7 @@ function AppointmentRescheduler({ appointment, onChanged, onMessage }: { appoint
     onMessage("Your appointment was rescheduled."); setOpen(false); setSelected(undefined); await onChanged();
   }
   return <div className="appointment-rescheduler"><button onClick={() => { setOpen((value) => !value); if (!open) setLoading(true); }}>{open ? "Close rescheduling" : "Reschedule"}</button>{open && <div className="reschedule-panel">
+    <p className="service-summary">Times use {timezone || "the business timezone"}.</p>
     <div className="week-controls"><button disabled={week.getTime() <= currentWeek.getTime()} onClick={() => changeWeek(-1)} aria-label="Previous week">←</button><strong>{dates[0].toLocaleDateString([], { month: "short", day: "numeric" })} – {dates[6].toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}</strong><button onClick={() => changeWeek(1)} aria-label="Next week">→</button></div>
     <div className="weekly-availability" aria-busy={loading}>{dates.map((date) => { const dateText = formatDateInput(date); const slots = availability[dateText] ?? []; return <section key={dateText}><header><strong>{date.toLocaleDateString([], { weekday: "short" })}</strong><span>{date.toLocaleDateString([], { month: "short", day: "numeric" })}</span></header><div>{slots.length ? slots.map((slot) => <button className={selected?.slot.startsAt === slot.startsAt ? "is-selected" : ""} key={slot.startsAt} onClick={() => setSelected({ date: dateText, slot })}>{slot.label}</button>) : <small>No times</small>}</div></section>; })}</div>
     {selected && <button className="reschedule-confirm" disabled={loading} onClick={confirm}>{loading ? "Rescheduling…" : `Move to ${selected.slot.label}`}</button>}

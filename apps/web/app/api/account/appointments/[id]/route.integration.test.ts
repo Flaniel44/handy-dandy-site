@@ -98,6 +98,19 @@ describe("customer appointment lifecycle routes", () => {
     expect(status).toBe("confirmed");
   });
 
+  it("enforces the configured customer cancellation and rescheduling cutoff", async () => {
+    const customerId = await seedCustomer("owner@example.com", "Owner");
+    auth.session = sessionFor(customerId, "owner@example.com", "Owner");
+    await testSql`UPDATE business_settings SET cancellation_notice_minutes = 1440`;
+    const start = DateTime.now().setZone("America/Toronto").plus({ hours: 12 }).startOf("minute");
+    const appointment = await seedAppointment(customerId, { startsAt: start.toISO()!, endsAt: start.plus({ hours: 1 }).toISO()! });
+
+    expect((await cancelAppointment(new Request("http://localhost"), context(appointment.id))).status).toBe(409);
+    expect((await rescheduleAppointment(rescheduleRequest(futureSlot(8, 10)), context(appointment.id))).status).toBe(409);
+    const [{ status }] = await testSql<{ status: string }[]>`SELECT status FROM appointments WHERE id = ${appointment.id}`;
+    expect(status).toBe("confirmed");
+  });
+
   it("reschedules an owned appointment and releases the previous slot", async () => {
     const customerId = await seedCustomer("owner@example.com", "Owner");
     auth.session = sessionFor(customerId, "owner@example.com", "Owner");

@@ -32,6 +32,10 @@ events block availability and confirmed appointments sync back. Payments are not
 
 The initial migration seeds a 60-minute consultation and Monday-to-Friday working
 hours from 9:00 AM to 5:00 PM in `America/Toronto`. These values can be changed at `/admin`.
+The collapsed **Booking policies** panel also controls the business timezone, slot interval,
+minimum booking notice, maximum advance window, post-appointment/calendar buffer, and the
+notice clients must give before cancelling or rescheduling. Admins can always override an
+appointment status directly when handling a client by phone.
 
 ## Admin credentials
 

@@ -9,6 +9,7 @@ export function BookingForm() {
   const [services, setServices] = useState<Service[]>([]); const [serviceId, setServiceId] = useState("");
   const [currentWeek] = useState(startOfWeek); const [week, setWeek] = useState(startOfWeek);
   const [availability, setAvailability] = useState<Record<string, Slot[]>>({});
+  const [timezone, setTimezone] = useState("");
   const [selected, setSelected] = useState<{ date: string; slot: Slot }>();
   const [loading, setLoading] = useState(true); const [error, setError] = useState(""); const [confirmation, setConfirmation] = useState<{ appointmentId: string }>();
   const dates = Array.from({ length: 7 }, (_, index) => addDays(week, index));
@@ -27,8 +28,8 @@ export function BookingForm() {
       const dateText = formatDateInput(addDays(week, index));
       const response = await fetch(`/api/availability?date=${dateText}&serviceId=${serviceId}`, { signal: controller.signal });
       const body = await response.json(); if (!response.ok) throw new Error(body.error ?? "Availability is temporarily unavailable.");
-      return [dateText, body.slots ?? []] as const;
-    })).then((entries) => setAvailability(Object.fromEntries(entries))).catch((reason) => {
+      return { dateText, slots: body.slots ?? [], timezone: body.timezone as string };
+    })).then((entries) => { setAvailability(Object.fromEntries(entries.map((entry) => [entry.dateText, entry.slots]))); setTimezone(entries[0]?.timezone ?? ""); }).catch((reason) => {
       if (reason.name !== "AbortError") { setAvailability({}); setError(reason.message ?? "Availability is temporarily unavailable."); }
     }).finally(() => setLoading(false));
     return () => controller.abort();
@@ -53,7 +54,7 @@ export function BookingForm() {
     <label>Service<select value={serviceId} onChange={(event) => { setServiceId(event.target.value); setSelected(undefined); setLoading(true); }}>{services.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
     {service && <p className="service-summary">{service.description} · {service.durationMinutes} minutes · ${(service.priceCents / 100).toFixed(2)}</p>}
 
-    <div className="booking-step"><span>02</span><div><h2>Choose a time</h2><p>Browse one week at a time. Times use the business timezone.</p></div></div>
+    <div className="booking-step"><span>02</span><div><h2>Choose a time</h2><p>Browse one week at a time. Times use {timezone || "the business timezone"}.</p></div></div>
     <div className="week-controls"><button type="button" disabled={week.getTime() <= currentWeek.getTime()} onClick={() => changeWeek(-1)} aria-label="Previous week">←</button><strong>{dates[0].toLocaleDateString([], { month: "short", day: "numeric" })} – {dates[6].toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}</strong><button type="button" onClick={() => changeWeek(1)} aria-label="Next week">→</button></div>
     <div className="weekly-availability" aria-busy={loading}>{dates.map((date) => { const dateText = formatDateInput(date); const slots = availability[dateText] ?? []; return <section key={dateText}><header><strong>{date.toLocaleDateString([], { weekday: "short" })}</strong><span>{date.toLocaleDateString([], { month: "short", day: "numeric" })}</span></header><div>{slots.length ? slots.map((slot) => <button type="button" className={selected?.slot.startsAt === slot.startsAt ? "is-selected" : ""} key={slot.startsAt} onClick={() => setSelected({ date: dateText, slot })}>{slot.label}</button>) : <small>No times</small>}</div></section>; })}</div>
 

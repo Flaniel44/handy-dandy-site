@@ -21,12 +21,15 @@ let getBlocks: typeof import("./blocks/route").GET;
 let createBlock: typeof import("./blocks/route").POST;
 let deleteBlock: typeof import("./blocks/[id]/route").DELETE;
 let getAvailabilityForDate: typeof import("../../../lib/availability").getAvailabilityForDate;
+let getBookingPolicies: typeof import("./booking-policies/route").GET;
+let putBookingPolicies: typeof import("./booking-policies/route").PUT;
 
 beforeAll(async () => {
   testSql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   ({ GET: getWorkingHours, PUT: putWorkingHours } = await import("./working-hours/route"));
   ({ GET: getBlocks, POST: createBlock } = await import("./blocks/route"));
   ({ DELETE: deleteBlock } = await import("./blocks/[id]/route"));
+  ({ GET: getBookingPolicies, PUT: putBookingPolicies } = await import("./booking-policies/route"));
   ({ getAvailabilityForDate } = await import("../../../lib/availability"));
 });
 
@@ -48,6 +51,27 @@ describe("admin scheduling controls", () => {
     expect((await getBlocks()).status).toBe(401);
     expect((await createBlock(jsonRequest("/api/admin/blocks", blockData(futureBusinessDay()), "POST"))).status).toBe(401);
     expect((await deleteBlock(new Request("http://localhost"), context("00000000-0000-4000-8000-000000000000"))).status).toBe(401);
+    expect((await getBookingPolicies()).status).toBe(401);
+    expect((await putBookingPolicies(jsonRequest("/api/admin/booking-policies", policyData(), "PUT"))).status).toBe(401);
+  });
+
+  it("reads, validates, and saves booking policies", async () => {
+    auth.isAdmin = true;
+    const initial = await (await getBookingPolicies()).json() as { policies: ReturnType<typeof policyData> };
+    expect(initial.policies).toMatchObject({ timezone: "America/Toronto", minimumNoticeMinutes: 120, appointmentBufferMinutes: 60 });
+
+    const response = await putBookingPolicies(jsonRequest("/api/admin/booking-policies", policyData({
+      timezone: "America/Vancouver", minimumNoticeMinutes: 1440, bookingWindowDays: 90,
+      appointmentBufferMinutes: 30, cancellationNoticeMinutes: 720,
+    }), "PUT"));
+    expect(response.status).toBe(200);
+    expect((await response.json() as { policies: ReturnType<typeof policyData> }).policies).toMatchObject({
+      timezone: "America/Vancouver", minimumNoticeMinutes: 1440, bookingWindowDays: 90,
+      appointmentBufferMinutes: 30, cancellationNoticeMinutes: 720,
+    });
+
+    expect((await putBookingPolicies(jsonRequest("/api/admin/booking-policies", policyData({ timezone: "Toronto" }), "PUT"))).status).toBe(400);
+    expect((await putBookingPolicies(jsonRequest("/api/admin/booking-policies", policyData({ bookingWindowDays: 0 }), "PUT"))).status).toBe(400);
   });
 
   it("atomically replaces and normalizes weekly working hours", async () => {
@@ -140,7 +164,37 @@ describe("admin scheduling controls", () => {
     expect(availability?.slots[0]?.localTime).toBe("13:00");
     expect(availability?.slots.some((slot) => slot.localTime === "12:30")).toBe(false);
   });
+
+  it("uses the configured buffer after confirmed appointments", async () => {
+    auth.isAdmin = true;
+    const day = futureBusinessDay();
+    await putBookingPolicies(jsonRequest("/api/admin/booking-policies", policyData({ appointmentBufferMinutes: 30 }), "PUT"));
+    await testSql`
+      INSERT INTO booking_slots (service_id, starts_at, ends_at, state)
+      VALUES (${SERVICE_ID}, ${day.set({ hour: 9 }).toUTC().toJSDate()}, ${day.set({ hour: 10 }).toUTC().toJSDate()}, 'confirmed')
+    `;
+    const availability = await getAvailabilityForDate(day.toISODate()!, SERVICE_ID);
+    expect(availability?.slots[0]?.localTime).toBe("10:30");
+  });
+
+  it("enforces the configured minimum notice and advance booking window", async () => {
+    auth.isAdmin = true;
+    const day = futureBusinessDay();
+    await putBookingPolicies(jsonRequest("/api/admin/booking-policies", policyData({ bookingWindowDays: 1 }), "PUT"));
+    expect((await getAvailabilityForDate(day.toISODate()!, SERVICE_ID))?.slots).toEqual([]);
+
+    await putBookingPolicies(jsonRequest("/api/admin/booking-policies", policyData({ minimumNoticeMinutes: 43_200 }), "PUT"));
+    expect((await getAvailabilityForDate(day.toISODate()!, SERVICE_ID))?.slots).toEqual([]);
+  });
 });
+
+function policyData(overrides: Record<string, unknown> = {}) {
+  return {
+    timezone: "America/Toronto", slotIntervalMinutes: 30, minimumNoticeMinutes: 120,
+    bookingWindowDays: 60, appointmentBufferMinutes: 60, cancellationNoticeMinutes: 0,
+    ...overrides,
+  };
+}
 
 function futureBusinessDay() {
   let day = DateTime.now().setZone("America/Toronto").plus({ days: 8 }).startOf("day");

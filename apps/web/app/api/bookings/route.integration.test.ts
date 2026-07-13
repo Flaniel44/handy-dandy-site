@@ -73,7 +73,7 @@ describe("POST /api/bookings", () => {
 
   it("updates a returning guest instead of creating a duplicate customer", async () => {
     const first = nextBookableSlot(9);
-    const second = nextBookableSlot(10);
+    const second = nextBookableSlot(11);
 
     expect((await postBooking(bookingRequest(first, {
       name: "Old Name",

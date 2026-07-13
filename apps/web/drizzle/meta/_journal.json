@@ -64,6 +64,13 @@
       "when": 1784361600000,
       "tag": "0008_service_order",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784448000000,
+      "tag": "0009_booking_policies",
+      "breakpoints": true
     }
   ]
 }

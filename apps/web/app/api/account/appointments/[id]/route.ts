@@ -6,7 +6,7 @@ import { requireCustomer } from "../../../../../lib/admin-auth";
 import { getAvailabilityForDate } from "../../../../../lib/availability";
 import { getDb } from "../../../../../lib/db";
 import { hasDatabaseErrorCode } from "../../../../../lib/db/errors";
-import { appointments, bookingSlots, services } from "../../../../../lib/db/schema";
+import { appointments, bookingSlots, businessSettings, services } from "../../../../../lib/db/schema";
 import { sendAppointmentCancelled, sendAppointmentRescheduled } from "../../../../../lib/email";
 import { deleteGoogleEvent, markCalendarSyncFailure, updateGoogleEventForAppointment } from "../../../../../lib/google-calendar";
 
@@ -68,11 +68,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 async function findEditableAppointment(id: string, customerId: string) {
   const [row] = await getDb().select({
     slotId: bookingSlots.id, startsAt: bookingSlots.startsAt, serviceId: bookingSlots.serviceId, serviceName: services.name, googleEventId: appointments.googleEventId,
-    status: appointments.status, slotState: bookingSlots.state,
+    status: appointments.status, slotState: bookingSlots.state, cancellationNoticeMinutes: businessSettings.cancellationNoticeMinutes,
   }).from(appointments)
     .innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(services, eq(services.id, bookingSlots.serviceId))
+    .innerJoin(businessSettings, eq(businessSettings.id, services.businessId))
     .where(and(eq(appointments.id, id), eq(appointments.customerId, customerId)))
     .limit(1);
-  return row && canCustomerManageAppointment(row) ? row : null;
+  if (!row || !canCustomerManageAppointment(row)) return null;
+  const cutoff = Date.now() + row.cancellationNoticeMinutes * 60_000;
+  return row.startsAt.getTime() >= cutoff ? row : null;
 }

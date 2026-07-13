@@ -6,8 +6,6 @@ import { getDb } from "./db";
 import { bookingSlots, businessSettings, manualBlocks, services, weeklyHours } from "./db/schema";
 import { getGoogleBusyRanges } from "./google-calendar";
 
-export const GOOGLE_CALENDAR_POST_EVENT_BUFFER_MINUTES = 60;
-
 export async function getActiveServices() {
   return getDb().select({
     id: services.id,
@@ -45,21 +43,25 @@ export async function getAvailabilityForDate(date: string, serviceId: string) {
     )),
     db.select({ startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt }).from(bookingSlots).where(and(
       lt(bookingSlots.startsAt, dayEnd.toJSDate()),
-      gt(bookingSlots.endsAt, dayStart.toJSDate()),
+      gt(bookingSlots.endsAt, dayStart.minus({ minutes: settings.appointmentBufferMinutes }).toJSDate()),
       or(
         eq(bookingSlots.state, "confirmed"),
         and(eq(bookingSlots.state, "held"), gt(bookingSlots.expiresAt, now)),
       ),
     )),
     getGoogleBusyRanges(
-      dayStart.minus({ minutes: GOOGLE_CALENDAR_POST_EVENT_BUFFER_MINUTES }).toJSDate(),
+      dayStart.minus({ minutes: settings.appointmentBufferMinutes }).toJSDate(),
       dayEnd.toJSDate(),
     ),
   ]);
 
+  const bufferedReserved = reserved.map((range) => ({
+    startsAt: range.startsAt,
+    endsAt: new Date(range.endsAt.getTime() + settings.appointmentBufferMinutes * 60_000),
+  }));
   const bufferedGoogleBusy = googleBusy.map((range) => ({
     startsAt: range.startsAt,
-    endsAt: new Date(range.endsAt.getTime() + GOOGLE_CALENDAR_POST_EVENT_BUFFER_MINUTES * 60_000),
+    endsAt: new Date(range.endsAt.getTime() + settings.appointmentBufferMinutes * 60_000),
   }));
 
   const slots = calculateAvailability({
@@ -73,7 +75,7 @@ export async function getAvailabilityForDate(date: string, serviceId: string) {
       startsAtLocal: hoursRow.startsAtLocal,
       endsAtLocal: hoursRow.endsAtLocal,
     })),
-    busyRanges: [...blocks, ...reserved, ...bufferedGoogleBusy].map((range) => ({
+    busyRanges: [...blocks, ...bufferedReserved, ...bufferedGoogleBusy].map((range) => ({
       startsAt: range.startsAt.toISOString(),
       endsAt: range.endsAt.toISOString(),
     })),
