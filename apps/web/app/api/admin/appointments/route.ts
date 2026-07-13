@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { requireAdmin } from "../../../../lib/admin-auth";
 import { getDb } from "../../../../lib/db";
+import { hasDatabaseErrorCode } from "../../../../lib/db/errors";
 import { appointments, bookingSlots, businessSettings, customers, services } from "../../../../lib/db/schema";
 import { sendBookingConfirmation } from "../../../../lib/email";
 import { createGoogleEventForAppointment, markCalendarSyncFailure } from "../../../../lib/google-calendar";
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
     catch (calendarError) { await markCalendarSyncFailure(result.id, calendarError); console.error("Manual appointment created but Google Calendar sync failed", calendarError); }
     return Response.json(result, { status: 201 });
   } catch (error) {
-    if (typeof error === "object" && error && "code" in error && error.code === "23P01") {
+    if (hasDatabaseErrorCode(error, "23P01")) {
       return Response.json({ error: "That time overlaps another appointment." }, { status: 409 });
     }
     console.error("Unable to create manual appointment", error);
