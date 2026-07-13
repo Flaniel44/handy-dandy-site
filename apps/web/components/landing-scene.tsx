@@ -253,6 +253,8 @@ export function LandingScene() {
     let suppressTouchClick = false;
     let previousPointerX: number | undefined;
     let ropeFrame: number | undefined;
+    let previousRopeTime: number | undefined;
+    let ropeAccumulator = 0;
     let grabbed = false;
     let grabX = points.at(-1)!.x;
     let grabY = points.at(-1)!.y;
@@ -290,7 +292,7 @@ export function LandingScene() {
       handle.setAttribute("transform", `rotate(${angle} ${end.x} ${end.y})`);
     };
 
-    const simulateRope = () => {
+    const stepRopePhysics = () => {
       let energy = 0;
       for (let index = 1; index < points.length; index += 1) {
         const point = points[index];
@@ -298,11 +300,11 @@ export function LandingScene() {
           point.x = grabX; point.y = grabY; point.oldX = grabX; point.oldY = grabY;
           continue;
         }
-        const velocityX = (point.x - point.oldX) * .985;
-        const velocityY = (point.y - point.oldY) * .985;
+        const velocityX = (point.x - point.oldX) * .986;
+        const velocityY = (point.y - point.oldY) * .986;
         point.oldX = point.x; point.oldY = point.y;
         point.x += velocityX;
-        point.y += velocityY + .16;
+        point.y += velocityY + .25;
         energy += Math.abs(velocityX) + Math.abs(velocityY);
       }
       for (let iteration = 0; iteration < 7; iteration += 1) {
@@ -320,22 +322,47 @@ export function LandingScene() {
         }
         if (grabbed) { points.at(-1)!.x = grabX; points.at(-1)!.y = grabY; }
       }
+      return energy;
+    };
+
+    const physicsStepMs = 1000 / 60;
+    const simulateRope = (time: number) => {
+      if (previousRopeTime === undefined) previousRopeTime = time - physicsStepMs;
+      ropeAccumulator += Math.min(100, Math.max(0, time - previousRopeTime));
+      previousRopeTime = time;
+
+      let steps = 0;
+      while (ropeAccumulator >= physicsStepMs && steps < 6) {
+        const energy = stepRopePhysics();
+        settledFrames = !grabbed && energy < .012 ? settledFrames + 1 : 0;
+        ropeAccumulator -= physicsStepMs;
+        steps += 1;
+      }
+
       renderRope();
-      settledFrames = !grabbed && energy < .025 ? settledFrames + 1 : 0;
-      if (settledFrames > 12) {
+      if (settledFrames > 24) {
         points.forEach((point, index) => Object.assign(point, { ...restingPoints[index], oldX: restingPoints[index].x, oldY: restingPoints[index].y }));
-        renderRope(); ropeFrame = undefined; return;
+        renderRope();
+        ropeFrame = undefined;
+        previousRopeTime = undefined;
+        ropeAccumulator = 0;
+        return;
       }
       ropeFrame = window.requestAnimationFrame(simulateRope);
     };
 
-    const startRope = () => { if (ropeFrame === undefined) ropeFrame = window.requestAnimationFrame(simulateRope); };
+    const startRope = () => {
+      if (ropeFrame !== undefined) return;
+      previousRopeTime = undefined;
+      ropeAccumulator = 0;
+      ropeFrame = window.requestAnimationFrame(simulateRope);
+    };
 
     // A small initial impulse lets the joint simulation open with a natural,
     // decaying sway instead of a perfectly static chain.
     points.forEach((point, index) => {
       if (index === 0) return;
-      point.oldX -= 2.25 * (index / (points.length - 1));
+      point.oldX -= 6 * (index / (points.length - 1));
     });
     startRope();
 
@@ -370,7 +397,7 @@ export function LandingScene() {
         });
         const movement = event.clientX - previousPointerX;
         if (closestDistance <= 12 && Math.abs(movement) > .4) {
-          points[closestIndex].oldX -= movement * svgScale() * (event.pointerType === "mouse" ? .32 : .2);
+          points[closestIndex].oldX -= movement * svgScale() * (event.pointerType === "mouse" ? .62 : .2);
           startRope();
         }
       }
