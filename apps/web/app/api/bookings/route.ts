@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { getAvailabilityForDate } from "../../../lib/availability";
 import { getDb } from "../../../lib/db";
+import { hasDatabaseErrorCode } from "../../../lib/db/errors";
 import { appointments, bookingSlots, customers } from "../../../lib/db/schema";
 import { sendBookingConfirmation } from "../../../lib/email";
 import { createGoogleEventForAppointment, markCalendarSyncFailure } from "../../../lib/google-calendar";
@@ -62,18 +63,8 @@ export async function POST(request: Request) {
     catch (calendarError) { await markCalendarSyncFailure(result.appointmentId, calendarError); console.error("Booking created but Google Calendar sync failed", calendarError); }
     return Response.json(result, { status: 201 });
   } catch (error) {
-    if (isOverlapError(error)) return Response.json({ error: "That time was just reserved by someone else." }, { status: 409 });
+    if (hasDatabaseErrorCode(error, "23P01")) return Response.json({ error: "That time was just reserved by someone else." }, { status: 409 });
     console.error("Unable to create booking", error);
     return Response.json({ error: "We could not reserve that time." }, { status: 500 });
   }
-}
-
-function isOverlapError(error: unknown) {
-  let current = error;
-  while (typeof current === "object" && current !== null) {
-    if ("code" in current && current.code === "23P01") return true;
-    if (!("cause" in current)) return false;
-    current = current.cause;
-  }
-  return false;
 }

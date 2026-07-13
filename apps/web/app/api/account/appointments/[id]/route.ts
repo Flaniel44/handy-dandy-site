@@ -5,6 +5,7 @@ import { canCustomerManageAppointment } from "@handy-dani/domain";
 import { requireCustomer } from "../../../../../lib/admin-auth";
 import { getAvailabilityForDate } from "../../../../../lib/availability";
 import { getDb } from "../../../../../lib/db";
+import { hasDatabaseErrorCode } from "../../../../../lib/db/errors";
 import { appointments, bookingSlots, services } from "../../../../../lib/db/schema";
 import { sendAppointmentCancelled, sendAppointmentRescheduled } from "../../../../../lib/email";
 import { deleteGoogleEvent, markCalendarSyncFailure, updateGoogleEventForAppointment } from "../../../../../lib/google-calendar";
@@ -51,7 +52,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       await tx.update(appointments).set({ slotId: slot.id, updatedAt: new Date() }).where(and(eq(appointments.id, id), eq(appointments.customerId, session.customerId)));
     });
   } catch (error) {
-    if (typeof error === "object" && error && "code" in error && error.code === "23P01") return Response.json({ error: "That time was just booked." }, { status: 409 });
+    if (hasDatabaseErrorCode(error, "23P01")) return Response.json({ error: "That time was just booked." }, { status: 409 });
     console.error("Unable to reschedule appointment", error);
     return Response.json({ error: "We could not reschedule the appointment." }, { status: 500 });
   }
