@@ -343,6 +343,7 @@ export function LandingScene() {
       if (settledFrames > 24) {
         points.forEach((point, index) => Object.assign(point, { ...restingPoints[index], oldX: restingPoints[index].x, oldY: restingPoints[index].y }));
         renderRope();
+        settledFrames = 0;
         ropeFrame = undefined;
         previousRopeTime = undefined;
         ropeAccumulator = 0;
@@ -353,6 +354,7 @@ export function LandingScene() {
 
     const startRope = () => {
       if (ropeFrame !== undefined) return;
+      settledFrames = 0;
       previousRopeTime = undefined;
       ropeAccumulator = 0;
       ropeFrame = window.requestAnimationFrame(simulateRope);
