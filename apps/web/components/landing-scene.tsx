@@ -220,7 +220,11 @@ export function LandingScene() {
     const beads = Array.from(chain.querySelectorAll<SVGCircleElement>(":scope > circle"));
     const handle = chain.querySelector<SVGRectElement>(":scope > rect:not([data-chain-hit-area])");
     const points = [
-      ...beads.map((bead) => ({ x: Number(bead.getAttribute("cx")), y: Number(bead.getAttribute("cy")), oldX: Number(bead.getAttribute("cx")), oldY: Number(bead.getAttribute("cy")) })),
+      ...beads.map((_, index) => {
+        const x = 340;
+        const y = -40 + index * 11;
+        return { x, y, oldX: x, oldY: y };
+      }),
       { x: 340, y: 103, oldX: 340, oldY: 103 },
     ];
     const restingPoints = points.map((point) => ({ x: point.x, y: point.y }));
@@ -487,7 +491,7 @@ export function LandingScene() {
       if (readyTimer) window.clearTimeout(readyTimer);
       if (cameraFrame !== undefined) window.cancelAnimationFrame(cameraFrame);
     };
-  }, [router]);
+  });
 
   return (
     <main className="landing-page">
