@@ -1,7 +1,11 @@
 import "server-only";
 
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
+
+import { getDb } from "./db";
+import { customers } from "./db/schema";
 
 export const SESSION_COOKIE = "handy_dandy_session";
 export const ADMIN_COOKIE = SESSION_COOKIE;
@@ -9,10 +13,10 @@ const SESSION_SECONDS = 60 * 60 * 12;
 
 export type AppSession =
   | { role: "admin"; email: string; expiresAt: number }
-  | { role: "customer"; email: string; customerId: string; firstName: string; expiresAt: number };
+  | { role: "customer"; email: string; customerId: string; firstName: string; authVersion: number; expiresAt: number };
 type SessionInput =
   | { role: "admin"; email: string }
-  | { role: "customer"; email: string; customerId: string; firstName: string };
+  | { role: "customer"; email: string; customerId: string; firstName: string; authVersion: number };
 
 export function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -31,8 +35,8 @@ export function createAdminSessionToken(email: string) {
   return createSessionToken({ role: "admin", email });
 }
 
-export function createCustomerSessionToken(customer: { id: string; email: string; firstName: string }) {
-  return createSessionToken({ role: "customer", email: customer.email, customerId: customer.id, firstName: customer.firstName });
+export function createCustomerSessionToken(customer: { id: string; email: string; firstName: string; authVersion: number }) {
+  return createSessionToken({ role: "customer", email: customer.email, customerId: customer.id, firstName: customer.firstName, authVersion: customer.authVersion });
 }
 
 export function readSessionToken(token?: string): AppSession | null {
@@ -59,7 +63,9 @@ export async function requireAdmin() {
 
 export async function requireCustomer() {
   const session = await getSession();
-  return session?.role === "customer" ? session : null;
+  if (session?.role !== "customer") return null;
+  const [customer] = await getDb().select({ authVersion: customers.authVersion }).from(customers).where(eq(customers.id, session.customerId)).limit(1);
+  return customer?.authVersion === session.authVersion ? session : null;
 }
 
 export function adminCookieOptions() {

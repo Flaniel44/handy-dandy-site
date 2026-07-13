@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   } else {
     const [customer] = await getDb().select().from(customers).where(eq(customers.email, parsed.data.email)).limit(1);
     if (customer?.passwordHash && verifyPassword(parsed.data.password, customer.passwordHash)) {
-      token = createCustomerSessionToken({ id: customer.id, email: customer.email, firstName: customer.firstName || customer.name.split(" ")[0] });
+      token = createCustomerSessionToken({ id: customer.id, email: customer.email, firstName: customer.firstName || customer.name.split(" ")[0], authVersion: customer.authVersion });
     }
   }
   if (!token) return invalid();

@@ -4,6 +4,7 @@ import { requireCustomer } from "../../../../lib/admin-auth";
 import { getAvailabilityForDate } from "../../../../lib/availability";
 import { getDb } from "../../../../lib/db";
 import { appointments, bookingSlots } from "../../../../lib/db/schema";
+import { sendBookingConfirmation } from "../../../../lib/email";
 
 const schema = z.object({
   serviceId: z.uuid(), date: z.iso.date(), startsAt: z.iso.datetime({ offset: true }),
@@ -29,6 +30,11 @@ export async function POST(request: Request) {
       }).returning({ id: appointments.id });
       return created;
     });
+    try {
+      await sendBookingConfirmation(session.email, session.firstName, availability.service.name, startsAt);
+    } catch (emailError) {
+      console.error("Account booking created but confirmation email failed", emailError);
+    }
     return Response.json({ appointmentId: appointment.id }, { status: 201 });
   } catch (error) {
     if (typeof error === "object" && error && "code" in error && error.code === "23P01") {

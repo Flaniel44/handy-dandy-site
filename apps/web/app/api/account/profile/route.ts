@@ -45,7 +45,7 @@ export async function PATCH(request: Request) {
     updatedAt: new Date(),
   }).where(eq(customers.id, session.customerId));
   (await cookies()).set(SESSION_COOKIE, createCustomerSessionToken({
-    id: session.customerId, email: session.email, firstName: parsed.data.firstName,
+    id: session.customerId, email: session.email, firstName: parsed.data.firstName, authVersion: session.authVersion,
   }), adminCookieOptions());
   return Response.json({ ok: true });
 }

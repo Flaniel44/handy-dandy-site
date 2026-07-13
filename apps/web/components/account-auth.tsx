@@ -11,7 +11,7 @@ export function LoginForm() {
     const body = await response.json(); setBusy(false); if (!response.ok) return setError(body.error);
     router.replace(body.destination); router.refresh();
   }
-  return <form className="auth-form" onSubmit={submit}><label>Email<input name="email" type="email" autoComplete="username" required /></label><label>Password<input name="password" type="password" autoComplete="current-password" required /></label>{error && <p className="form-error">{error}</p>}<button disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button></form>;
+  return <form className="auth-form" onSubmit={submit}><label>Email<input name="email" type="email" autoComplete="username" required /></label><label>Password<input name="password" type="password" autoComplete="current-password" required /></label><a className="auth-help-link" href="/forgot-password">Forgot your password?</a>{error && <p className="form-error">{error}</p>}<button disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button></form>;
 }
 
 export function RegistrationForm() {

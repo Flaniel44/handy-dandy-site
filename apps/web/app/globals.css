@@ -229,6 +229,9 @@ a { color: inherit; }
 .auth-form label small { color: var(--muted); font-weight: 400; }
 .auth-form input { padding: 13px 14px; border: 1px solid #3a4468; border-radius: 7px; background: #0c1020; color: var(--ink); font: inherit; }
 .auth-form button { padding: 14px; border: 0; border-radius: 7px; background: var(--ink); color: var(--night); cursor: pointer; font: inherit; font-weight: 800; }
+.auth-help-link { justify-self: end; margin-top: -8px; color: var(--muted); font-size: .8rem; }
+.auth-intro { margin: -12px 0 28px; color: var(--muted); line-height: 1.6; }
+.auth-success { padding: 12px 14px; border: 1px solid #47755d; border-radius: 7px; background: #183a2a55; color: #bce7cc; line-height: 1.5; }
 
 .account-page { min-height: 100vh; padding: 90px clamp(18px, 5vw, 70px) 100px; background: radial-gradient(circle at 10% 0, #342d7040, transparent 30%), var(--night); }
 .account-header, .account-actions, .account-panel { width: min(100%, 1000px); margin-inline: auto; }

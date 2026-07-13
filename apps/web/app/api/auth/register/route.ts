@@ -31,6 +31,6 @@ export async function POST(request: Request) {
   const [customer] = existing
     ? await db.update(customers).set(values).where(eq(customers.id, existing.id)).returning()
     : await db.insert(customers).values(values).returning();
-  (await cookies()).set(SESSION_COOKIE, createCustomerSessionToken({ id: customer.id, email: customer.email, firstName: parsed.data.firstName }), adminCookieOptions());
+  (await cookies()).set(SESSION_COOKIE, createCustomerSessionToken({ id: customer.id, email: customer.email, firstName: parsed.data.firstName, authVersion: customer.authVersion }), adminCookieOptions());
   return Response.json({ ok: true }, { status: 201 });
 }

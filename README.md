@@ -43,6 +43,18 @@ npm run admin:hash-password --workspace=@handy-dani/web -- "your-long-password"
 
 The admin session is stored in a signed, HTTP-only cookie. Production cookies require HTTPS.
 
+## Transactional email and password resets
+
+Development emails are written to the server console when `RESEND_API_KEY` is empty. For production,
+verify `whatisthis.place` in Resend and configure `RESEND_API_KEY`, `APP_URL`, `EMAIL_FROM`, and
+`EMAIL_REPLY_TO`. Password-reset links expire after 30 minutes and invalidate existing customer sessions.
+Booking confirmation emails are sent after a reservation is committed, so an email delivery failure never
+cancels a valid appointment.
+
+Incoming addresses such as `hello@whatisthis.place` can be forwarded to a personal Gmail account with
+Cloudflare Email Routing. Configure the same address under Gmail's **Send mail as** setting using Resend's
+SMTP host so manual replies retain the business address.
+
 ## Repository layout
 
 - `apps/web`: Next.js website and future route handlers
