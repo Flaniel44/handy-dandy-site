@@ -1,6 +1,5 @@
 "use client";
 
-import { mdiCctv } from "@mdi/js";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
@@ -98,10 +97,33 @@ export function LandingScene() {
             </g>
           </g>
         </g>
-        <g class="bathroom-camera" transform="translate(483 306) scale(1.15)">
-          <g transform="translate(24 0) scale(-1 1)">
-            <path d="${mdiCctv}" fill="#7f77dd" />
+        <g class="tracking-camera bathroom-camera" transform="translate(483 306) scale(1.15)">
+          <rect x="0" y="7" width="4" height="17" rx="1.5" fill="#5a6080" />
+          <path d="M4 17 H8 L12 13" fill="none" stroke="#7f77dd" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+          <g class="camera-aim">
+            <path d="M12 13 L16 7 H29 Q32 7 32 10 V16 Q32 19 29 19 H16 Z" fill="#7f77dd" />
+            <rect x="29" y="10" width="5" height="6" rx="1.4" fill="#151a2c" stroke="#7f77dd" stroke-width="1.2" />
+            <circle cx="31.5" cy="13" r="1.25" fill="#080a12" />
+            <circle cx="18" cy="11" r="1.2" fill="#f59842" />
           </g>
+          <circle cx="12" cy="13" r="3.5" fill="#5a6080" stroke="#a9adb8" stroke-width="1.4" />
+          <circle cx="12" cy="13" r="1.25" fill="#232b47" />
+          <g transform="translate(15 1)">
+            <path class="camera-wifi-wave" d="M-2.5 -1.5 Q0 -4 2.5 -1.5" />
+            <path class="camera-wifi-wave wave-outer" d="M-5 -3 Q0 -8 5 -3" />
+          </g>
+        </g>
+        <g class="tracking-camera bedroom-camera" transform="translate(197 306) scale(-1.15 1.15)">
+          <rect x="0" y="7" width="4" height="17" rx="1.5" fill="#5a6080" />
+          <path d="M4 17 H8 L12 13" fill="none" stroke="#7f77dd" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+          <g class="camera-aim">
+            <path d="M12 13 L16 7 H29 Q32 7 32 10 V16 Q32 19 29 19 H16 Z" fill="#7f77dd" />
+            <rect x="29" y="10" width="5" height="6" rx="1.4" fill="#151a2c" stroke="#7f77dd" stroke-width="1.2" />
+            <circle cx="31.5" cy="13" r="1.25" fill="#080a12" />
+            <circle cx="18" cy="11" r="1.2" fill="#f59842" />
+          </g>
+          <circle cx="12" cy="13" r="3.5" fill="#5a6080" stroke="#a9adb8" stroke-width="1.4" />
+          <circle cx="12" cy="13" r="1.25" fill="#232b47" />
           <g transform="translate(15 1)">
             <path class="camera-wifi-wave" d="M-2.5 -1.5 Q0 -4 2.5 -1.5" />
             <path class="camera-wifi-wave wave-outer" d="M-5 -3 Q0 -8 5 -3" />
@@ -114,6 +136,14 @@ export function LandingScene() {
     if (demosButton) demosButton.textContent = "What's Possible?";
 
     const sceneSvg = root.querySelector<SVGSVGElement>(".stage > svg");
+    const cameraTrackers = Array.from(root.querySelectorAll<SVGGElement>(".tracking-camera")).map((camera, index) => ({
+      camera,
+      aim: camera.querySelector<SVGGElement>(".camera-aim"),
+      currentAngle: 0,
+      targetAngle: 0,
+      trackingUntil: 0,
+      phase: index * Math.PI * .75,
+    }));
     const mobileScene = window.matchMedia("(max-width: 620px)");
     const syncSceneViewport = () => sceneSvg?.setAttribute("viewBox", mobileScene.matches ? "170 0 340 460" : "0 0 680 460");
     syncSceneViewport();
@@ -123,9 +153,9 @@ export function LandingScene() {
     if (!hitArea) {
       hitArea = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       hitArea.setAttribute("data-chain-hit-area", "true");
-      hitArea.setAttribute("x", "280");
+      hitArea.setAttribute("x", "307");
       hitArea.setAttribute("y", "-45");
-      hitArea.setAttribute("width", "120");
+      hitArea.setAttribute("width", "66");
       hitArea.setAttribute("height", "175");
       hitArea.setAttribute("rx", "30");
       hitArea.setAttribute("fill", "transparent");
@@ -193,6 +223,22 @@ export function LandingScene() {
     let grabY = points.at(-1)!.y;
     let settledFrames = 0;
     let mousePull = false;
+    let gravityX = 0;
+    let gravityY = 1;
+    let motionListening = false;
+    let motionPermissionRequested = false;
+    let cameraFrame: number | undefined;
+
+    const animateCameras = (time: number) => {
+      cameraTrackers.forEach((tracker) => {
+        if (!tracker.aim) return;
+        const desiredAngle = time < tracker.trackingUntil ? tracker.targetAngle : Math.sin(time / 1500 + tracker.phase) * 12;
+        tracker.currentAngle += (desiredAngle - tracker.currentAngle) * .075;
+        tracker.aim.setAttribute("transform", `rotate(${tracker.currentAngle.toFixed(2)} 12 13)`);
+      });
+      cameraFrame = window.requestAnimationFrame(animateCameras);
+    };
+    cameraFrame = window.requestAnimationFrame(animateCameras);
 
     const svgScale = () => {
       const svg = chain.ownerSVGElement;
@@ -224,7 +270,8 @@ export function LandingScene() {
         const velocityX = (point.x - point.oldX) * .985;
         const velocityY = (point.y - point.oldY) * .985;
         point.oldX = point.x; point.oldY = point.y;
-        point.x += velocityX; point.y += velocityY + .16;
+        point.x += velocityX + gravityX * .16;
+        point.y += velocityY + gravityY * .16;
         energy += Math.abs(velocityX) + Math.abs(velocityY);
       }
       for (let iteration = 0; iteration < 7; iteration += 1) {
@@ -245,7 +292,7 @@ export function LandingScene() {
       renderRope();
       settledFrames = !grabbed && energy < .025 ? settledFrames + 1 : 0;
       if (settledFrames > 12) {
-        points.forEach((point, index) => Object.assign(point, { ...restingPoints[index], oldX: restingPoints[index].x, oldY: restingPoints[index].y }));
+        if (!motionListening) points.forEach((point, index) => Object.assign(point, { ...restingPoints[index], oldX: restingPoints[index].x, oldY: restingPoints[index].y }));
         renderRope(); ropeFrame = undefined; return;
       }
       ropeFrame = window.requestAnimationFrame(simulateRope);
@@ -253,23 +300,81 @@ export function LandingScene() {
 
     const startRope = () => { if (ropeFrame === undefined) ropeFrame = window.requestAnimationFrame(simulateRope); };
 
+    const onDeviceMotion = (event: DeviceMotionEvent) => {
+      const acceleration = event.accelerationIncludingGravity;
+      if (acceleration?.x == null || acceleration.y == null) return;
+      const rawX = Math.max(-1.2, Math.min(1.2, acceleration.x / 9.81));
+      const rawY = Math.max(-1.2, Math.min(1.2, -acceleration.y / 9.81));
+      const orientation = ((screen.orientation?.angle ?? 0) * Math.PI) / 180;
+      const screenX = rawX * Math.cos(orientation) + rawY * Math.sin(orientation);
+      const screenY = -rawX * Math.sin(orientation) + rawY * Math.cos(orientation);
+      gravityX = gravityX * .82 + screenX * .18;
+      gravityY = gravityY * .82 + screenY * .18;
+      startRope();
+    };
+
+    const startMotionTracking = async () => {
+      if (!mobileScene.matches || motionListening || motionPermissionRequested || typeof window.DeviceMotionEvent === "undefined") return;
+      motionPermissionRequested = true;
+      const motionEvent = window.DeviceMotionEvent as typeof DeviceMotionEvent & { requestPermission?: () => Promise<"granted" | "denied"> };
+      try {
+        const permission = motionEvent.requestPermission ? await motionEvent.requestPermission() : "granted";
+        if (permission === "granted") {
+          window.addEventListener("devicemotion", onDeviceMotion);
+          motionListening = true;
+        }
+      } catch {
+        // Fixed downward gravity remains available when motion access is denied.
+      }
+    };
+
+    if (mobileScene.matches && typeof window.DeviceMotionEvent !== "undefined"
+      && !(window.DeviceMotionEvent as typeof DeviceMotionEvent & { requestPermission?: () => Promise<string> }).requestPermission) {
+      void startMotionTracking();
+    }
+
     const onScenePointerMove = (event: PointerEvent) => {
+      if (event.pointerType === "mouse") {
+        cameraTrackers.forEach((tracker) => {
+          const { camera } = tracker;
+          const matrix = camera.getScreenCTM();
+          if (!matrix || !tracker.aim) return;
+          const target = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+          const targetAngle = Math.atan2(target.y - 13, target.x - 12) * 180 / Math.PI;
+          const insideVisionCone = target.x > 12 && targetAngle >= -50 && targetAngle <= 50;
+          if (insideVisionCone) {
+            tracker.targetAngle = Math.max(-38, Math.min(42, targetAngle));
+            tracker.trackingUntil = performance.now() + 1400;
+          } else {
+            tracker.trackingUntil = 0;
+          }
+        });
+      }
       if (event.pointerType !== "mouse" || grabbed) return;
-      const bounds = chain.getBoundingClientRect();
-      if (previousMouseX !== undefined && event.clientY >= bounds.top - 10 && event.clientY <= bounds.bottom + 20
-        && event.clientX >= bounds.left - 40 && event.clientX <= bounds.right + 40) {
+      const svg = chain.ownerSVGElement;
+      const matrix = svg?.getScreenCTM();
+      if (previousMouseX !== undefined && matrix) {
+        const cursor = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+        let closestIndex = 1;
+        let closestDistance = Number.POSITIVE_INFINITY;
+        points.forEach((point, index) => {
+          if (index === 0) return;
+          const distance = Math.hypot(cursor.x - point.x, cursor.y - point.y);
+          if (distance < closestDistance) { closestDistance = distance; closestIndex = index; }
+        });
         const movement = event.clientX - previousMouseX;
-        if (Math.abs(movement) > .4) {
-          const relativeY = (event.clientY - bounds.top) / Math.max(1, bounds.height);
-          const index = Math.max(1, Math.min(points.length - 1, Math.round(relativeY * (points.length - 1))));
-          points[index].oldX -= movement * svgScale() * .32;
+        if (closestDistance <= 12 && Math.abs(movement) > .4) {
+          points[closestIndex].oldX -= movement * svgScale() * .32;
           startRope();
         }
       }
       previousMouseX = event.clientX;
     };
 
+    const resetCameraAim = () => cameraTrackers.forEach((tracker) => { tracker.trackingUntil = 0; });
+
     const onPointerDown = (event: PointerEvent) => {
+      void startMotionTracking();
       const end = points.at(-1)!;
       pullStartX = event.clientX; pullStartY = event.clientY; pullDistance = 0; grabbed = true;
       mousePull = event.pointerType === "mouse";
@@ -346,6 +451,7 @@ export function LandingScene() {
     container.addEventListener("click", onClick);
     container.addEventListener("keydown", onKeyDown);
     container.addEventListener("pointermove", onScenePointerMove);
+    container.addEventListener("pointerleave", resetCameraAim);
     chain.addEventListener("pointerdown", onPointerDown);
     chain.addEventListener("pointermove", onPointerMove);
     chain.addEventListener("pointerup", releasePullChain);
@@ -355,15 +461,18 @@ export function LandingScene() {
       container.removeEventListener("click", onClick);
       container.removeEventListener("keydown", onKeyDown);
       container.removeEventListener("pointermove", onScenePointerMove);
+      container.removeEventListener("pointerleave", resetCameraAim);
       chain.removeEventListener("pointerdown", onPointerDown);
       chain.removeEventListener("pointermove", onPointerMove);
       chain.removeEventListener("pointerup", releasePullChain);
       chain.removeEventListener("pointercancel", releasePullChain);
       mobileScene.removeEventListener("change", syncSceneViewport);
+      if (motionListening) window.removeEventListener("devicemotion", onDeviceMotion);
       document.body.classList.remove("landing-lights-off");
       window.clearInterval(ambientTimer);
       if (ropeFrame !== undefined) window.cancelAnimationFrame(ropeFrame);
       if (readyTimer) window.clearTimeout(readyTimer);
+      if (cameraFrame !== undefined) window.cancelAnimationFrame(cameraFrame);
     };
   }, [router]);
 

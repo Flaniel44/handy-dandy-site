@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@handy-dani/domain": "*",
-    "@mdi/js": "^7.4.47",
     "drizzle-orm": "^0.45.2",
     "luxon": "^3.7.2",
     "next": "16.2.10",
