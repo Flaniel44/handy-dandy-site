@@ -251,17 +251,13 @@ export function LandingScene() {
     let pullStartY: number | undefined;
     let pullDistance = 0;
     let suppressTouchClick = false;
-    let previousMouseX: number | undefined;
+    let previousPointerX: number | undefined;
     let ropeFrame: number | undefined;
     let grabbed = false;
     let grabX = points.at(-1)!.x;
     let grabY = points.at(-1)!.y;
     let settledFrames = 0;
     let mousePull = false;
-    let gravityX = 0;
-    let gravityY = 1;
-    let motionListening = false;
-    let motionPermissionRequested = false;
     let cameraFrame: number | undefined;
 
     const animateCameras = (time: number) => {
@@ -305,8 +301,8 @@ export function LandingScene() {
         const velocityX = (point.x - point.oldX) * .985;
         const velocityY = (point.y - point.oldY) * .985;
         point.oldX = point.x; point.oldY = point.y;
-        point.x += velocityX + gravityX * .16;
-        point.y += velocityY + gravityY * .16;
+        point.x += velocityX;
+        point.y += velocityY + .16;
         energy += Math.abs(velocityX) + Math.abs(velocityY);
       }
       for (let iteration = 0; iteration < 7; iteration += 1) {
@@ -327,7 +323,7 @@ export function LandingScene() {
       renderRope();
       settledFrames = !grabbed && energy < .025 ? settledFrames + 1 : 0;
       if (settledFrames > 12) {
-        if (!motionListening) points.forEach((point, index) => Object.assign(point, { ...restingPoints[index], oldX: restingPoints[index].x, oldY: restingPoints[index].y }));
+        points.forEach((point, index) => Object.assign(point, { ...restingPoints[index], oldX: restingPoints[index].x, oldY: restingPoints[index].y }));
         renderRope(); ropeFrame = undefined; return;
       }
       ropeFrame = window.requestAnimationFrame(simulateRope);
@@ -335,38 +331,13 @@ export function LandingScene() {
 
     const startRope = () => { if (ropeFrame === undefined) ropeFrame = window.requestAnimationFrame(simulateRope); };
 
-    const onDeviceMotion = (event: DeviceMotionEvent) => {
-      const acceleration = event.accelerationIncludingGravity;
-      if (acceleration?.x == null || acceleration.y == null) return;
-      const rawX = Math.max(-1.2, Math.min(1.2, acceleration.x / 9.81));
-      const rawY = Math.max(-1.2, Math.min(1.2, -acceleration.y / 9.81));
-      const orientation = ((screen.orientation?.angle ?? 0) * Math.PI) / 180;
-      const screenX = rawX * Math.cos(orientation) + rawY * Math.sin(orientation);
-      const screenY = -rawX * Math.sin(orientation) + rawY * Math.cos(orientation);
-      gravityX = gravityX * .82 + screenX * .18;
-      gravityY = gravityY * .82 + screenY * .18;
-      startRope();
-    };
-
-    const startMotionTracking = async () => {
-      if (!mobileScene.matches || motionListening || motionPermissionRequested || typeof window.DeviceMotionEvent === "undefined") return;
-      motionPermissionRequested = true;
-      const motionEvent = window.DeviceMotionEvent as typeof DeviceMotionEvent & { requestPermission?: () => Promise<"granted" | "denied"> };
-      try {
-        const permission = motionEvent.requestPermission ? await motionEvent.requestPermission() : "granted";
-        if (permission === "granted") {
-          window.addEventListener("devicemotion", onDeviceMotion);
-          motionListening = true;
-        }
-      } catch {
-        // Fixed downward gravity remains available when motion access is denied.
-      }
-    };
-
-    if (mobileScene.matches && typeof window.DeviceMotionEvent !== "undefined"
-      && !(window.DeviceMotionEvent as typeof DeviceMotionEvent & { requestPermission?: () => Promise<string> }).requestPermission) {
-      void startMotionTracking();
-    }
+    // A small initial impulse lets the joint simulation open with a natural,
+    // decaying sway instead of a perfectly static chain.
+    points.forEach((point, index) => {
+      if (index === 0) return;
+      point.oldX -= 2.25 * (index / (points.length - 1));
+    });
+    startRope();
 
     const onScenePointerMove = (event: PointerEvent) => {
       if (event.pointerType === "mouse") {
@@ -385,10 +356,10 @@ export function LandingScene() {
           }
         });
       }
-      if (event.pointerType !== "mouse" || grabbed) return;
+      if (grabbed) return;
       const svg = chain.ownerSVGElement;
       const matrix = svg?.getScreenCTM();
-      if (previousMouseX !== undefined && matrix) {
+      if (previousPointerX !== undefined && matrix) {
         const cursor = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
         let closestIndex = 1;
         let closestDistance = Number.POSITIVE_INFINITY;
@@ -397,19 +368,21 @@ export function LandingScene() {
           const distance = Math.hypot(cursor.x - point.x, cursor.y - point.y);
           if (distance < closestDistance) { closestDistance = distance; closestIndex = index; }
         });
-        const movement = event.clientX - previousMouseX;
+        const movement = event.clientX - previousPointerX;
         if (closestDistance <= 12 && Math.abs(movement) > .4) {
-          points[closestIndex].oldX -= movement * svgScale() * .32;
+          points[closestIndex].oldX -= movement * svgScale() * (event.pointerType === "mouse" ? .32 : .2);
           startRope();
         }
       }
-      previousMouseX = event.clientX;
+      previousPointerX = event.clientX;
     };
+
+    const onScenePointerDown = (event: PointerEvent) => { previousPointerX = event.clientX; };
+    const onScenePointerEnd = () => { previousPointerX = undefined; };
 
     const resetCameraAim = () => cameraTrackers.forEach((tracker) => { tracker.trackingUntil = 0; });
 
     const onPointerDown = (event: PointerEvent) => {
-      void startMotionTracking();
       const end = points.at(-1)!;
       pullStartX = event.clientX; pullStartY = event.clientY; pullDistance = 0; grabbed = true;
       mousePull = event.pointerType === "mouse";
@@ -485,7 +458,10 @@ export function LandingScene() {
     const ambientTimer = window.setInterval(flickerRandomRoom, 9000);
     container.addEventListener("click", onClick);
     container.addEventListener("keydown", onKeyDown);
+    container.addEventListener("pointerdown", onScenePointerDown);
     container.addEventListener("pointermove", onScenePointerMove);
+    container.addEventListener("pointerup", onScenePointerEnd);
+    container.addEventListener("pointercancel", onScenePointerEnd);
     container.addEventListener("pointerleave", resetCameraAim);
     chain.addEventListener("pointerdown", onPointerDown);
     chain.addEventListener("pointermove", onPointerMove);
@@ -495,14 +471,16 @@ export function LandingScene() {
     return () => {
       container.removeEventListener("click", onClick);
       container.removeEventListener("keydown", onKeyDown);
+      container.removeEventListener("pointerdown", onScenePointerDown);
       container.removeEventListener("pointermove", onScenePointerMove);
+      container.removeEventListener("pointerup", onScenePointerEnd);
+      container.removeEventListener("pointercancel", onScenePointerEnd);
       container.removeEventListener("pointerleave", resetCameraAim);
       chain.removeEventListener("pointerdown", onPointerDown);
       chain.removeEventListener("pointermove", onPointerMove);
       chain.removeEventListener("pointerup", releasePullChain);
       chain.removeEventListener("pointercancel", releasePullChain);
       mobileScene.removeEventListener("change", syncSceneViewport);
-      if (motionListening) window.removeEventListener("devicemotion", onDeviceMotion);
       document.body.classList.remove("landing-lights-off");
       window.clearInterval(ambientTimer);
       if (ropeFrame !== undefined) window.cancelAnimationFrame(ropeFrame);
