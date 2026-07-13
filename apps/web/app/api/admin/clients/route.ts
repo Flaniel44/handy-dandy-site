@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     id: customers.id, name: customers.name, email: customers.email, phone: customers.phone,
     createdAt: customers.createdAt, appointmentCount: sql<number>`count(${appointments.id})::int`,
   }).from(customers).leftJoin(appointments, eq(appointments.customerId, customers.id))
-    .groupBy(customers.id).orderBy(desc(customers.createdAt)).limit(pageSize).offset((page - 1) * pageSize)]);
+    .groupBy(customers.id).orderBy(desc(customers.createdAt), desc(customers.id)).limit(pageSize).offset((page - 1) * pageSize)]);
   const total = totalRow?.total ?? 0;
   return Response.json({ clients, pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) } });
 }
