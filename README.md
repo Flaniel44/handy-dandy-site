@@ -50,7 +50,22 @@ Development emails are written to the server console when `RESEND_API_KEY` is em
 verify `whatisthis.place` in Resend and configure `RESEND_API_KEY`, `APP_URL`, `EMAIL_FROM`, and
 `EMAIL_REPLY_TO`. Password-reset links expire after 30 minutes and invalidate existing customer sessions.
 Booking confirmation emails are sent after a reservation is committed, so an email delivery failure never
-cancels a valid appointment.
+cancels a valid appointment. Delivery is attempted three times; exhausted deliveries trigger a manual
+follow-up alert to `EMAIL_FAILURE_ALERT_TO` or, when omitted, `ADMIN_EMAIL`.
+
+## Appointment reminders
+
+Confirmed appointments receive separate client and admin reminders during the 24 hours before their start.
+Set `REMINDER_CRON_SECRET` to a long random value and optionally set
+`APPOINTMENT_REMINDER_ADMIN_EMAIL` (it falls back to `ADMIN_EMAIL`). While the web app is running, start the
+dedicated reminder worker in a second process:
+
+```bash
+npm run reminders:worker --workspace=@handy-dani/web
+```
+
+The worker checks every 15 minutes by default; configure `REMINDER_WORKER_INTERVAL_MINUTES` to change this.
+Successful recipients are recorded separately, so a later cycle retries only the reminder that failed.
 
 Incoming addresses such as `hello@whatisthis.place` can be forwarded to a personal Gmail account with
 Cloudflare Email Routing. Configure the same address under Gmail's **Send mail as** setting using Resend's

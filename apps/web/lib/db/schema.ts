@@ -105,12 +105,15 @@ export const appointments = pgTable("appointments", {
   calendarSyncStatus: text("calendar_sync_status").notNull().default("pending"),
   calendarSyncError: text("calendar_sync_error"),
   calendarSyncedAt: timestamp("calendar_synced_at", { withTimezone: true }),
+  customerReminderSentAt: timestamp("customer_reminder_sent_at", { withTimezone: true }),
+  adminReminderSentAt: timestamp("admin_reminder_sent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   uniqueIndex("appointments_slot_idx").on(table.slotId),
   uniqueIndex("appointments_stripe_session_idx").on(table.stripeCheckoutSessionId),
   index("appointments_calendar_sync_idx").on(table.calendarSyncStatus, table.updatedAt),
+  index("appointments_reminder_due_idx").on(table.status, table.customerReminderSentAt, table.adminReminderSentAt),
 ]);
 
 export const googleCalendarConnections = pgTable("google_calendar_connections", {

@@ -83,6 +83,34 @@ export async function sendAppointmentRescheduled(to: string, name: string, servi
   });
 }
 
+export async function sendCustomerAppointmentReminder(to: string, name: string, serviceName: string, startsAt: Date) {
+  const formatted = formatAppointmentTime(startsAt);
+  await sendTransactionalEmail({
+    to,
+    subject: "Reminder: your Handy Dandy appointment is tomorrow",
+    text: `Hi ${name},\n\nThis is a reminder that your ${serviceName} appointment is scheduled for ${formatted}.\n\nReply to this email if you need help.`,
+    html: `<p>Hi ${escapeHtml(name)},</p><p>This is a reminder that your <strong>${escapeHtml(serviceName)}</strong> appointment is scheduled for:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p><p>Reply to this email if you need help.</p>`,
+  });
+}
+
+export async function sendAdminAppointmentReminder(
+  to: string,
+  customerName: string,
+  customerEmail: string,
+  serviceName: string,
+  startsAt: Date,
+  notes: string,
+) {
+  const formatted = formatAppointmentTime(startsAt);
+  const details = [`Client: ${customerName} <${customerEmail}>`, `Service: ${serviceName}`, `Time: ${formatted}`, notes && `Notes: ${notes}`].filter(Boolean);
+  await sendTransactionalEmail({
+    to,
+    subject: `Reminder: ${customerName} is booked tomorrow`,
+    text: details.join("\n"),
+    html: `<p><strong>You have an appointment tomorrow.</strong></p><p>Client: ${escapeHtml(customerName)} &lt;${escapeHtml(customerEmail)}&gt;<br>Service: ${escapeHtml(serviceName)}<br>Time: ${escapeHtml(formatted)}</p>${notes ? `<p>Notes: ${escapeHtml(notes)}</p>` : ""}`,
+  });
+}
+
 function formatAppointmentTime(startsAt: Date) {
   return new Intl.DateTimeFormat("en-CA", { dateStyle: "full", timeStyle: "short", timeZone: process.env.BUSINESS_TIMEZONE ?? "America/Toronto" }).format(startsAt);
 }

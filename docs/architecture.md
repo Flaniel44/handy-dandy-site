@@ -23,7 +23,7 @@ than trusting a browser redirect.
 
 - `web`: landing page, booking flow, customer history, admin interface
 - `api`: availability and appointment commands shared by web/mobile
-- `worker`: hold expiry, email, Calendar reconciliation
+- `worker`: appointment reminders (implemented), future hold expiry and Calendar reconciliation scheduling
 - `postgres`: appointments, customers, schedules, OAuth connection, audit log
 - `caddy`: TLS and reverse proxy
 

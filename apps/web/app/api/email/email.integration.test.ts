@@ -144,6 +144,20 @@ describe("transactional email delivery", () => {
     expect(resendBody(1).text).toContain("Tuesday, August 4, 2026 at 3:00 p.m.");
     expect(resendBody(2).subject).toBe("Your Handy Dandy password was changed");
   });
+
+  it("generates separate client and admin appointment reminders", async () => {
+    const startsAt = new Date("2026-08-03T17:00:00.000Z");
+    await email.sendCustomerAppointmentReminder("client@example.com", "Ada", "Consultation", startsAt);
+    await email.sendAdminAppointmentReminder(
+      "owner@example.com", "Ada", "client@example.com", "Consultation", startsAt, "Bring the hub",
+    );
+
+    expect(resendBody(0).subject).toBe("Reminder: your Handy Dandy appointment is tomorrow");
+    expect(resendBody(0).text).toContain("Monday, August 3, 2026 at 1:00 p.m.");
+    expect(resendBody(1).subject).toBe("Reminder: Ada is booked tomorrow");
+    expect(resendBody(1).text).toContain("Client: Ada <client@example.com>");
+    expect(resendBody(1).text).toContain("Bring the hub");
+  });
 });
 
 function resendBody(index: number) {

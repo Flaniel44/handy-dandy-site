@@ -50,6 +50,13 @@
       "when": 1784188800000,
       "tag": "0006_calendar_event_overrides",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784275200000,
+      "tag": "0007_appointment_reminders",
+      "breakpoints": true
     }
   ]
 }
