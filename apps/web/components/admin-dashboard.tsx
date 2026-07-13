@@ -8,7 +8,8 @@ type Block = { id: string; startsAt: string; endsAt: string; reason: string };
 type Client = { id: string; name: string; email: string; phone?: string; appointmentCount: number };
 type Appointment = { id: string; status: string; notes: string; startsAt: string; endsAt: string; customerName: string; customerEmail: string; customerPhone?: string; serviceName: string; source: string };
 type Service = { id: string; name: string };
-type CalendarStatus = { configured: boolean; connected: boolean; connection: { calendarId: string; updatedAt: string } | null };
+type CalendarEvent = { id: string; name: string; startsAt: string; endsAt: string; isAllDay: boolean; googleBusy: boolean; override: "available" | "unavailable" | null; blocksAvailability: boolean };
+type CalendarStatus = { configured: boolean; connected: boolean; connection: { calendarId: string; updatedAt: string } | null; health?: { pending: number; failed: number; synced: number; lastSyncedAt: string | null }; events?: CalendarEvent[] };
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export function AdminDashboard() {
@@ -20,6 +21,7 @@ export function AdminDashboard() {
   const [services, setServices] = useState<Service[]>([]);
   const [timezone, setTimezone] = useState("");
   const [calendarStatus, setCalendarStatus] = useState<CalendarStatus>({ configured: false, connected: false, connection: null });
+  const [calendarSyncing, setCalendarSyncing] = useState(false);
   const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
@@ -89,6 +91,22 @@ export function AdminDashboard() {
     if (response.ok) await load();
   }
 
+  async function syncCalendar() {
+    setCalendarSyncing(true);
+    const response = await fetch("/api/admin/google-calendar", { method: "POST" });
+    const body = await response.json();
+    setMessage(response.ok ? `Calendar sync complete: ${body.synced} synced, ${body.failed} failed.` : body.error ?? "Calendar sync failed.");
+    setCalendarSyncing(false);
+    await load();
+  }
+
+  async function setEventAvailability(eventId: string, mode: "available" | "unavailable") {
+    const response = await fetch("/api/admin/google-calendar", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eventId, mode }) });
+    const body = await response.json();
+    setMessage(response.ok ? `Calendar event marked ${mode}.` : body.error ?? "Could not update event availability.");
+    if (response.ok) await load();
+  }
+
   const activeAppointmentGroups = groupAppointmentsByCustomer(appointments.filter((appointment) => !["completed", "cancelled"].includes(appointment.status)));
   const completedAppointments = appointments
     .filter((appointment) => appointment.status === "completed")
@@ -115,9 +133,14 @@ export function AdminDashboard() {
 
     <section className="admin-panel admin-calendar-panel"><div className="admin-section-heading"><div><h2>Google Calendar</h2><p>Timed events block availability and confirmed appointments sync back to your calendar.</p></div></div>
       <div className="calendar-connection">
-        <div><strong>{calendarStatus.connected ? "Connected" : "Not connected"}</strong><p>{calendarStatus.connected ? `Calendar: ${calendarStatus.connection?.calendarId}` : calendarStatus.configured ? "Connect the Google account that owns your business calendar." : "Complete the Google Calendar environment variables first."}</p></div>
-        {calendarStatus.connected ? <button onClick={disconnectCalendar}>Disconnect</button> : <a className={`admin-action-link${calendarStatus.configured ? "" : " disabled"}`} href={calendarStatus.configured ? "/api/admin/google-calendar/connect" : undefined}>Connect Google Calendar</a>}
+        <div><strong>{calendarStatus.connected ? calendarStatus.health?.failed ? "Connected — attention needed" : "Connected" : "Not connected"}</strong><p>{calendarStatus.connected ? `Calendar: ${calendarStatus.connection?.calendarId}` : calendarStatus.configured ? "Connect the Google account that owns your business calendar." : "Complete the Google Calendar environment variables first."}</p>
+          {calendarStatus.connected && <div className="calendar-health"><span>{calendarStatus.health?.synced ?? 0} synced</span><span>{calendarStatus.health?.pending ?? 0} pending</span><span className={calendarStatus.health?.failed ? "has-errors" : ""}>{calendarStatus.health?.failed ?? 0} failed</span><span>Last success: {calendarStatus.health?.lastSyncedAt ? formatDate(calendarStatus.health.lastSyncedAt) : "Not yet"}</span></div>}
+        </div>
+        <div className="calendar-actions">{calendarStatus.connected ? <><button disabled={calendarSyncing} onClick={syncCalendar}>{calendarSyncing ? "Syncing…" : "Sync now"}</button><button onClick={disconnectCalendar}>Disconnect</button></> : <a className={`admin-action-link${calendarStatus.configured ? "" : " disabled"}`} href={calendarStatus.configured ? "/api/admin/google-calendar/connect" : undefined}>Connect Google Calendar</a>}</div>
       </div>
+      {calendarStatus.connected && <details className="calendar-events-list"><summary><span>Calendar availability events</span><small>{calendarStatus.events?.filter((event) => event.blocksAvailability).length ?? 0} blocking</small></summary>
+        <div>{calendarStatus.events?.length ? calendarStatus.events.map((event) => <article key={event.id} className={event.blocksAvailability ? "is-blocking" : ""}><div><strong>{event.name}</strong><p>{formatCalendarEvent(event)}</p><small>{event.blocksAvailability ? "Unavailable for bookings" : "Available for bookings"}{event.override ? ` · Manual override: ${event.override}` : event.googleBusy ? " · Google: Busy" : " · Google: Free"}</small></div><button onClick={() => setEventAvailability(event.id, event.blocksAvailability ? "available" : "unavailable")}>{event.blocksAvailability ? "Become available" : "Become unavailable"}</button></article>) : <p className="empty-state">No Google Calendar events fall inside the current booking window.</p>}</div>
+      </details>}
     </section>
 
     <details className="admin-panel admin-collapsible-panel admin-phone-panel"><summary><span><strong>Add a phone appointment</strong><small>Create a confirmed appointment for a phone-booked client.</small></span></summary>
@@ -168,3 +191,12 @@ function groupAppointmentsByCustomer(items: Appointment[]) {
 }
 
 function formatDate(value: string) { return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }); }
+function formatCalendarEvent(event: CalendarEvent) {
+  const start = new Date(event.startsAt); const end = new Date(event.endsAt);
+  if (event.isAllDay) {
+    const inclusiveEnd = new Date(end); inclusiveEnd.setDate(inclusiveEnd.getDate() - 1);
+    const startText = start.toLocaleDateString([], { dateStyle: "medium" }); const endText = inclusiveEnd.toLocaleDateString([], { dateStyle: "medium" });
+    return startText === endText ? `All day · ${startText}` : `All day · ${startText} – ${endText}`;
+  }
+  return `${formatDate(event.startsAt)} – ${formatDate(event.endsAt)}`;
+}

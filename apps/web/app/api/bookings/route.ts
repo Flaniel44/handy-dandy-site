@@ -4,7 +4,7 @@ import { getAvailabilityForDate } from "../../../lib/availability";
 import { getDb } from "../../../lib/db";
 import { appointments, bookingSlots, customers } from "../../../lib/db/schema";
 import { sendBookingConfirmation } from "../../../lib/email";
-import { createGoogleEventForAppointment } from "../../../lib/google-calendar";
+import { createGoogleEventForAppointment, markCalendarSyncFailure } from "../../../lib/google-calendar";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       console.error("Booking created but confirmation email failed", emailError);
     }
     try { await createGoogleEventForAppointment(result.appointmentId); }
-    catch (calendarError) { console.error("Booking created but Google Calendar sync failed", calendarError); }
+    catch (calendarError) { await markCalendarSyncFailure(result.appointmentId, calendarError); console.error("Booking created but Google Calendar sync failed", calendarError); }
     return Response.json(result, { status: 201 });
   } catch (error) {
     if (isOverlapError(error)) return Response.json({ error: "That time was just reserved by someone else." }, { status: 409 });

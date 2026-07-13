@@ -102,11 +102,15 @@ export const appointments = pgTable("appointments", {
   source: text("source").notNull().default("web"),
   stripeCheckoutSessionId: text("stripe_checkout_session_id"),
   googleEventId: text("google_event_id"),
+  calendarSyncStatus: text("calendar_sync_status").notNull().default("pending"),
+  calendarSyncError: text("calendar_sync_error"),
+  calendarSyncedAt: timestamp("calendar_synced_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   uniqueIndex("appointments_slot_idx").on(table.slotId),
   uniqueIndex("appointments_stripe_session_idx").on(table.stripeCheckoutSessionId),
+  index("appointments_calendar_sync_idx").on(table.calendarSyncStatus, table.updatedAt),
 ]);
 
 export const googleCalendarConnections = pgTable("google_calendar_connections", {
@@ -118,6 +122,15 @@ export const googleCalendarConnections = pgTable("google_calendar_connections", 
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const googleCalendarEventOverrides = pgTable("google_calendar_event_overrides", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  businessId: uuid("business_id").notNull().references(() => businessSettings.id, { onDelete: "cascade" }),
+  googleEventId: text("google_event_id").notNull(),
+  mode: text("mode").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [uniqueIndex("google_calendar_event_overrides_event_idx").on(table.businessId, table.googleEventId)]);
 
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: uuid("id").primaryKey().defaultRandom(),

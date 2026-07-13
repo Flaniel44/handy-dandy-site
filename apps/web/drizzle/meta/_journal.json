@@ -36,6 +36,20 @@
       "when": 1784016000000,
       "tag": "0004_password_resets",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784102400000,
+      "tag": "0005_calendar_sync_health",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784188800000,
+      "tag": "0006_calendar_event_overrides",
+      "breakpoints": true
     }
   ]
 }

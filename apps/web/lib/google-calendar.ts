@@ -1,10 +1,11 @@
 import "server-only";
 
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, isNotNull, or } from "drizzle-orm";
+import { DateTime } from "luxon";
 
 import { getDb } from "./db";
-import { appointments, bookingSlots, businessSettings, customers, googleCalendarConnections, services } from "./db/schema";
+import { appointments, bookingSlots, businessSettings, customers, googleCalendarConnections, googleCalendarEventOverrides, services } from "./db/schema";
 
 const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
 
@@ -53,9 +54,22 @@ export async function connectGoogleCalendar(code: string) {
 }
 
 export async function getGoogleCalendarStatus() {
-  const [connection] = await getDb().select({ calendarId: googleCalendarConnections.calendarId, updatedAt: googleCalendarConnections.updatedAt })
+  const [connection] = await getDb().select({ businessId: googleCalendarConnections.businessId, calendarId: googleCalendarConnections.calendarId, updatedAt: googleCalendarConnections.updatedAt })
     .from(googleCalendarConnections).limit(1);
-  return { configured: googleCalendarConfigured(), connected: Boolean(connection), connection: connection ?? null };
+  const candidates = connection ? await getReconciliationCandidates() : [];
+  const successfulDates = candidates.flatMap((item) => item.calendarSyncedAt ? [item.calendarSyncedAt] : []);
+  const [settings] = connection ? await getDb().select().from(businessSettings).where(eq(businessSettings.id, connection.businessId)).limit(1) : [];
+  const calendarEvents = connection && settings ? await getGoogleAvailabilityEvents(new Date(), DateTime.now().setZone(settings.timezone).plus({ days: settings.bookingWindowDays + 1 }).toUTC().toJSDate()) : [];
+  return {
+    configured: googleCalendarConfigured(), connected: Boolean(connection), connection: connection ?? null,
+    health: {
+      pending: candidates.filter((item) => item.calendarSyncStatus === "pending").length,
+      failed: candidates.filter((item) => item.calendarSyncStatus === "failed").length,
+      synced: candidates.filter((item) => item.calendarSyncStatus === "synced").length,
+      lastSyncedAt: successfulDates.sort((a, b) => b.getTime() - a.getTime())[0] ?? null,
+    },
+    events: calendarEvents,
+  };
 }
 
 export async function disconnectGoogleCalendar() {
@@ -63,6 +77,10 @@ export async function disconnectGoogleCalendar() {
 }
 
 export async function getGoogleBusyRanges(startsAt: Date, endsAt: Date) {
+  return (await getGoogleAvailabilityEvents(startsAt, endsAt)).filter((event) => event.blocksAvailability).map((event) => ({ startsAt: event.startsAt, endsAt: event.endsAt }));
+}
+
+export async function getGoogleAvailabilityEvents(startsAt: Date, endsAt: Date) {
   const connection = await getConnection();
   if (!connection) return [];
   const accessToken = await getAccessToken(connection.encryptedRefreshToken);
@@ -70,11 +88,31 @@ export async function getGoogleBusyRanges(startsAt: Date, endsAt: Date) {
     timeMin: startsAt.toISOString(), timeMax: endsAt.toISOString(), singleEvents: "true", showDeleted: "false", maxResults: "2500",
   });
   const response = await googleFetch(`/calendars/${encodeURIComponent(connection.calendarId)}/events?${params}`, accessToken);
-  const body = await response.json() as { items?: Array<{ status?: string; start?: { date?: string; dateTime?: string }; end?: { date?: string; dateTime?: string } }> };
+  const body = await response.json() as { items?: Array<{ id?: string; summary?: string; status?: string; transparency?: string; start?: { date?: string; dateTime?: string }; end?: { date?: string; dateTime?: string } }> };
+  const overrides = await getDb().select().from(googleCalendarEventOverrides).where(eq(googleCalendarEventOverrides.businessId, connection.businessId));
+  const overridesByEvent = new Map(overrides.map((override) => [override.googleEventId, override.mode]));
+  const timezone = process.env.BUSINESS_TIMEZONE ?? "America/Toronto";
   return (body.items ?? []).flatMap((event) => {
-    if (event.status === "cancelled" || !event.start?.dateTime || !event.end?.dateTime) return [];
-    return [{ startsAt: new Date(event.start.dateTime), endsAt: new Date(event.end.dateTime) }];
+    if (!event.id || event.status === "cancelled") return [];
+    const isAllDay = Boolean(event.start?.date && event.end?.date);
+    const eventStartsAt = event.start?.dateTime ? new Date(event.start.dateTime) : event.start?.date ? DateTime.fromISO(event.start.date, { zone: timezone }).toUTC().toJSDate() : null;
+    const eventEndsAt = event.end?.dateTime ? new Date(event.end.dateTime) : event.end?.date ? DateTime.fromISO(event.end.date, { zone: timezone }).toUTC().toJSDate() : null;
+    if (!eventStartsAt || !eventEndsAt) return [];
+    const override = overridesByEvent.get(event.id) as "available" | "unavailable" | undefined;
+    const googleBusy = event.transparency !== "transparent";
+    return [{
+      id: event.id, name: event.summary?.trim() || "Untitled Google Calendar event", startsAt: eventStartsAt, endsAt: eventEndsAt,
+      isAllDay, googleBusy, override: override ?? null,
+      blocksAvailability: override === "unavailable" || (googleBusy && override !== "available"),
+    }];
   });
+}
+
+export async function setGoogleEventAvailability(eventId: string, mode: "available" | "unavailable") {
+  const connection = await getConnection();
+  if (!connection) throw new Error("Google Calendar is not connected.");
+  await getDb().insert(googleCalendarEventOverrides).values({ businessId: connection.businessId, googleEventId: eventId, mode })
+    .onConflictDoUpdate({ target: [googleCalendarEventOverrides.businessId, googleCalendarEventOverrides.googleEventId], set: { mode, updatedAt: new Date() } });
 }
 
 export async function createGoogleEventForAppointment(appointmentId: string) {
@@ -101,7 +139,7 @@ export async function createGoogleEventForAppointment(appointmentId: string) {
   });
   const event = await response.json() as { id?: string };
   if (!event.id) throw new Error("Google did not return an event ID.");
-  await getDb().update(appointments).set({ googleEventId: event.id, updatedAt: new Date() }).where(eq(appointments.id, appointmentId));
+  await getDb().update(appointments).set({ googleEventId: event.id, calendarSyncStatus: "synced", calendarSyncError: null, calendarSyncedAt: new Date(), updatedAt: new Date() }).where(eq(appointments.id, appointmentId));
 }
 
 export async function updateGoogleEventForAppointment(appointmentId: string) {
@@ -112,13 +150,20 @@ export async function updateGoogleEventForAppointment(appointmentId: string) {
   if (!row) return;
   if (!row.eventId) return createGoogleEventForAppointment(appointmentId);
   const accessToken = await getAccessToken(connection.encryptedRefreshToken);
-  await googleFetch(`/calendars/${encodeURIComponent(connection.calendarId)}/events/${encodeURIComponent(row.eventId)}`, accessToken, {
-    method: "PATCH", body: JSON.stringify({ start: { dateTime: row.startsAt.toISOString() }, end: { dateTime: row.endsAt.toISOString() } }),
+  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(connection.calendarId)}/events/${encodeURIComponent(row.eventId)}`, {
+    method: "PATCH", cache: "no-store", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ start: { dateTime: row.startsAt.toISOString() }, end: { dateTime: row.endsAt.toISOString() } }),
   });
+  if (response.status === 404 || response.status === 410) {
+    await getDb().update(appointments).set({ googleEventId: null, updatedAt: new Date() }).where(eq(appointments.id, appointmentId));
+    return createGoogleEventForAppointment(appointmentId);
+  }
+  if (!response.ok) throw new Error(await googleErrorMessage(response));
+  await markSync(appointmentId, "synced");
 }
 
-export async function deleteGoogleEvent(eventId: string | null) {
-  if (!eventId) return;
+export async function deleteGoogleEvent(eventId: string | null, appointmentId?: string) {
+  if (!eventId) { if (appointmentId) await markSync(appointmentId, "synced"); return; }
   const connection = await getConnection();
   if (!connection) return;
   const accessToken = await getAccessToken(connection.encryptedRefreshToken);
@@ -126,6 +171,49 @@ export async function deleteGoogleEvent(eventId: string | null) {
     method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store",
   });
   if (!response.ok && response.status !== 404 && response.status !== 410) throw new Error(`Google Calendar returned ${response.status}.`);
+  if (appointmentId) await getDb().update(appointments).set({ googleEventId: null, calendarSyncStatus: "synced", calendarSyncError: null, calendarSyncedAt: new Date(), updatedAt: new Date() }).where(eq(appointments.id, appointmentId));
+}
+
+export async function markCalendarSyncFailure(appointmentId: string, error: unknown) {
+  await markSync(appointmentId, "failed", error);
+}
+
+export async function reconcileGoogleCalendar() {
+  const connection = await getConnection();
+  if (!connection) throw new Error("Google Calendar is not connected.");
+  const candidates = await getReconciliationCandidates();
+  let synced = 0; let failed = 0;
+  for (const candidate of candidates) {
+    try {
+      if (candidate.status === "cancelled") await deleteGoogleEvent(candidate.googleEventId, candidate.id);
+      else await updateGoogleEventForAppointment(candidate.id);
+      synced += 1;
+    } catch (error) {
+      await markSync(candidate.id, "failed", error);
+      failed += 1;
+    }
+  }
+  await getDb().update(googleCalendarConnections).set({ updatedAt: new Date() }).where(eq(googleCalendarConnections.id, connection.id));
+  return { checked: candidates.length, synced, failed };
+}
+
+async function getReconciliationCandidates() {
+  return getDb().select({
+    id: appointments.id, status: appointments.status, googleEventId: appointments.googleEventId,
+    calendarSyncStatus: appointments.calendarSyncStatus, calendarSyncedAt: appointments.calendarSyncedAt,
+  }).from(appointments).innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId)).where(or(
+    and(eq(appointments.status, "confirmed"), gt(bookingSlots.endsAt, new Date())),
+    and(eq(appointments.status, "cancelled"), isNotNull(appointments.googleEventId)),
+  ));
+}
+
+async function markSync(appointmentId: string, status: "synced" | "failed", error?: unknown) {
+  await getDb().update(appointments).set({
+    calendarSyncStatus: status,
+    calendarSyncError: error ? (error instanceof Error ? error.message : "Unknown Google Calendar error.").slice(0, 1000) : null,
+    calendarSyncedAt: status === "synced" ? new Date() : undefined,
+    updatedAt: new Date(),
+  }).where(eq(appointments.id, appointmentId));
 }
 
 async function getConnection() {
