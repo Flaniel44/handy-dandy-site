@@ -5,12 +5,13 @@ import { resetTestData } from "../../../test/integration/database";
 
 const SERVICE_ID = "22222222-2222-4222-8222-222222222222";
 const auth = vi.hoisted(() => ({ isAdmin: false }));
+const googleCalendar = vi.hoisted(() => ({ getGoogleBusyRanges: vi.fn().mockResolvedValue([]) }));
 
 vi.mock("../../../lib/admin-auth", () => ({
   requireAdmin: vi.fn(() => auth.isAdmin ? { role: "admin", email: "admin@example.com" } : null),
 }));
 vi.mock("../../../lib/google-calendar", () => ({
-  getGoogleBusyRanges: vi.fn().mockResolvedValue([]),
+  getGoogleBusyRanges: googleCalendar.getGoogleBusyRanges,
 }));
 
 let testSql: ReturnType<typeof postgres>;
@@ -33,6 +34,7 @@ beforeEach(async () => {
   await resetTestData(testSql);
   auth.isAdmin = false;
   vi.clearAllMocks();
+  googleCalendar.getGoogleBusyRanges.mockResolvedValue([]);
 });
 
 afterAll(async () => {
@@ -120,6 +122,23 @@ describe("admin scheduling controls", () => {
 
     const availability = await getAvailabilityForDate(day.toISODate()!, SERVICE_ID);
     expect(availability?.slots.map((slot) => slot.localTime)).toEqual(["09:00", "11:00", "11:30", "12:00"]);
+  });
+
+  it("keeps one hour free after a blocking Google Calendar event", async () => {
+    auth.isAdmin = true;
+    const day = futureBusinessDay();
+    const weekday = day.weekday % 7;
+    await putWorkingHours(jsonRequest("/api/admin/working-hours", {
+      hours: [{ weekday, startsAtLocal: "09:00", endsAtLocal: "17:00" }],
+    }, "PUT"));
+    googleCalendar.getGoogleBusyRanges.mockResolvedValue([{
+      startsAt: day.set({ hour: 9 }).toUTC().toJSDate(),
+      endsAt: day.set({ hour: 12 }).toUTC().toJSDate(),
+    }]);
+
+    const availability = await getAvailabilityForDate(day.toISODate()!, SERVICE_ID);
+    expect(availability?.slots[0]?.localTime).toBe("13:00");
+    expect(availability?.slots.some((slot) => slot.localTime === "12:30")).toBe(false);
   });
 });
 

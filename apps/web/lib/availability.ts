@@ -6,6 +6,8 @@ import { getDb } from "./db";
 import { bookingSlots, businessSettings, manualBlocks, services, weeklyHours } from "./db/schema";
 import { getGoogleBusyRanges } from "./google-calendar";
 
+export const GOOGLE_CALENDAR_POST_EVENT_BUFFER_MINUTES = 60;
+
 export async function getActiveServices() {
   return getDb().select({
     id: services.id,
@@ -49,8 +51,16 @@ export async function getAvailabilityForDate(date: string, serviceId: string) {
         and(eq(bookingSlots.state, "held"), gt(bookingSlots.expiresAt, now)),
       ),
     )),
-    getGoogleBusyRanges(dayStart.toJSDate(), dayEnd.toJSDate()),
+    getGoogleBusyRanges(
+      dayStart.minus({ minutes: GOOGLE_CALENDAR_POST_EVENT_BUFFER_MINUTES }).toJSDate(),
+      dayEnd.toJSDate(),
+    ),
   ]);
+
+  const bufferedGoogleBusy = googleBusy.map((range) => ({
+    startsAt: range.startsAt,
+    endsAt: new Date(range.endsAt.getTime() + GOOGLE_CALENDAR_POST_EVENT_BUFFER_MINUTES * 60_000),
+  }));
 
   const slots = calculateAvailability({
     date,
@@ -63,7 +73,7 @@ export async function getAvailabilityForDate(date: string, serviceId: string) {
       startsAtLocal: hoursRow.startsAtLocal,
       endsAtLocal: hoursRow.endsAtLocal,
     })),
-    busyRanges: [...blocks, ...reserved, ...googleBusy].map((range) => ({
+    busyRanges: [...blocks, ...reserved, ...bufferedGoogleBusy].map((range) => ({
       startsAt: range.startsAt.toISOString(),
       endsAt: range.endsAt.toISOString(),
     })),
