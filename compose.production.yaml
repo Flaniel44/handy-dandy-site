@@ -1,0 +1,82 @@
+name: handy-dandy
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-handy_dandy}
+      POSTGRES_USER: ${POSTGRES_USER:-handy_dandy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in apps/web/.env.production}
+    volumes:
+      - handy_dandy_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-handy_dandy} -d ${POSTGRES_DB:-handy_dandy}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+    networks: [backend]
+
+  migrate:
+    build:
+      context: .
+      target: migrator
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-handy_dandy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-handy_dandy}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks: [backend]
+
+  web:
+    build:
+      context: .
+      target: runner
+      args:
+        NEXT_PUBLIC_BUSINESS_EMAIL: ${NEXT_PUBLIC_BUSINESS_EMAIL:-hello@whatisthis.place}
+        NEXT_PUBLIC_WHATSAPP_URL: ${NEXT_PUBLIC_WHATSAPP_URL:-}
+        NEXT_PUBLIC_MESSENGER_URL: ${NEXT_PUBLIC_MESSENGER_URL:-}
+    env_file: ${HANDY_DANDY_ENV_FILE:-apps/web/.env.production}
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-handy_dandy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-handy_dandy}
+      APP_URL: https://whatisthis.place
+      GOOGLE_OAUTH_REDIRECT_URI: https://whatisthis.place/api/admin/google-calendar/callback
+    ports:
+      - "${HANDY_DANDY_BIND_IP:-10.10.0.2}:${HANDY_DANDY_PORT:-3010}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks: [backend]
+
+  reminder-worker:
+    build:
+      context: .
+      target: reminder-worker
+    env_file: ${HANDY_DANDY_ENV_FILE:-apps/web/.env.production}
+    environment:
+      APP_URL: http://web:3000
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [backend]
+
+volumes:
+  handy_dandy_postgres_data:
+    name: handy_dandy_postgres_data
+
+networks:
+  backend:
+    name: handy_dandy_backend
+    internal: true
