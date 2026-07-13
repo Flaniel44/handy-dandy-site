@@ -8,7 +8,7 @@ type Block = { id: string; startsAt: string; endsAt: string; reason: string };
 type Client = { id: string; name: string; email: string; phone?: string; appointmentCount: number };
 type ClientPagination = { page: number; pageSize: number; total: number; totalPages: number };
 type Appointment = { id: string; status: string; notes: string; startsAt: string; endsAt: string; customerName: string; customerEmail: string; customerPhone?: string; serviceName: string; source: string };
-type Service = { id: string; name: string };
+type Service = { id: string; name: string; description: string; durationMinutes: number; priceCents: number; active: boolean; sortOrder: number };
 type CalendarEvent = { id: string; name: string; startsAt: string; endsAt: string; isAllDay: boolean; googleBusy: boolean; override: "available" | "unavailable" | null; blocksAvailability: boolean };
 type CalendarStatus = { configured: boolean; connected: boolean; connection: { calendarId: string; updatedAt: string } | null; health?: { pending: number; failed: number; synced: number; lastSyncedAt: string | null }; events?: CalendarEvent[] };
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -28,7 +28,7 @@ export function AdminDashboard() {
   const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
-    const endpoints = ["/api/admin/working-hours", "/api/admin/blocks", "/api/admin/appointments", "/api/services", "/api/admin/google-calendar"];
+    const endpoints = ["/api/admin/working-hours", "/api/admin/blocks", "/api/admin/appointments", "/api/admin/services", "/api/admin/google-calendar"];
     const responses = await Promise.all(endpoints.map((url) => fetch(url)));
     if (responses.some((response) => response.status === 401)) { router.replace("/admin/login"); return; }
     const [hoursBody, blocksBody, appointmentsBody, servicesBody, calendarBody] = await Promise.all(responses.map((response) => response.json()));
@@ -97,6 +97,59 @@ export function AdminDashboard() {
     setMessage(response.ok ? "Appointment updated." : "Could not update appointment."); if (response.ok) await load();
   }
 
+  async function addService(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const response = await fetch("/api/admin/services", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: form.get("name"),
+        description: form.get("description"),
+        durationMinutes: Number(form.get("durationMinutes")),
+        priceCents: Math.round(Number(form.get("priceDollars")) * 100),
+        active: true,
+      }),
+    });
+    const body = await response.json();
+    setMessage(response.ok ? "Service created." : body.error ?? "Could not create service.");
+    if (response.ok) { event.currentTarget.reset(); await load(); }
+  }
+
+  async function updateService(service: Service) {
+    const response = await fetch(`/api/admin/services/${service.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: service.name,
+        description: service.description,
+        durationMinutes: service.durationMinutes,
+        priceCents: service.priceCents,
+        active: service.active,
+      }),
+    });
+    const body = await response.json();
+    setMessage(response.ok ? "Service saved." : body.error ?? "Could not save service.");
+    if (response.ok) await load();
+  }
+
+  async function moveService(id: string, direction: -1 | 1) {
+    const currentIndex = services.findIndex((service) => service.id === id);
+    const targetIndex = currentIndex + direction;
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= services.length) return;
+    const reordered = [...services];
+    [reordered[currentIndex], reordered[targetIndex]] = [reordered[targetIndex], reordered[currentIndex]];
+    setServices(reordered);
+    const response = await fetch("/api/admin/services/order", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderedIds: reordered.map((service) => service.id) }),
+    });
+    const body = await response.json().catch(() => ({}));
+    setMessage(response.ok ? "Service order saved." : body.error ?? "Could not reorder services.");
+    if (!response.ok) await load();
+  }
+
   async function disconnectCalendar() {
     if (!window.confirm("Disconnect Google Calendar? Calendar events will no longer block booking availability.")) return;
     const response = await fetch("/api/admin/google-calendar", { method: "DELETE" });
@@ -139,6 +192,17 @@ export function AdminDashboard() {
       </div>; })}</div>
     </details>
 
+    <details className="admin-panel admin-collapsible-panel admin-services-panel"><summary><span><strong>Services</strong><small>Create, reorder, and configure the services clients can book.</small></span></summary>
+      <form className="admin-grid-form service-create-form" onSubmit={addService}>
+        <label>Name<input name="name" placeholder="General tech support" required minLength={2} maxLength={120} /></label>
+        <label>Duration (minutes)<input name="durationMinutes" type="number" min="15" max="480" step="15" defaultValue="60" required /></label>
+        <label>Price (CAD)<input name="priceDollars" type="number" min="0" max="100000" step="0.01" defaultValue="0.00" required /></label>
+        <label className="wide">Description<textarea name="description" rows={2} maxLength={1000} placeholder="What this service includes" /></label>
+        <button type="submit">Create service</button>
+      </form>
+      <div className="service-admin-list">{services.map((service, index) => <ServiceEditor key={service.id} service={service} save={updateService} canMoveUp={index > 0} canMoveDown={index < services.length - 1} moveUp={() => moveService(service.id, -1)} moveDown={() => moveService(service.id, 1)} />)}</div>
+    </details>
+
     <section className="admin-panel admin-blocks-panel"><div className="admin-section-heading"><div><h2>Vacation and manual blocks</h2><p>Blocked periods are removed from public availability.</p></div></div>
       <form className="admin-inline-form" onSubmit={addBlock}><label>Starts<input name="startsAtLocal" type="datetime-local" required /></label><label>Ends<input name="endsAtLocal" type="datetime-local" required /></label><label>Reason<input name="reason" defaultValue="Vacation" required /></label><button type="submit">Add block</button></form>
       <div className="admin-list">{blocks.map((block) => <article key={block.id}><div><strong>{block.reason}</strong><p>{formatDate(block.startsAt)} → {formatDate(block.endsAt)}</p></div><button onClick={() => deleteBlock(block.id)}>Remove</button></article>)}</div>
@@ -157,7 +221,7 @@ export function AdminDashboard() {
     </section>
 
     <details className="admin-panel admin-collapsible-panel admin-phone-panel"><summary><span><strong>Add a phone appointment</strong><small>Create a confirmed appointment for a phone-booked client.</small></span></summary>
-      <form className="admin-grid-form" onSubmit={addAppointment}><label>Service<select name="serviceId" required>{services.map((service) => <option value={service.id} key={service.id}>{service.name}</option>)}</select></label><label>Date and time<input name="startsAtLocal" type="datetime-local" required /></label><label>Client name<input name="name" required /></label><label>Email<input name="email" type="email" required /></label><label>Phone<input name="phone" type="tel" inputMode="numeric" pattern="[0-9]*" onInput={(event) => { event.currentTarget.value = event.currentTarget.value.replace(/\D/g, ""); }} /></label><label className="wide">Notes<textarea name="notes" rows={3} /></label><button type="submit">Create appointment</button></form>
+      <form className="admin-grid-form" onSubmit={addAppointment}><label>Service<select name="serviceId" required>{services.filter((service) => service.active).map((service) => <option value={service.id} key={service.id}>{service.name}</option>)}</select></label><label>Date and time<input name="startsAtLocal" type="datetime-local" required /></label><label>Client name<input name="name" required /></label><label>Email<input name="email" type="email" required /></label><label>Phone<input name="phone" type="tel" inputMode="numeric" pattern="[0-9]*" onInput={(event) => { event.currentTarget.value = event.currentTarget.value.replace(/\D/g, ""); }} /></label><label className="wide">Notes<textarea name="notes" rows={3} /></label><button type="submit">Create appointment</button></form>
     </details>
 
     <section className="admin-panel admin-appointments-panel"><div className="admin-section-heading"><div><h2>Appointments</h2><p>{appointments.length} total appointments, grouped by client.</p></div></div>
@@ -182,6 +246,36 @@ export function AdminDashboard() {
       <div className="client-pagination"><button disabled={clientsLoading || clientPagination.page <= 1} onClick={() => loadClients(clientPagination.page - 1)}>Previous</button><span>Page {clientPagination.page} of {clientPagination.totalPages} · {clientPagination.total} clients</span><button disabled={clientsLoading || clientPagination.page >= clientPagination.totalPages} onClick={() => loadClients(clientPagination.page + 1)}>Next</button></div>
     </section>
   </main>;
+}
+
+function ServiceEditor({ service, save, canMoveUp, canMoveDown, moveUp, moveDown }: { service: Service; save: (service: Service) => Promise<void>; canMoveUp: boolean; canMoveDown: boolean; moveUp: () => void; moveDown: () => void }) {
+  const [name, setName] = useState(service.name);
+  const [description, setDescription] = useState(service.description);
+  const [durationMinutes, setDurationMinutes] = useState(String(service.durationMinutes));
+  const [priceDollars, setPriceDollars] = useState((service.priceCents / 100).toFixed(2));
+  const [active, setActive] = useState(service.active);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await save({
+      ...service,
+      name,
+      description,
+      durationMinutes: Number(durationMinutes),
+      priceCents: Math.round(Number(priceDollars) * 100),
+      active,
+    });
+  }
+
+  return <form className={`service-admin-card${active ? "" : " is-disabled"}`} onSubmit={submit}>
+    <label>Name<input value={name} onChange={(event) => setName(event.target.value)} required minLength={2} maxLength={120} /></label>
+    <label>Duration (minutes)<input type="number" min="15" max="480" step="15" value={durationMinutes} onChange={(event) => setDurationMinutes(event.target.value)} required /></label>
+    <label>Price (CAD)<input type="number" min="0" max="100000" step="0.01" value={priceDollars} onChange={(event) => setPriceDollars(event.target.value)} required /></label>
+    <label className="service-active-toggle"><input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} /> Active and bookable</label>
+    <div className="service-order-actions wide" aria-label={`Reorder ${service.name}`}><span>Booking menu order</span><button type="button" disabled={!canMoveUp} onClick={moveUp}>↑ Move up</button><button type="button" disabled={!canMoveDown} onClick={moveDown}>↓ Move down</button></div>
+    <label className="wide">Description<textarea rows={2} value={description} onChange={(event) => setDescription(event.target.value)} maxLength={1000} /></label>
+    <button type="submit">Save service</button>
+  </form>;
 }
 
 function ClientHistory({ client, save }: { client: Client; save: (id: string, notes: string, status: string) => Promise<void> }) {

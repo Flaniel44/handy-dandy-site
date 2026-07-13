@@ -1,5 +1,5 @@
 import { calculateAvailability } from "@handy-dani/domain";
-import { and, eq, gt, lt, or } from "drizzle-orm";
+import { and, asc, eq, gt, lt, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 
 import { getDb } from "./db";
@@ -15,7 +15,7 @@ export async function getActiveServices() {
     description: services.description,
     durationMinutes: services.durationMinutes,
     priceCents: services.priceCents,
-  }).from(services).where(eq(services.active, true)).orderBy(services.name);
+  }).from(services).where(eq(services.active, true)).orderBy(asc(services.sortOrder), asc(services.name), asc(services.id));
 }
 
 export async function getAvailabilityForDate(date: string, serviceId: string) {

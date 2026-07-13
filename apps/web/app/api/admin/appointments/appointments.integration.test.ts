@@ -69,6 +69,14 @@ describe("manual phone appointments", () => {
     expect(count).toBe(0);
   });
 
+  it("does not create new phone appointments for a disabled service", async () => {
+    auth.isAdmin = true;
+    await testSql`UPDATE services SET active = false WHERE id = ${SERVICE_ID}`;
+    expect((await createAppointment(manualAppointmentRequest())).status).toBe(400);
+    const [{ count }] = await testSql<{ count: number }[]>`SELECT COUNT(*)::int AS count FROM appointments`;
+    expect(count).toBe(0);
+  });
+
   it("creates a confirmed phone appointment in the business timezone", async () => {
     auth.isAdmin = true;
     const startsAt = futureLocalTime(10);

@@ -60,6 +60,19 @@ export async function resetTestData(sql: ReturnType<typeof postgres>) {
   await sql`DELETE FROM google_calendar_connections`;
   await sql`DELETE FROM manual_blocks`;
   await sql`DELETE FROM weekly_hours`;
+  await sql`DELETE FROM services WHERE id NOT IN ('22222222-2222-4222-8222-222222222222', '33333333-3333-4333-8333-333333333333')`;
+  await sql`
+    UPDATE services SET name = 'Smart-home consultation',
+      description = 'A practical one-on-one consultation tailored to your home.',
+      duration_minutes = 60, price_cents = 12500, active = true, sort_order = 0
+    WHERE id = '22222222-2222-4222-8222-222222222222'
+  `;
+  await sql`
+    UPDATE services SET name = 'Personal Tech Help',
+      description = 'Patient, judgment-free help with phones, computers, apps, accounts, setup, troubleshooting, and everyday maintenance.',
+      duration_minutes = 60, price_cents = 7500, active = true, sort_order = 1
+    WHERE id = '33333333-3333-4333-8333-333333333333'
+  `;
   await sql`
     INSERT INTO weekly_hours (business_id, weekday, starts_at_local, ends_at_local)
     SELECT '11111111-1111-4111-8111-111111111111', weekday, '09:00', '17:00'

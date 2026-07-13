@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   const [[settings], [service]] = await Promise.all([
     db.select().from(businessSettings).limit(1), db.select().from(services).where(eq(services.id, parsed.data.serviceId)).limit(1),
   ]);
-  if (!settings || !service) return Response.json({ error: "Service or settings are missing." }, { status: 400 });
+  if (!settings || !service?.active) return Response.json({ error: "Service or settings are missing." }, { status: 400 });
   const startsAt = DateTime.fromISO(parsed.data.startsAtLocal, { zone: settings.timezone });
   if (!startsAt.isValid) return Response.json({ error: "Invalid appointment time." }, { status: 400 });
 

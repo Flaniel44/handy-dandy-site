@@ -41,6 +41,7 @@ export const services = pgTable("services", {
   durationMinutes: integer("duration_minutes").notNull(),
   priceCents: integer("price_cents").notNull(),
   active: boolean("active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
