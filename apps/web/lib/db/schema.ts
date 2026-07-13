@@ -78,11 +78,15 @@ export const customers = pgTable("customers", {
   postalCode: text("postal_code"),
   country: text("country"),
   passwordHash: text("password_hash"),
+  googleSubject: text("google_subject"),
   authVersion: integer("auth_version").notNull().default(1),
   userId: text("user_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}, (table) => [uniqueIndex("customers_email_idx").on(table.email)]);
+}, (table) => [
+  uniqueIndex("customers_email_idx").on(table.email),
+  uniqueIndex("customers_google_subject_idx").on(table.googleSubject),
+]);
 
 export const bookingSlots = pgTable("booking_slots", {
   id: uuid("id").primaryKey().defaultRandom(),

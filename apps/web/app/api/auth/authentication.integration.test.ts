@@ -38,6 +38,8 @@ let logout: typeof import("./logout/route").POST;
 let currentUser: typeof import("./me/route").GET;
 let forgotPassword: typeof import("./forgot-password/route").POST;
 let resetPassword: typeof import("./reset-password/route").POST;
+let startGoogleLogin: typeof import("./google/start/route").GET;
+let finishGoogleLogin: typeof import("./google/callback/route").GET;
 let getProfile: typeof import("../account/profile/route").GET;
 let updateProfile: typeof import("../account/profile/route").PATCH;
 let hashPassword: typeof import("../../../lib/admin-auth").hashPassword;
@@ -51,6 +53,8 @@ beforeAll(async () => {
   ({ GET: currentUser } = await import("./me/route"));
   ({ POST: forgotPassword } = await import("./forgot-password/route"));
   ({ POST: resetPassword } = await import("./reset-password/route"));
+  ({ GET: startGoogleLogin } = await import("./google/start/route"));
+  ({ GET: finishGoogleLogin } = await import("./google/callback/route"));
   ({ GET: getProfile, PATCH: updateProfile } = await import("../account/profile/route"));
   ({ hashPassword } = await import("../../../lib/admin-auth"));
 });
@@ -61,6 +65,9 @@ beforeEach(async () => {
   vi.clearAllMocks();
   delete process.env.ADMIN_EMAIL;
   delete process.env.ADMIN_PASSWORD_HASH;
+  delete process.env.GOOGLE_LOGIN_CLIENT_ID;
+  delete process.env.GOOGLE_LOGIN_CLIENT_SECRET;
+  delete process.env.GOOGLE_LOGIN_REDIRECT_URI;
 });
 
 afterAll(async () => {
@@ -150,6 +157,79 @@ describe("authentication routes", () => {
     expect(adminLogin.status).toBe(200);
     expect(await adminLogin.json()).toEqual({ ok: true, destination: "/admin" });
     expect(await (await currentUser()).json()).toEqual({ user: { role: "admin", firstName: "Admin" } });
+  });
+
+  it("uses state and PKCE to link a verified Google identity to an existing customer", async () => {
+    await register(jsonRequest("/api/auth/register", registrationData()));
+    cookieJar.clear();
+    process.env.GOOGLE_LOGIN_CLIENT_ID = "google-login-client";
+    process.env.GOOGLE_LOGIN_CLIENT_SECRET = "google-login-secret";
+    process.env.GOOGLE_LOGIN_REDIRECT_URI = "http://localhost/api/auth/google/callback";
+
+    const start = await startGoogleLogin(new Request("http://localhost/api/auth/google/start"));
+    expect(start.status).toBe(302);
+    const authorizationUrl = new URL(start.headers.get("location")!);
+    const state = cookieJar.get("handy_dandy_google_login_state");
+    const verifier = cookieJar.get("handy_dandy_google_login_verifier");
+    expect(authorizationUrl.origin).toBe("https://accounts.google.com");
+    expect(authorizationUrl.searchParams.get("scope")).toBe("openid email profile");
+    expect(authorizationUrl.searchParams.get("state")).toBe(state);
+    expect(authorizationUrl.searchParams.get("code_challenge")).toBeTruthy();
+    expect(verifier).toBeTruthy();
+
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      if (url === "https://oauth2.googleapis.com/token") {
+        const body = init?.body as URLSearchParams;
+        expect(body.get("code_verifier")).toBe(verifier);
+        expect(body.get("code")).toBe("valid-code");
+        return Response.json({ access_token: "verified-access-token" });
+      }
+      if (url === "https://openidconnect.googleapis.com/v1/userinfo") {
+        expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer verified-access-token");
+        return Response.json({
+          sub: "google-subject-123",
+          email: "ADA@example.com",
+          email_verified: true,
+          name: "Ada Lovelace",
+          given_name: "Ada",
+          family_name: "Lovelace",
+        });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    const callback = await finishGoogleLogin(new Request(
+      `http://localhost/api/auth/google/callback?code=valid-code&state=${encodeURIComponent(state!)}`,
+    ));
+    fetchMock.mockRestore();
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toBe("http://localhost/account");
+    expect(cookieJar.get("handy_dandy_session")).toBeTruthy();
+    expect(cookieJar.has("handy_dandy_google_login_state")).toBe(false);
+    expect(cookieJar.has("handy_dandy_google_login_verifier")).toBe(false);
+
+    const [customer] = await testSql<{ google_subject: string; password_hash: string }[]>`
+      SELECT google_subject, password_hash FROM customers WHERE email = 'ada@example.com'
+    `;
+    expect(customer.google_subject).toBe("google-subject-123");
+    expect(customer.password_hash).toMatch(/^scrypt:/);
+    expect(await (await currentUser()).json()).toEqual({ user: { role: "customer", firstName: "Ada" } });
+  });
+
+  it("rejects a Google callback whose state does not match", async () => {
+    process.env.GOOGLE_LOGIN_CLIENT_ID = "google-login-client";
+    process.env.GOOGLE_LOGIN_CLIENT_SECRET = "google-login-secret";
+    await startGoogleLogin(new Request("http://localhost/api/auth/google/start"));
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+
+    const callback = await finishGoogleLogin(new Request(
+      "http://localhost/api/auth/google/callback?code=stolen-code&state=wrong-state",
+    ));
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toBe("http://localhost/login?oauth=invalid");
+    expect(fetchMock).not.toHaveBeenCalled();
+    fetchMock.mockRestore();
   });
 
   it("issues a single-use reset token and invalidates the old session", async () => {

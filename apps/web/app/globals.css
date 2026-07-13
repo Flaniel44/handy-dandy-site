@@ -301,6 +301,12 @@ a { color: inherit; }
 .auth-help-link { justify-self: end; margin-top: -8px; color: var(--muted); font-size: .8rem; }
 .auth-intro { margin: -12px 0 28px; color: var(--muted); line-height: 1.6; }
 .auth-success { padding: 12px 14px; border: 1px solid #47755d; border-radius: 7px; background: #183a2a55; color: #bce7cc; line-height: 1.5; }
+.google-login-link { display: flex; align-items: center; justify-content: center; gap: 11px; width: 100%; padding: 13px 16px; border: 1px solid #4a5580; border-radius: 7px; background: #f7f7f7; color: #202124; font-weight: 800; text-decoration: none; }
+.google-login-link:hover, .google-login-link:focus-visible { background: #fff; border-color: #737fa9; }
+.google-login-link span { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; color: #4285f4; font-family: Arial, sans-serif; font-size: 1rem; font-weight: 900; }
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 22px 0; color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .08em; }
+.auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: #343c5b; }
+.auth-divider span { white-space: nowrap; }
 
 .account-page { min-height: 100vh; padding: 90px clamp(18px, 5vw, 70px) 100px; background: radial-gradient(circle at 10% 0, #342d7040, transparent 30%), var(--night); }
 .account-header, .account-actions, .account-panel { width: min(100%, 1000px); margin-inline: auto; }

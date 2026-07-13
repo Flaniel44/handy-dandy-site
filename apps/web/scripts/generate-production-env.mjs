@@ -63,6 +63,10 @@ generated.set(
   "https://whatisthis.place/api/admin/google-calendar/callback",
 );
 generated.set("GOOGLE_TOKEN_ENCRYPTION_KEY", randomBytes(32).toString("base64"));
+generated.set(
+  "GOOGLE_LOGIN_REDIRECT_URI",
+  "https://whatisthis.place/api/auth/google/callback",
+);
 
 const output = templateContents
   .split(/\r?\n/)
