@@ -36,3 +36,4 @@ export function rangesOverlap(left: TimeRange, right: TimeRange): boolean {
 }
 
 export * from "./availability";
+export * from "./appointment-lifecycle";

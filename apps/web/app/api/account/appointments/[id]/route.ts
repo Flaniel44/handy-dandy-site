@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { canCustomerManageAppointment } from "@handy-dani/domain";
 
 import { requireCustomer } from "../../../../../lib/admin-auth";
 import { getAvailabilityForDate } from "../../../../../lib/availability";
@@ -64,10 +65,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 async function findEditableAppointment(id: string, customerId: string) {
   const [row] = await getDb().select({
     slotId: bookingSlots.id, startsAt: bookingSlots.startsAt, serviceId: bookingSlots.serviceId, serviceName: services.name, googleEventId: appointments.googleEventId,
+    status: appointments.status, slotState: bookingSlots.state,
   }).from(appointments)
     .innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(services, eq(services.id, bookingSlots.serviceId))
-    .where(and(eq(appointments.id, id), eq(appointments.customerId, customerId), eq(appointments.status, "confirmed"), eq(bookingSlots.state, "confirmed")))
+    .where(and(eq(appointments.id, id), eq(appointments.customerId, customerId)))
     .limit(1);
-  return row && row.startsAt.getTime() > Date.now() ? row : null;
+  return row && canCustomerManageAppointment(row) ? row : null;
 }

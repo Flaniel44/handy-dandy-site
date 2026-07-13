@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { shouldSendCancellation, slotStateForAppointmentStatus } from "@handy-dani/domain";
 
 import { requireAdmin } from "../../../../../lib/admin-auth";
 import { getDb } from "../../../../../lib/db";
@@ -35,10 +36,10 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   await db.transaction(async (tx) => {
     await tx.update(appointments).set({ ...body.data, updatedAt: new Date() }).where(eq(appointments.id, id.data));
     if (body.data.status) await tx.update(bookingSlots).set({
-      state: body.data.status === "confirmed" ? "confirmed" : "released", updatedAt: new Date(),
+      state: slotStateForAppointmentStatus(body.data.status), updatedAt: new Date(),
     }).where(eq(bookingSlots.id, existing.slotId));
   });
-  if (body.data.status === "cancelled" && existing.status !== "cancelled") {
+  if (body.data.status && shouldSendCancellation(existing.status, body.data.status)) {
     try {
       await sendAppointmentCancelled(existing.customerEmail, existing.customerName, existing.serviceName, existing.startsAt);
     } catch (emailError) {
