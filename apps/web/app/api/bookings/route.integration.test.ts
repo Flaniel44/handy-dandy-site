@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import postgres from "postgres";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { resetTestData } from "../../../test/integration/database";
 
 const SERVICE_ID = "22222222-2222-4222-8222-222222222222";
 const testDatabaseUrl = process.env.DATABASE_URL!;
@@ -25,7 +26,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await testSql.unsafe("TRUNCATE appointments, booking_slots, customers RESTART IDENTITY CASCADE");
+  await resetTestData(testSql);
   vi.clearAllMocks();
 });
 

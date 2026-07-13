@@ -52,7 +52,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       await tx.update(appointments).set({ slotId: slot.id, updatedAt: new Date() }).where(and(eq(appointments.id, id), eq(appointments.customerId, session.customerId)));
     });
   } catch (error) {
-    if (hasDatabaseErrorCode(error, "23P01")) return Response.json({ error: "That time was just booked." }, { status: 409 });
+    if (hasDatabaseErrorCode(error, "23P01") || hasDatabaseErrorCode(error, "40P01")) {
+      return Response.json({ error: "That time was just booked." }, { status: 409 });
+    }
     console.error("Unable to reschedule appointment", error);
     return Response.json({ error: "We could not reschedule the appointment." }, { status: 500 });
   }

@@ -51,3 +51,16 @@ export async function recreateTestDatabase(databaseUrl: string) {
     await migrationSql.end();
   }
 }
+
+export async function resetTestData(sql: ReturnType<typeof postgres>) {
+  await sql.unsafe(
+    "TRUNCATE password_reset_tokens, appointments, booking_slots, customers RESTART IDENTITY CASCADE",
+  );
+  await sql`DELETE FROM manual_blocks`;
+  await sql`DELETE FROM weekly_hours`;
+  await sql`
+    INSERT INTO weekly_hours (business_id, weekday, starts_at_local, ends_at_local)
+    SELECT '11111111-1111-4111-8111-111111111111', weekday, '09:00', '17:00'
+    FROM generate_series(1, 5) AS weekday
+  `;
+}

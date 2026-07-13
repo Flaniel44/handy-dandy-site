@@ -1,5 +1,6 @@
 import postgres from "postgres";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { resetTestData } from "../../../test/integration/database";
 
 const cookieJar = vi.hoisted(() => new Map<string, string>());
 const email = vi.hoisted(() => ({
@@ -53,7 +54,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await testSql.unsafe("TRUNCATE appointments, booking_slots, customers RESTART IDENTITY CASCADE");
+  await resetTestData(testSql);
   cookieJar.clear();
   vi.clearAllMocks();
   delete process.env.ADMIN_EMAIL;
