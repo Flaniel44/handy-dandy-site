@@ -1,6 +1,7 @@
 import "server-only";
 
 type EmailMessage = { to: string; subject: string; html: string; text: string };
+const MAX_DELIVERY_ATTEMPTS = 3;
 
 export async function sendTransactionalEmail(message: EmailMessage) {
   const apiKey = process.env.RESEND_API_KEY;
@@ -13,12 +14,23 @@ export async function sendTransactionalEmail(message: EmailMessage) {
     return;
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, reply_to: replyTo, ...message }),
-  });
-  if (!response.ok) throw new Error(`Resend rejected an email with status ${response.status}.`);
+  let failure: Error | undefined;
+  let attempts = 0;
+  for (attempts = 1; attempts <= MAX_DELIVERY_ATTEMPTS; attempts += 1) {
+    try {
+      const response = await deliverEmail(apiKey, from, replyTo, message);
+      if (response.ok) return;
+      failure = new EmailDeliveryError(response.status);
+      if (!isRetryableStatus(response.status)) break;
+    } catch (error) {
+      failure = error instanceof Error ? error : new Error("Unknown email delivery failure.");
+    }
+    if (attempts < MAX_DELIVERY_ATTEMPTS) await retryDelay(attempts);
+  }
+
+  const finalFailure = failure ?? new Error("Unknown email delivery failure.");
+  await alertDeliveryFailure(apiKey, from, replyTo, message, Math.min(attempts, MAX_DELIVERY_ATTEMPTS), finalFailure);
+  throw finalFailure;
 }
 
 export async function sendPasswordResetEmail(to: string, firstName: string, token: string) {
@@ -77,4 +89,64 @@ function formatAppointmentTime(startsAt: Date) {
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[character]!);
+}
+
+async function deliverEmail(apiKey: string, from: string, replyTo: string, message: EmailMessage) {
+  return fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from, reply_to: replyTo, ...message }),
+  });
+}
+
+async function alertDeliveryFailure(
+  apiKey: string,
+  from: string,
+  replyTo: string,
+  original: EmailMessage,
+  attempts: number,
+  failure: Error,
+) {
+  const alertTo = process.env.EMAIL_FAILURE_ALERT_TO ?? process.env.ADMIN_EMAIL;
+  if (!alertTo) {
+    console.error("Email delivery failed and no alert recipient is configured", { to: original.to, subject: original.subject, attempts, failure });
+    return;
+  }
+  const alert: EmailMessage = {
+    to: alertTo,
+    subject: `Action required: email to ${original.to} failed`,
+    text: [
+      `Handy Dandy could not deliver an email after ${attempts} attempt${attempts === 1 ? "" : "s"}.`,
+      `Customer: ${original.to}`,
+      `Subject: ${original.subject}`,
+      `Failure: ${failure.message}`,
+      "",
+      "Please contact the customer manually with this message:",
+      "",
+      original.text,
+    ].join("\n"),
+    html: `<p><strong>Handy Dandy could not deliver an email after ${attempts} attempt${attempts === 1 ? "" : "s"}.</strong></p><p>Customer: ${escapeHtml(original.to)}<br>Subject: ${escapeHtml(original.subject)}<br>Failure: ${escapeHtml(failure.message)}</p><p>Please contact the customer manually with this message:</p><pre style="white-space:pre-wrap">${escapeHtml(original.text)}</pre>`,
+  };
+  try {
+    const response = await deliverEmail(apiKey, from, replyTo, alert);
+    if (!response.ok) throw new EmailDeliveryError(response.status);
+  } catch (alertError) {
+    console.error("Unable to send the email delivery failure alert", alertError);
+  }
+}
+
+function isRetryableStatus(status: number) {
+  return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
+}
+
+async function retryDelay(failedAttempt: number) {
+  if (process.env.NODE_ENV === "test") return;
+  await new Promise((resolve) => setTimeout(resolve, 250 * (2 ** (failedAttempt - 1))));
+}
+
+class EmailDeliveryError extends Error {
+  constructor(status: number) {
+    super(`Resend rejected an email with status ${status}.`);
+    this.name = "EmailDeliveryError";
+  }
 }

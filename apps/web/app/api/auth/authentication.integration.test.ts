@@ -179,6 +179,22 @@ describe("authentication routes", () => {
     expect(profile).toMatchObject({ firstName: "Grace", lastName: "Hopper", email: "ada@example.com" });
     expect(await (await currentUser()).json()).toEqual({ user: { role: "customer", firstName: "Grace" } });
   });
+
+  it("keeps a usable reset token when the reset email provider is temporarily unavailable", async () => {
+    await register(jsonRequest("/api/auth/register", registrationData()));
+    email.sendPasswordResetEmail.mockRejectedValueOnce(new Error("Resend unavailable"));
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await forgotPassword(jsonRequest("/api/auth/forgot-password", { email: "ada@example.com" }));
+    expect(response.status).toBe(200);
+    const [{ count }] = await testSql<{ count: number }[]>`
+      SELECT COUNT(*)::int AS count
+      FROM password_reset_tokens WHERE used_at IS NULL AND expires_at > now()
+    `;
+    expect(count).toBe(1);
+    expect(errorLog).toHaveBeenCalledWith("Unable to send password reset email", expect.any(Error));
+    errorLog.mockRestore();
+  });
 });
 
 function registrationData() {

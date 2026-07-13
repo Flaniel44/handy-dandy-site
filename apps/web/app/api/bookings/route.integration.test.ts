@@ -116,6 +116,26 @@ describe("POST /api/bookings", () => {
     `;
     expect(count).toBe(1);
   });
+
+  it("keeps a confirmed booking and continues calendar sync when confirmation email fails", async () => {
+    const slot = nextBookableSlot(9);
+    sendBookingConfirmation.mockRejectedValueOnce(new Error("Resend unavailable"));
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await postBooking(bookingRequest(slot, {
+      name: "Reliable Guest", email: "reliable@example.com",
+    }));
+
+    expect(response.status).toBe(201);
+    const body = await response.json() as { appointmentId: string };
+    const [{ count }] = await testSql<{ count: number }[]>`
+      SELECT COUNT(*)::int AS count FROM appointments WHERE id = ${body.appointmentId} AND status = 'confirmed'
+    `;
+    expect(count).toBe(1);
+    expect(createGoogleEventForAppointment).toHaveBeenCalledWith(body.appointmentId);
+    expect(errorLog).toHaveBeenCalledWith("Booking created but confirmation email failed", expect.any(Error));
+    errorLog.mockRestore();
+  });
 });
 
 function nextBookableSlot(hour: number) {
