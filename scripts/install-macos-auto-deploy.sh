@@ -27,7 +27,7 @@ cat > "${PLIST_PATH}" <<EOF
   <key>RunAtLoad</key>
   <true/>
   <key>StartInterval</key>
-  <integer>180</integer>
+  <integer>900</integer>
   <key>EnvironmentVariables</key>
   <dict>
     <key>PATH</key>
@@ -48,6 +48,6 @@ launchctl bootstrap "${USER_DOMAIN}" "${PLIST_PATH}"
 launchctl enable "${USER_DOMAIN}/${LABEL}"
 launchctl kickstart -k "${USER_DOMAIN}/${LABEL}"
 
-echo "Automatic deployment is installed and checks every 3 minutes."
+echo "Automatic deployment is installed and checks every 15 minutes."
 echo "Deployment log: ${LOG_DIR}/handy-dandy-deploy.log"
 echo "Error log:      ${LOG_DIR}/handy-dandy-deploy-error.log"

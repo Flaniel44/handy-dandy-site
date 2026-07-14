@@ -18,7 +18,7 @@ chmod +x scripts/install-macos-auto-deploy.sh scripts/deploy-production.sh
 ./scripts/install-macos-auto-deploy.sh
 ```
 
-The LaunchAgent runs as the logged-in `daniel` user every three minutes. Docker Desktop must be running, as it already is for the other hosted services.
+The LaunchAgent runs as the logged-in `daniel` user every 15 minutes. Docker Desktop must be running, as it already is for the other hosted services. A normal check only performs a small Git fetch; container builds happen only when CI has promoted a new commit to `production`.
 
 ## Verify the installation
 
@@ -45,7 +45,7 @@ The deployer:
 - refuses to overwrite tracked local changes;
 - fetches the tested `production` branch;
 - requires a fast-forward update;
-- builds the migrator, web app, and reminder worker images;
+- builds the migrator, web app, and reminder worker images one at a time so an older Mac is not hit with several simultaneous builds;
 - applies database migrations;
 - recreates only services whose image or configuration changed;
 - waits up to 150 seconds for the health endpoint;

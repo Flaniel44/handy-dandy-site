@@ -82,7 +82,7 @@ git merge --ff-only "${target_sha}"
 compose=(docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}")
 
 log "Building production images..."
-"${compose[@]}" build migrate web reminder-worker
+COMPOSE_PARALLEL_LIMIT=1 "${compose[@]}" build migrate web reminder-worker
 
 log "Applying migrations and starting updated services..."
 "${compose[@]}" up -d --remove-orphans
