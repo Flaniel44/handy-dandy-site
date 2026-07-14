@@ -103,3 +103,5 @@ and policy changes are recorded in the paginated **Security and audit history** 
 - `reference`: design references only; production code never reads from this folder
 
 See `docs/architecture.md` for system boundaries and delivery order.
+
+Production updates are tested by GitHub Actions and can be deployed automatically by the MacBook server. See [docs/automatic-deployment.md](docs/automatic-deployment.md) for setup and operation.
