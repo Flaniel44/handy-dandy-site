@@ -7,3 +7,9 @@ export function hasDatabaseErrorCode(error: unknown, code: string) {
   }
   return false;
 }
+
+const BOOKING_CONFLICT_CODES = ["23P01", "40P01", "40001"] as const;
+
+export function isBookingConflictError(error: unknown) {
+  return BOOKING_CONFLICT_CODES.some((code) => hasDatabaseErrorCode(error, code));
+}

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getAvailabilityForDate } from "../../../lib/availability";
 import { areNewBookingsEnabled, bookingsClosedResponse } from "../../../lib/booking-status";
 import { getDb } from "../../../lib/db";
-import { hasDatabaseErrorCode } from "../../../lib/db/errors";
+import { isBookingConflictError } from "../../../lib/db/errors";
 import { bookingSlots, guestBookingConfirmations } from "../../../lib/db/schema";
 import { sendGuestBookingVerification } from "../../../lib/email";
 import {
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       expiresAt: expiresAt.toISOString(),
     }, { status: 202 });
   } catch (error) {
-    if (hasDatabaseErrorCode(error, "23P01")) return Response.json({ error: "That time was just reserved by someone else." }, { status: 409 });
+    if (isBookingConflictError(error)) return Response.json({ error: "That time was just reserved by someone else." }, { status: 409 });
     console.error("Unable to create booking", error);
     return Response.json({ error: "We could not reserve that time." }, { status: 500 });
   }
