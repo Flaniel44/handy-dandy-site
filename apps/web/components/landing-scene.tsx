@@ -6,7 +6,42 @@ import { useEffect, useRef } from "react";
 import { landingSceneMarkup } from "./landing-scene-markup";
 
 const STORAGE_KEY = "handy-dandy-house-powered";
+const DEVICE_STORAGE_KEY = "handy-dandy-device-power";
 const ROOM_CLASSES = ["lamp1", "lamp2", "lamp3", "lamp4"] as const;
+const DEVICE_CONFIG = [
+  {
+    roomClass: "lamp1",
+    label: "bedroom lamp",
+    sourceSelector: 'g[transform="translate(262,244) scale(2.4)"]',
+    hitArea: { x: -2, y: -4, width: 28, height: 32 },
+    wireIndexes: [0],
+    nodeIndex: 0,
+  },
+  {
+    roomClass: "lamp2",
+    label: "bathroom light",
+    sourceSelector: 'g[transform="translate(407,208) scale(1.4)"]',
+    hitArea: { x: -5, y: -4, width: 34, height: 32 },
+    wireIndexes: [1, 2],
+    nodeIndex: 1,
+  },
+  {
+    roomClass: "lamp3",
+    label: "kitchen chandelier",
+    sourceSelector: 'g[transform="translate(237,300) scale(1.5)"]',
+    hitArea: { x: -7, y: -5, width: 38, height: 35 },
+    wireIndexes: [3],
+    nodeIndex: 2,
+  },
+  {
+    roomClass: "lamp4",
+    label: "living room TV",
+    sourceSelector: 'g[transform="translate(403,342) scale(1.7)"]',
+    hitArea: { x: -7, y: -5, width: 38, height: 34 },
+    wireIndexes: [4],
+    nodeIndex: 3,
+  },
+] as const;
 
 export function LandingScene() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -148,6 +183,72 @@ export function LandingScene() {
     if (demosButton) demosButton.textContent = "What's Possible?";
 
     const sceneSvg = root.querySelector<SVGSVGElement>(".stage > svg");
+    const wireFlows = Array.from(root.querySelectorAll<SVGPathElement>(".data-wire-flow"));
+    const dataNodes = Array.from(root.querySelectorAll<SVGCircleElement>(".data-node > circle"));
+    let disabledDevices = new Set<string>();
+    try {
+      const savedDevices = JSON.parse(window.sessionStorage.getItem(DEVICE_STORAGE_KEY) ?? "[]");
+      if (Array.isArray(savedDevices)) {
+        disabledDevices = new Set(savedDevices.filter((room): room is string => typeof room === "string"));
+      }
+    } catch {
+      // Individual device state can safely reset if browser storage is unavailable.
+    }
+
+    const persistDeviceState = () => {
+      try {
+        window.sessionStorage.setItem(DEVICE_STORAGE_KEY, JSON.stringify([...disabledDevices]));
+      } catch {
+        // Persistence is an enhancement, not a requirement for the interaction.
+      }
+    };
+
+    const setDevicePowered = (roomClass: string, powered: boolean) => {
+      root.classList.toggle(`device-off-${roomClass}`, !powered);
+      const source = root.querySelector<SVGGElement>(`[data-device-toggle="${roomClass}"]`);
+      source?.setAttribute("aria-pressed", String(powered));
+      source?.setAttribute("aria-label", `${powered ? "Turn off" : "Turn on"} ${source.dataset.deviceLabel ?? "light"}`);
+      if (powered) disabledDevices.delete(roomClass);
+      else disabledDevices.add(roomClass);
+      persistDeviceState();
+    };
+
+    DEVICE_CONFIG.forEach(({ roomClass, label, sourceSelector, hitArea, wireIndexes, nodeIndex }) => {
+      const source = houseScene?.querySelector<SVGGElement>(sourceSelector);
+      if (!source) return;
+
+      source.classList.add("device-toggle-source");
+      source.dataset.deviceToggle = roomClass;
+      source.dataset.deviceLabel = label;
+      source.setAttribute("role", "button");
+      source.setAttribute("tabindex", "0");
+
+      let clickTarget = source.querySelector<SVGRectElement>(":scope > .device-click-target");
+      if (!clickTarget) {
+        clickTarget = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        clickTarget.setAttribute("class", "device-click-target");
+        clickTarget.setAttribute("fill", "transparent");
+        clickTarget.setAttribute("pointer-events", "all");
+        clickTarget.setAttribute("aria-hidden", "true");
+        source.prepend(clickTarget);
+      }
+      clickTarget.setAttribute("x", String(hitArea.x));
+      clickTarget.setAttribute("y", String(hitArea.y));
+      clickTarget.setAttribute("width", String(hitArea.width));
+      clickTarget.setAttribute("height", String(hitArea.height));
+      clickTarget.setAttribute("rx", "3");
+
+      root.querySelectorAll<SVGElement>(`.${roomClass}`).forEach((light) => {
+        light.classList.add("device-room-illumination");
+      });
+      source.querySelectorAll<SVGElement>(`.${roomClass}`).forEach((light) => {
+        light.classList.remove("device-room-illumination");
+      });
+      wireIndexes.forEach((index) => wireFlows[index]?.classList.add(`device-wire-${roomClass}`));
+      dataNodes[nodeIndex]?.classList.add(`device-node-${roomClass}`);
+      setDevicePowered(roomClass, !disabledDevices.has(roomClass));
+    });
+
     let chainHint = sceneSvg?.querySelector<SVGGElement>(".chain-hint");
     if (sceneSvg && !chainHint) {
       chainHint = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -230,6 +331,15 @@ export function LandingScene() {
       if (action === "demos") router.push("/demos");
       if (action === "admin") router.push("/admin");
       if (action === "contact") window.location.href = "mailto:hello@example.com";
+    };
+
+    const toggleDeviceFrom = (target: EventTarget | null) => {
+      if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
+      const source = target.closest<SVGGElement>("[data-device-toggle]");
+      const roomClass = source?.dataset.deviceToggle;
+      if (!source || !roomClass) return false;
+      setDevicePowered(roomClass, disabledDevices.has(roomClass));
+      return true;
     };
 
     const actionFrom = (target: EventTarget | null) =>
@@ -440,6 +550,7 @@ export function LandingScene() {
     };
 
     const onClick = (event: MouseEvent) => {
+      if (toggleDeviceFrom(event.target)) return;
       const action = actionFrom(event.target);
       if (action === "toggle-light" && suppressTouchClick) {
         suppressTouchClick = false;
@@ -449,6 +560,11 @@ export function LandingScene() {
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest("[data-device-toggle]")) {
+        event.preventDefault();
+        toggleDeviceFrom(event.target);
+        return;
+      }
       const action = actionFrom(event.target);
       if (action && (event.key === "Enter" || event.key === " ")) {
         event.preventDefault();
@@ -459,12 +575,25 @@ export function LandingScene() {
     let previousRoom = -1;
     const flickerRandomRoom = () => {
       if (!root.classList.contains("lit")) return;
-      let room = Math.floor(Math.random() * ROOM_CLASSES.length);
-      if (room === previousRoom) room = (room + 1) % ROOM_CLASSES.length;
+      const availableRooms = ROOM_CLASSES
+        .map((_, index) => index)
+        .filter((index) => !disabledDevices.has(ROOM_CLASSES[index]));
+      if (availableRooms.length === 0) return;
+      let room = availableRooms[Math.floor(Math.random() * availableRooms.length)];
+      if (room === previousRoom && availableRooms.length > 1) {
+        room = availableRooms[(availableRooms.indexOf(room) + 1) % availableRooms.length];
+      }
       previousRoom = room;
 
       const lights = Array.from(root.querySelectorAll<SVGElement>(`.${ROOM_CLASSES[room]}`));
       const setRoomLevel = (opacity: number, transition = "opacity 45ms linear") => {
+        if (disabledDevices.has(ROOM_CLASSES[room])) {
+          lights.forEach((light) => {
+            light.style.removeProperty("opacity");
+            light.style.removeProperty("transition");
+          });
+          return;
+        }
         lights.forEach((light) => {
           light.style.setProperty("transition", transition, "important");
           light.style.setProperty("opacity", String(opacity), "important");
@@ -536,6 +665,43 @@ export function LandingScene() {
         .scene-root.lit.ambient-ready .lamp { animation: none !important; }
         .scene-root.lit.session-restored .hide { animation: none !important; opacity: 1; }
         .scene-root .data-wire-flow { animation-duration: 1.85s !important; }
+        .scene-root .device-toggle-source {
+          cursor: pointer;
+          outline: none;
+          transition: filter .18s ease, opacity .18s ease;
+        }
+        .scene-root.lit .device-toggle-source:hover,
+        .scene-root.lit .device-toggle-source:focus-visible {
+          filter: drop-shadow(0 0 5px #f4a04f);
+        }
+        .scene-root.device-off-lamp1 .lamp1.device-room-illumination,
+        .scene-root.device-off-lamp2 .lamp2.device-room-illumination,
+        .scene-root.device-off-lamp3 .lamp3.device-room-illumination,
+        .scene-root.device-off-lamp4 .lamp4.device-room-illumination {
+          animation: none !important;
+          opacity: 0 !important;
+        }
+        .scene-root.device-off-lamp1 [data-device-toggle="lamp1"],
+        .scene-root.device-off-lamp2 [data-device-toggle="lamp2"],
+        .scene-root.device-off-lamp3 [data-device-toggle="lamp3"],
+        .scene-root.device-off-lamp4 [data-device-toggle="lamp4"] {
+          filter: saturate(.3);
+          opacity: .28;
+        }
+        .scene-root.device-off-lamp1 .device-wire-lamp1,
+        .scene-root.device-off-lamp2 .device-wire-lamp2,
+        .scene-root.device-off-lamp3 .device-wire-lamp3,
+        .scene-root.device-off-lamp4 .device-wire-lamp4 {
+          animation-play-state: paused !important;
+          opacity: 0 !important;
+        }
+        .scene-root.device-off-lamp1 .device-node-lamp1,
+        .scene-root.device-off-lamp2 .device-node-lamp2,
+        .scene-root.device-off-lamp3 .device-node-lamp3,
+        .scene-root.device-off-lamp4 .device-node-lamp4 {
+          animation-play-state: paused !important;
+          opacity: .25 !important;
+        }
         .scene-root .chain-hint {
           opacity: 0;
           pointer-events: none;
