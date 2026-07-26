@@ -666,8 +666,12 @@ export function LandingScene() {
         .scene-root.lit.session-restored .hide { animation: none !important; opacity: 1; }
         .scene-root .data-wire-flow { animation-duration: 1.85s !important; }
         .scene-root .device-toggle-source {
+          -webkit-tap-highlight-color: transparent;
           cursor: pointer;
           outline: none;
+          touch-action: manipulation;
+          user-select: none;
+          -webkit-user-select: none;
           transition: filter .18s ease, opacity .18s ease;
         }
         .scene-root.lit .device-toggle-source:hover,
