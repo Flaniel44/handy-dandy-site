@@ -4,6 +4,7 @@ import { DateTime } from "luxon";
 
 import { getDb } from "./db";
 import { bookingSlots, businessSettings, manualBlocks, services, weeklyHours } from "./db/schema";
+import { releaseExpiredGuestBookingHolds } from "./guest-booking-confirmation";
 import { getGoogleBusyRanges } from "./google-calendar";
 
 export async function getActiveServices() {
@@ -17,6 +18,7 @@ export async function getActiveServices() {
 }
 
 export async function getAvailabilityForDate(date: string, serviceId: string) {
+  await releaseExpiredGuestBookingHolds();
   const db = getDb();
   const [service] = await db.select().from(services).where(and(eq(services.id, serviceId), eq(services.active, true))).limit(1);
   if (!service) return null;

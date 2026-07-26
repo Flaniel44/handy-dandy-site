@@ -64,6 +64,24 @@ export async function sendBookingConfirmation(to: string, name: string, serviceN
   });
 }
 
+export async function sendGuestBookingVerification(
+  to: string,
+  name: string,
+  serviceName: string,
+  startsAt: Date,
+  token: string,
+) {
+  const appUrl = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const confirmationUrl = `${appUrl}/book/confirm?token=${encodeURIComponent(token)}`;
+  const formatted = formatAppointmentTime(startsAt);
+  await sendTransactionalEmail({
+    to,
+    subject: "Confirm your Handy Dandy appointment",
+    text: `Hi ${name},\n\nPlease confirm your ${serviceName} appointment for ${formatted} within 15 minutes:\n${confirmationUrl}\n\nThe appointment will not be added to the calendar until you confirm it. If you did not request this, you can ignore this email.`,
+    html: `<p>Hi ${escapeHtml(name)},</p><p>Please confirm your <strong>${escapeHtml(serviceName)}</strong> appointment for:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p><p><a href="${escapeHtml(confirmationUrl)}" style="display:inline-block;padding:12px 18px;background:#f5f1e8;color:#0b0d16;text-decoration:none;border-radius:6px;font-weight:700">Review and confirm appointment</a></p><p>This link expires in 15 minutes. The appointment will not be added to the calendar until you confirm it.</p><p>If you did not request this, you can safely ignore this email.</p>`,
+  });
+}
+
 export async function sendAppointmentCancelled(to: string, name: string, serviceName: string, startsAt: Date) {
   const formatted = formatAppointmentTime(startsAt);
   await sendTransactionalEmail({

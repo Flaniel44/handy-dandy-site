@@ -123,6 +123,24 @@ describe("transactional email delivery", () => {
     expect(body.text).toContain("Monday, August 3, 2026 at 1:00 p.m.");
   });
 
+  it("sends guest verification links without confirming the appointment prematurely", async () => {
+    const startsAt = new Date("2026-08-03T17:00:00.000Z");
+    await email.sendGuestBookingVerification(
+      "ada@example.com",
+      "Ada & Co",
+      "Lights & Music",
+      startsAt,
+      "token+with?symbols",
+    );
+
+    const body = resendBody(0);
+    expect(body.subject).toBe("Confirm your Handy Dandy appointment");
+    expect(body.text).toContain("https://whatisthis.place/book/confirm?token=token%2Bwith%3Fsymbols");
+    expect(body.text).toContain("will not be added to the calendar until you confirm");
+    expect(body.html).toContain("Ada &amp; Co");
+    expect(body.html).toContain("Lights &amp; Music");
+  });
+
   it("builds an encoded password-reset link and escapes it in HTML", async () => {
     await email.sendPasswordResetEmail("ada@example.com", "Ada & Co", "token+with?symbols");
 

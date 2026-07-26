@@ -99,6 +99,21 @@ export const bookingSlots = pgTable("booking_slots", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [index("booking_slots_time_idx").on(table.startsAt, table.endsAt)]);
 
+export const guestBookingConfirmations = pgTable("guest_booking_confirmations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  slotId: uuid("slot_id").notNull().references(() => bookingSlots.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  clientNotes: text("client_notes").notNull().default(""),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("guest_booking_confirmations_slot_idx").on(table.slotId),
+  uniqueIndex("guest_booking_confirmations_token_idx").on(table.tokenHash),
+  index("guest_booking_confirmations_expires_idx").on(table.expiresAt),
+]);
+
 export const appointments = pgTable("appointments", {
   id: uuid("id").primaryKey().defaultRandom(),
   slotId: uuid("slot_id").notNull().references(() => bookingSlots.id),

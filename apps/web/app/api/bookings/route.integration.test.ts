@@ -6,11 +6,12 @@ import { resetTestData } from "../../../test/integration/database";
 const SERVICE_ID = "22222222-2222-4222-8222-222222222222";
 const testDatabaseUrl = process.env.DATABASE_URL!;
 
+const sendGuestBookingVerification = vi.fn().mockResolvedValue(undefined);
 const sendBookingConfirmation = vi.fn().mockResolvedValue(undefined);
 const createGoogleEventForAppointment = vi.fn().mockResolvedValue(undefined);
 const markCalendarSyncFailure = vi.fn().mockResolvedValue(undefined);
 
-vi.mock("../../../lib/email", () => ({ sendBookingConfirmation }));
+vi.mock("../../../lib/email", () => ({ sendGuestBookingVerification, sendBookingConfirmation }));
 vi.mock("../../../lib/google-calendar", () => ({
   createGoogleEventForAppointment,
   getGoogleBusyRanges: vi.fn().mockResolvedValue([]),
@@ -19,10 +20,12 @@ vi.mock("../../../lib/google-calendar", () => ({
 
 let testSql: ReturnType<typeof postgres>;
 let postBooking: typeof import("./route").POST;
+let confirmBooking: typeof import("./confirm/route").POST;
 
 beforeAll(async () => {
   testSql = postgres(testDatabaseUrl, { max: 1, prepare: false });
   ({ POST: postBooking } = await import("./route"));
+  ({ POST: confirmBooking } = await import("./confirm/route"));
 });
 
 beforeEach(async () => {
@@ -35,7 +38,7 @@ afterAll(async () => {
 });
 
 describe("POST /api/bookings", () => {
-  it("persists a confirmed guest booking and triggers its integrations", async () => {
+  it("holds a guest slot until its email token is explicitly confirmed", async () => {
     const slot = nextBookableSlot(9);
     const response = await postBooking(bookingRequest(slot, {
       name: "Ada Lovelace",
@@ -43,24 +46,51 @@ describe("POST /api/bookings", () => {
       notes: "Please check the living-room lights.",
     }));
 
-    expect(response.status).toBe(201);
-    const body = await response.json() as { appointmentId: string };
-    expect(body.appointmentId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(response.status).toBe(202);
+    const body = await response.json() as { confirmationRequired: boolean; expiresAt: string };
+    expect(body.confirmationRequired).toBe(true);
+    expect(new Date(body.expiresAt).getTime()).toBeGreaterThan(Date.now());
 
     const [saved] = await testSql<{
+      email: string;
+      name: string;
+      state: string;
+      client_notes: string;
+    }[]>`
+      SELECT gbc.email, gbc.name, bs.state, gbc.client_notes
+      FROM guest_booking_confirmations gbc
+      JOIN booking_slots bs ON bs.id = gbc.slot_id
+    `;
+    expect(saved).toEqual({
+      email: "ada@example.com",
+      name: "Ada Lovelace",
+      state: "held",
+      client_notes: "Please check the living-room lights.",
+    });
+    expect(await appointmentCount()).toBe(0);
+    expect(sendGuestBookingVerification).toHaveBeenCalledOnce();
+    expect(sendBookingConfirmation).not.toHaveBeenCalled();
+    expect(createGoogleEventForAppointment).not.toHaveBeenCalled();
+
+    const token = verificationToken();
+    const confirmation = await confirmBookingRequest(token);
+    expect(confirmation.status).toBe(303);
+    expect(confirmation.headers.get("location")).toBe("http://localhost/book/confirmation?status=confirmed");
+
+    const [confirmed] = await testSql<{
       email: string;
       name: string;
       status: string;
       state: string;
       client_notes: string;
+      appointment_id: string;
     }[]>`
-      SELECT c.email, c.name, a.status, bs.state, a.client_notes
+      SELECT c.email, c.name, a.status, bs.state, a.client_notes, a.id AS appointment_id
       FROM appointments a
       JOIN customers c ON c.id = a.customer_id
       JOIN booking_slots bs ON bs.id = a.slot_id
-      WHERE a.id = ${body.appointmentId}
     `;
-    expect(saved).toEqual({
+    expect(confirmed).toMatchObject({
       email: "ada@example.com",
       name: "Ada Lovelace",
       status: "confirmed",
@@ -68,7 +98,13 @@ describe("POST /api/bookings", () => {
       client_notes: "Please check the living-room lights.",
     });
     expect(sendBookingConfirmation).toHaveBeenCalledOnce();
-    expect(createGoogleEventForAppointment).toHaveBeenCalledWith(body.appointmentId);
+    expect(createGoogleEventForAppointment).toHaveBeenCalledWith(confirmed.appointment_id);
+    expect(await confirmationCount()).toBe(0);
+
+    const replay = await confirmBookingRequest(token);
+    expect(replay.headers.get("location")).toBe("http://localhost/book/confirmation?status=invalid");
+    expect(await appointmentCount()).toBe(1);
+    expect(createGoogleEventForAppointment).toHaveBeenCalledTimes(1);
   });
 
   it("updates a returning guest instead of creating a duplicate customer", async () => {
@@ -78,11 +114,14 @@ describe("POST /api/bookings", () => {
     expect((await postBooking(bookingRequest(first, {
       name: "Old Name",
       email: "returning@example.com",
-    }))).status).toBe(201);
+    }))).status).toBe(202);
+    expect((await confirmBookingRequest(verificationToken())).status).toBe(303);
+    vi.clearAllMocks();
     expect((await postBooking(bookingRequest(second, {
       name: "New Name",
       email: "RETURNING@example.com",
-    }))).status).toBe(201);
+    }))).status).toBe(202);
+    expect((await confirmBookingRequest(verificationToken())).status).toBe(303);
 
     const [{ customer_count, appointment_count, name }] = await testSql<{
       customer_count: number;
@@ -110,33 +149,83 @@ describe("POST /api/bookings", () => {
       postBooking(bookingRequest(slot, { name: "Second Guest", email: "second@example.com" })),
     ]);
 
-    expect([first.status, second.status].sort()).toEqual([201, 409]);
-    const [{ count }] = await testSql<{ count: number }[]>`
-      SELECT COUNT(*)::int AS count FROM appointments
-    `;
-    expect(count).toBe(1);
+    expect([first.status, second.status].sort()).toEqual([202, 409]);
+    expect(await appointmentCount()).toBe(0);
+    expect(await confirmationCount()).toBe(1);
   });
 
-  it("keeps a confirmed booking and continues calendar sync when confirmation email fails", async () => {
+  it("releases the provisional hold when its verification email cannot be delivered", async () => {
     const slot = nextBookableSlot(9);
-    sendBookingConfirmation.mockRejectedValueOnce(new Error("Resend unavailable"));
+    sendGuestBookingVerification.mockRejectedValueOnce(new Error("Resend unavailable"));
     const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     const response = await postBooking(bookingRequest(slot, {
       name: "Reliable Guest", email: "reliable@example.com",
     }));
 
-    expect(response.status).toBe(201);
-    const body = await response.json() as { appointmentId: string };
-    const [{ count }] = await testSql<{ count: number }[]>`
-      SELECT COUNT(*)::int AS count FROM appointments WHERE id = ${body.appointmentId} AND status = 'confirmed'
+    expect(response.status).toBe(503);
+    expect(await appointmentCount()).toBe(0);
+    expect(await confirmationCount()).toBe(0);
+    const [{ count: slotCount }] = await testSql<{ count: number }[]>`
+      SELECT COUNT(*)::int AS count FROM booking_slots
     `;
-    expect(count).toBe(1);
-    expect(createGoogleEventForAppointment).toHaveBeenCalledWith(body.appointmentId);
-    expect(errorLog).toHaveBeenCalledWith("Booking created but confirmation email failed", expect.any(Error));
+    expect(slotCount).toBe(0);
+    expect(createGoogleEventForAppointment).not.toHaveBeenCalled();
+    expect(errorLog).toHaveBeenCalledWith("Unable to send guest booking verification", expect.any(Error));
     errorLog.mockRestore();
   });
+
+  it("expires an unconfirmed hold without creating a customer, appointment, or calendar event", async () => {
+    const slot = nextBookableSlot(9);
+    expect((await postBooking(bookingRequest(slot, {
+      name: "Late Guest", email: "late@example.com",
+    }))).status).toBe(202);
+    const token = verificationToken();
+    await testSql`UPDATE guest_booking_confirmations SET expires_at = now() - interval '1 minute'`;
+    await testSql`UPDATE booking_slots SET expires_at = now() - interval '1 minute'`;
+
+    const response = await confirmBookingRequest(token);
+    expect(response.headers.get("location")).toBe("http://localhost/book/confirmation?status=expired");
+    const [savedSlot] = await testSql<{ state: string }[]>`SELECT state FROM booking_slots`;
+    expect(savedSlot.state).toBe("expired");
+    expect(await appointmentCount()).toBe(0);
+    expect(createGoogleEventForAppointment).not.toHaveBeenCalled();
+
+    const replacement = await postBooking(bookingRequest(slot, {
+      name: "Replacement Guest", email: "replacement@example.com",
+    }));
+    expect(replacement.status).toBe(202);
+    expect(await confirmationCount()).toBe(1);
+  });
 });
+
+function verificationToken() {
+  const call = sendGuestBookingVerification.mock.calls.at(-1);
+  expect(call).toBeTruthy();
+  return call![4] as string;
+}
+
+function confirmBookingRequest(token: string) {
+  return confirmBooking(new Request("http://localhost/api/bookings/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ token }),
+  }));
+}
+
+async function appointmentCount() {
+  const [{ count }] = await testSql<{ count: number }[]>`
+    SELECT COUNT(*)::int AS count FROM appointments
+  `;
+  return count;
+}
+
+async function confirmationCount() {
+  const [{ count }] = await testSql<{ count: number }[]>`
+    SELECT COUNT(*)::int AS count FROM guest_booking_confirmations
+  `;
+  return count;
+}
 
 function nextBookableSlot(hour: number) {
   let local = DateTime.now().setZone("America/Toronto").plus({ days: 7 }).startOf("day");

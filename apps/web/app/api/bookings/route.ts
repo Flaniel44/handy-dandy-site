@@ -1,12 +1,16 @@
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { getAvailabilityForDate } from "../../../lib/availability";
 import { areNewBookingsEnabled, bookingsClosedResponse } from "../../../lib/booking-status";
 import { getDb } from "../../../lib/db";
 import { hasDatabaseErrorCode } from "../../../lib/db/errors";
-import { appointments, bookingSlots, customers } from "../../../lib/db/schema";
-import { sendBookingConfirmation } from "../../../lib/email";
-import { createGoogleEventForAppointment, markCalendarSyncFailure } from "../../../lib/google-calendar";
+import { bookingSlots, guestBookingConfirmations } from "../../../lib/db/schema";
+import { sendGuestBookingVerification } from "../../../lib/email";
+import {
+  createGuestBookingConfirmationToken,
+  GUEST_BOOKING_HOLD_MINUTES,
+} from "../../../lib/guest-booking-confirmation";
 import { checkRateLimit, rateLimitResponse } from "../../../lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -33,40 +37,48 @@ export async function POST(request: Request) {
     const selected = availability?.slots.find((slot) => slot.startsAt === startsAt.toISOString());
     if (!availability || !selected) return Response.json({ error: "That time is no longer available." }, { status: 409 });
 
+    const { token, tokenHash } = createGuestBookingConfirmationToken();
+    const expiresAt = new Date(Date.now() + GUEST_BOOKING_HOLD_MINUTES * 60_000);
     const result = await getDb().transaction(async (tx) => {
-      const [customer] = await tx.insert(customers).values({
-        name: parsed.data.name,
-        email: parsed.data.email,
-      }).onConflictDoUpdate({
-        target: customers.email,
-        set: { name: parsed.data.name, updatedAt: new Date() },
-      }).returning({ id: customers.id });
-
       const [slot] = await tx.insert(bookingSlots).values({
         serviceId: parsed.data.serviceId,
         startsAt,
         endsAt: new Date(selected.endsAt),
-        state: "confirmed",
+        state: "held",
+        expiresAt,
       }).returning({ id: bookingSlots.id });
 
-      const [appointment] = await tx.insert(appointments).values({
+      await tx.insert(guestBookingConfirmations).values({
         slotId: slot.id,
-        customerId: customer.id,
-        status: "confirmed",
+        tokenHash,
+        name: parsed.data.name,
+        email: parsed.data.email,
         clientNotes: parsed.data.notes,
-      }).returning({ id: appointments.id });
+        expiresAt,
+      });
 
-      return { appointmentId: appointment.id };
+      return { slotId: slot.id };
     });
 
     try {
-      await sendBookingConfirmation(parsed.data.email, parsed.data.name, availability.service.name, startsAt);
+      await sendGuestBookingVerification(
+        parsed.data.email,
+        parsed.data.name,
+        availability.service.name,
+        startsAt,
+        token,
+      );
     } catch (emailError) {
-      console.error("Booking created but confirmation email failed", emailError);
+      await getDb().delete(bookingSlots).where(eq(bookingSlots.id, result.slotId));
+      console.error("Unable to send guest booking verification", emailError);
+      return Response.json({
+        error: "We could not send the confirmation email. Please check the address and try again.",
+      }, { status: 503 });
     }
-    try { await createGoogleEventForAppointment(result.appointmentId); }
-    catch (calendarError) { await markCalendarSyncFailure(result.appointmentId, calendarError); console.error("Booking created but Google Calendar sync failed", calendarError); }
-    return Response.json(result, { status: 201 });
+    return Response.json({
+      confirmationRequired: true,
+      expiresAt: expiresAt.toISOString(),
+    }, { status: 202 });
   } catch (error) {
     if (hasDatabaseErrorCode(error, "23P01")) return Response.json({ error: "That time was just reserved by someone else." }, { status: 409 });
     console.error("Unable to create booking", error);

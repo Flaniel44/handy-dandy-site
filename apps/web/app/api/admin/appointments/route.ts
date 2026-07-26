@@ -8,6 +8,7 @@ import { getDb } from "../../../../lib/db";
 import { hasDatabaseErrorCode } from "../../../../lib/db/errors";
 import { appointments, bookingSlots, businessSettings, customers, services } from "../../../../lib/db/schema";
 import { sendBookingConfirmation } from "../../../../lib/email";
+import { releaseExpiredGuestBookingHolds } from "../../../../lib/guest-booking-confirmation";
 import { createGoogleEventForAppointment, markCalendarSyncFailure } from "../../../../lib/google-calendar";
 
 const manualAppointmentSchema = z.object({
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
   if (!startsAt.isValid) return Response.json({ error: "Invalid appointment time." }, { status: 400 });
 
   try {
+    await releaseExpiredGuestBookingHolds();
     const result = await db.transaction(async (tx) => {
       const [customer] = await tx.insert(customers).values({
         name: parsed.data.name, email: parsed.data.email, phone: parsed.data.phone || null,

@@ -11,7 +11,7 @@ export function BookingForm({ bookingsEnabled }: { bookingsEnabled: boolean }) {
   const [availability, setAvailability] = useState<Record<string, Slot[]>>({});
   const [timezone, setTimezone] = useState("");
   const [selected, setSelected] = useState<{ date: string; slot: Slot }>();
-  const [loading, setLoading] = useState(bookingsEnabled); const [error, setError] = useState(""); const [confirmation, setConfirmation] = useState<{ appointmentId: string }>();
+  const [loading, setLoading] = useState(bookingsEnabled); const [error, setError] = useState(""); const [confirmation, setConfirmation] = useState<{ email: string; expiresAt: string }>();
   const dates = Array.from({ length: 7 }, (_, index) => addDays(week, index));
 
   useEffect(() => {
@@ -46,11 +46,11 @@ export function BookingForm({ bookingsEnabled }: { bookingsEnabled: boolean }) {
     }) });
     const body = await response.json(); setLoading(false);
     if (!response.ok) return setError(body.error ?? "We could not create the appointment.");
-    setConfirmation(body);
+    setConfirmation({ email: String(form.get("email")), expiresAt: body.expiresAt });
   }
 
   if (!bookingsEnabled) return <section className="booking-card"><p className="eyebrow">Coming soon</p><h2>Online booking is not open yet.</h2><p>I&apos;m putting the finishing touches on the service. Please check back soon.</p></section>;
-  if (confirmation) return <section className="booking-card booking-success"><p className="eyebrow">Booking confirmed</p><h2>Your consultation is booked.</h2><p>No payment is required online. Your appointment reference is <strong>{confirmation.appointmentId}</strong>.</p></section>;
+  if (confirmation) return <section className="booking-card booking-success"><p className="eyebrow">Check your email</p><h2>Confirm your appointment.</h2><p>We sent a confirmation link to <strong>{confirmation.email}</strong>. Your selected time is held for 15 minutes and will only be added to the calendar after you confirm it.</p><p>If you do not see the message, check your spam folder.</p></section>;
   const service = services.find((item) => item.id === serviceId);
   return <form className="booking-card" onSubmit={submit}>
     <div className="booking-step"><span>01</span><div><h2>Consultation</h2><p>Select the service you need.</p></div></div>
