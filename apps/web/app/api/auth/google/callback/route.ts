@@ -6,6 +6,7 @@ import { SESSION_COOKIE, adminCookieOptions, createCustomerSessionToken } from "
 import { getDb } from "../../../../../lib/db";
 import { customers } from "../../../../../lib/db/schema";
 import { exchangeGoogleLoginCode } from "../../../../../lib/google-login";
+import { publicUrl } from "../../../../../lib/public-url";
 import { GOOGLE_LOGIN_STATE_COOKIE, GOOGLE_LOGIN_VERIFIER_COOKIE } from "../start/route";
 
 export async function GET(request: Request) {
@@ -34,7 +35,7 @@ export async function GET(request: Request) {
       firstName: customer.firstName || customer.name.split(" ")[0],
       authVersion: customer.authVersion,
     }), adminCookieOptions());
-    return Response.redirect(new URL("/account", request.url));
+    return Response.redirect(publicUrl(request, "/account"));
   } catch (error) {
     console.error("Unable to complete Google login", error);
     return loginRedirect(request, "failed");
@@ -74,7 +75,7 @@ function firstName(profile: Awaited<ReturnType<typeof exchangeGoogleLoginCode>>)
 }
 
 function loginRedirect(request: Request, reason: string) {
-  return Response.redirect(new URL(`/login?oauth=${reason}`, request.url));
+  return Response.redirect(publicUrl(request, `/login?oauth=${reason}`));
 }
 
 function safeEqual(first: string, second: string) {

@@ -199,12 +199,15 @@ describe("authentication routes", () => {
       throw new Error(`Unexpected fetch: ${url}`);
     });
 
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("APP_URL", "https://whatisthis.place");
     const callback = await finishGoogleLogin(new Request(
-      `http://localhost/api/auth/google/callback?code=valid-code&state=${encodeURIComponent(state!)}`,
+      `http://0.0.0.0:3000/api/auth/google/callback?code=valid-code&state=${encodeURIComponent(state!)}`,
     ));
+    vi.unstubAllEnvs();
     fetchMock.mockRestore();
     expect(callback.status).toBe(302);
-    expect(callback.headers.get("location")).toBe("http://localhost/account");
+    expect(callback.headers.get("location")).toBe("https://whatisthis.place/account");
     expect(cookieJar.get("handy_dandy_session")).toBeTruthy();
     expect(cookieJar.has("handy_dandy_google_login_state")).toBe(false);
     expect(cookieJar.has("handy_dandy_google_login_verifier")).toBe(false);
