@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
+import { ContactLinks } from "./contact-links";
+import { GoogleReviews } from "./google-reviews";
 import { landingSceneMarkup } from "./landing-scene-markup";
 
 const STORAGE_KEY = "handy-dandy-house-powered";
@@ -183,6 +185,20 @@ export function LandingScene() {
     if (demosButton) demosButton.textContent = "What's Possible?";
     const businessName = root.querySelector<HTMLElement>(".name-ph");
     if (businessName) businessName.textContent = "Digital HandyDan";
+    const actions = root.querySelector<HTMLElement>(".cta-row");
+    let reviewJump = root.querySelector<HTMLAnchorElement>(".landing-review-jump");
+    if (actions && !reviewJump) {
+      reviewJump = document.createElement("a");
+      reviewJump.className = "landing-review-jump hide";
+      reviewJump.href = "#google-reviews";
+      reviewJump.innerHTML = `
+        <span>Check out what people are saying about us</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 4v15m-6-6 6 6 6-6" />
+        </svg>
+      `;
+      actions.insertAdjacentElement("afterend", reviewJump);
+    }
 
     const sceneSvg = root.querySelector<SVGSVGElement>(".stage > svg");
     const wireFlows = Array.from(root.querySelectorAll<SVGPathElement>(".data-wire-flow"));
@@ -648,18 +664,26 @@ export function LandingScene() {
       if (hintTimer) window.clearTimeout(hintTimer);
       if (cameraFrame !== undefined) window.cancelAnimationFrame(cameraFrame);
       chainHint?.remove();
+      reviewJump?.remove();
     };
   });
 
   return (
     <main className="landing-page">
-      <div
-        ref={containerRef}
-        className="landing-scene-shell"
-        dangerouslySetInnerHTML={{
-          __html: landingSceneMarkup.replace(">Handy Dandy</p>", ">Digital HandyDan</p>"),
-        }}
-      />
+      <section className="landing-hero" aria-label="Digital HandyDan">
+        <div
+          ref={containerRef}
+          className="landing-scene-shell"
+          dangerouslySetInnerHTML={{
+            __html: landingSceneMarkup.replace(">Handy Dandy</p>", ">Digital HandyDan</p>"),
+          }}
+        />
+      </section>
+      <GoogleReviews />
+      <footer className="landing-footer">
+        <ContactLinks className="landing-contact" title="Let’s get connected" />
+        <p>© {new Date().getFullYear()} Digital HandyDan</p>
+      </footer>
       <style>{`
         .scene-root.lit .lamp { animation: lampFlicker 1s steps(1, end) forwards !important; }
         .scene-root.lit .lamp1 { animation-delay: .2s !important; }
@@ -729,6 +753,41 @@ export function LandingScene() {
           stroke-linecap: round;
           stroke-linejoin: round;
           stroke-width: 2;
+        }
+        .scene-root .landing-review-jump {
+          width: fit-content;
+          display: grid;
+          justify-items: center;
+          gap: 7px;
+          margin: -8px auto 0;
+          color: #aaa9a1;
+          font-size: .76rem;
+          font-weight: 700;
+          letter-spacing: .04em;
+          text-decoration: none;
+          transition: color .18s ease;
+        }
+        .scene-root .landing-review-jump:hover,
+        .scene-root .landing-review-jump:focus-visible {
+          color: #f4a04f;
+          outline: none;
+        }
+        .scene-root .landing-review-jump svg {
+          width: 25px;
+          height: 25px;
+          fill: none;
+          stroke: currentColor;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-width: 1.8;
+          animation: reviewArrowBounce 1.8s ease-in-out infinite;
+        }
+        @keyframes reviewArrowBounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(5px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .scene-root .landing-review-jump svg { animation: none; }
         }
       `}</style>
     </main>
