@@ -195,6 +195,7 @@ a { color: inherit; }
 .possibility-copy > span { color: #f25d9c; font-size: .72rem; font-weight: 800; letter-spacing: .15em; }
 .possibility-copy h3 { margin: 15px 0 20px; font-size: clamp(2rem, 4vw, 4rem); line-height: .98; letter-spacing: -.04em; }
 .possibility-copy p { margin: 0; color: var(--muted); line-height: 1.75; }
+.possibility-copy p strong { color: #f4a04f; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; }
 .possibilities-cta { margin-top: clamp(100px, 18vw, 220px); padding: clamp(45px, 8vw, 90px); border: 1px solid #343c5b; border-radius: 14px; background: #111522; text-align: center; }
 .possibilities-cta h2 { max-width: 800px; margin: 18px auto 8px; font-size: clamp(2.4rem, 6vw, 5rem); line-height: .98; letter-spacing: -.05em; }
 

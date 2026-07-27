@@ -9,26 +9,26 @@ const possibilitySections = [
     items: [
       {
         number: "01",
-        title: "Lights that respond to motion",
-        description: "Turn lights on when someone enters, switch them off when the room is empty, or receive a useful motion notification.",
+        title: "Can the lights turn on when I walk into a room?",
+        description: "Yes. Lights can turn on when someone enters, switch off when the room is empty, or send you a useful motion notification.",
         mediaLabel: "Motion-aware lighting and notification demo",
       },
       {
         number: "02",
-        title: "Grow lights that follow the sun",
-        description: "Keep indoor plants on a natural rhythm with grow lights scheduled around your local sunrise and sunset.",
+        title: "Can my grow lights follow the actual sunrise and sunset?",
+        description: "Yes. Your grow lights can follow local sunrise and sunset times automatically, keeping indoor plants on a natural rhythm throughout the year.",
         mediaLabel: "Sunrise and sunset grow-light automation",
       },
       {
         number: "03",
-        title: "Morning and evening scenes",
-        description: "Coordinate brightness, colour, music, and other devices as your home eases into the day or winds down at night.",
+        title: "Can my home have different morning and bedtime modes?",
+        description: "Absolutely. A single scene can coordinate brightness, colour, music, and other devices as your home wakes up or winds down.",
         mediaLabel: "Morning and evening scene demo",
       },
       {
         number: "04",
-        title: "Location-based routines",
-        description: "Prepare the house when you arrive, or turn off selected lights and devices after everyone leaves.",
+        title: "Can my home get ready when I arrive—and power down when I leave?",
+        description: "Yes. Your home can prepare for your arrival, then turn off selected lights and devices after everyone has left.",
         mediaLabel: "Arrival and departure automation",
       },
     ],
@@ -41,26 +41,26 @@ const possibilitySections = [
     items: [
       {
         number: "05",
-        title: "Physical controls for every room",
-        description: "Place simple physical buttons wherever they are useful, then customize them to control lights, music, scenes, or almost any connected device. A button can even perform different actions when pressed, held, or pressed multiple times.",
+        title: "Can I have simple physical controls in every room?",
+        description: "Absolutely. Buttons can control lights, music, scenes, or almost any connected device—and do something different when pressed, held, or pressed multiple times.",
         mediaLabel: "Custom physical button controls",
       },
       {
         number: "06",
-        title: "Tap to make something happen",
-        description: "Use NFC tags to play music, run a scene, adjust a room, or trigger almost any automation with a quick phone tap.",
+        title: "Can I tap my phone on something to trigger a routine?",
+        description: "Yes. An NFC tag can play music, run a scene, adjust a room, or trigger almost any automation with one quick phone tap.",
         mediaLabel: "NFC tag automation examples",
       },
       {
         number: "07",
-        title: "Scan and go",
-        description: "Use QR codes to run scenes, play music, or help guests connect to your Wi-Fi without finding and typing a password.",
+        title: "Can a QR code connect guests to Wi-Fi or start a scene?",
+        description: "Yes. A QR code can run a scene, play music, or connect guests to your Wi-Fi without making them find and type a password.",
         mediaLabel: "QR code scene and guest Wi-Fi demo",
       },
       {
         number: "08",
-        title: "Automations built around you",
-        description: "Think of it as: if this happens, then do that. If motion is detected, turn on a light. If you leave home, switch everything off. Combine simple rules like these to make your home respond automatically.",
+        title: "Can I build my own automations without learning to code?",
+        description: "Absolutely. Think of it as: IF this happens, THEN do that. If motion is detected, turn on a light. If you leave home, switch everything off.",
         mediaLabel: "If-this-then-that automation builder",
       },
     ],
@@ -73,20 +73,20 @@ const possibilitySections = [
     items: [
       {
         number: "09",
-        title: "Tap an album to play it everywhere",
-        description: "Place an NFC tag on an album cover, tap it with your phone, and start the music across your smart speakers.",
+        title: "Can I tap an album cover and play it throughout the house?",
+        description: "Yes. Place an NFC tag on an album cover, tap it with your phone, and start that music across your smart speakers.",
         mediaLabel: "NFC whole-home audio demo",
       },
       {
         number: "10",
-        title: "Control your TV from almost anything",
-        description: "Control your smart TV, movies, shows, and playback from a phone, physical remote, dashboard, or automation.",
+        title: "Can I control my TV from my phone, dashboard, or another remote?",
+        description: "Yes. Your television, movies, shows, and playback can be controlled from a phone, physical remote, dashboard, or automation.",
         mediaLabel: "Flexible smart TV controls",
       },
       {
         number: "11",
-        title: "Give old remotes new life",
-        description: "Use an infrared controller to automate televisions, stereos, air conditioners, and other devices that normally need an IR remote.",
+        title: "Can older remote-controlled devices become part of my smart home?",
+        description: "In many cases, yes. An infrared controller can automate televisions, stereos, air conditioners, and other devices that normally need an IR remote.",
         mediaLabel: "Infrared remote automation demo",
       },
     ],
@@ -99,14 +99,14 @@ const possibilitySections = [
     items: [
       {
         number: "12",
-        title: "Know when something moves",
-        description: "Receive useful motion notifications without needing to constantly watch a camera feed.",
+        title: "Can my phone tell me when motion is detected?",
+        description: "Yes. You can receive useful motion notifications without needing to constantly watch a camera feed.",
         mediaLabel: "Smart motion notification demo",
       },
       {
         number: "13",
-        title: "Smarter cameras and locks",
-        description: "View cameras, manage smart locks, and include security devices in arrival, bedtime, or away routines.",
+        title: "Can my cameras and locks work together when I leave or go to bed?",
+        description: "Yes. Cameras and smart locks can be managed together and included in arrival, bedtime, or away routines.",
         mediaLabel: "Camera, lock, and security dashboard",
       },
     ],
@@ -119,20 +119,20 @@ const possibilitySections = [
     items: [
       {
         number: "14",
-        title: "Upgrade without replacing everything",
-        description: "Add smart control to compatible non-smart appliances using plugs, relays, infrared controllers, or button pushers.",
+        title: "Do I need to replace everything to make my home smart?",
+        description: "No. Many existing appliances can gain smart control through plugs, relays, infrared controllers, or button pushers.",
         mediaLabel: "Non-smart device conversion examples",
       },
       {
         number: "15",
-        title: "Physically press almost any button",
-        description: "Automate devices that cannot otherwise be controlled electronically by adding a small device that presses their existing button.",
+        title: "Can something physically press a button for me?",
+        description: "Often, yes. A small button-pushing device can automate equipment that cannot otherwise be controlled electronically.",
         mediaLabel: "Physical button-pusher demo",
       },
       {
         number: "16",
-        title: "Start the coffee in the morning",
-        description: "Schedule a physical button pusher to start a coffee maker—or press another everyday button automatically.",
+        title: "Can my coffee maker start itself every morning?",
+        description: "Yes. A scheduled button pusher can start a compatible coffee maker—or press another everyday button automatically.",
         mediaLabel: "Scheduled coffee button automation",
       },
     ],
@@ -145,14 +145,14 @@ const possibilitySections = [
     items: [
       {
         number: "17",
-        title: "A dashboard for your whole home",
-        description: "Bring lighting, climate, entertainment, sensors, security, and automations together in one clear Home Assistant dashboard.",
+        title: "Can I control my entire home from one simple screen?",
+        description: "Yes. Lighting, climate, entertainment, sensors, security, and automations can come together in one clear Home Assistant dashboard.",
         mediaLabel: "Home Assistant dashboard tour",
       },
       {
         number: "18",
-        title: "Useful information at a glance",
-        description: "Show calendars, weather, reminders, and device status on a smart display or quiet, low-power e-ink screen.",
+        title: "Can a display show useful information without becoming another distraction?",
+        description: "Yes. Calendars, weather, reminders, and device status can appear on a smart display or a quiet, low-power e-ink screen.",
         mediaLabel: "Smart and e-ink display examples",
       },
     ],
@@ -163,13 +163,15 @@ export default function DemosPage() {
   return (
     <main className="possibilities-page">
       <header className="possibilities-hero">
-        <p className="eyebrow">What&apos;s possible?</p>
-        <h1>Small ideas.<br />A smarter home.</h1>
+        <p className="eyebrow">You ask. We make it possible.</p>
+        <h1>Could my home<br />do that?</h1>
         <p>
-          Smart-home technology is most useful when it quietly fits into your life.
-          Here are a few practical ways your home can feel more responsive, helpful, and personal.
+          You might be surprised. Here are some questions people ask—and practical
+          ways Digital HandyDan can make them possible.
         </p>
-        <a className="possibilities-jump" href="#ideas">Explore the ideas <span aria-hidden="true">↓</span></a>
+        <a className="possibilities-jump" href="#ideas">
+          Browse the questions <span aria-hidden="true">↓</span>
+        </a>
       </header>
 
       <div className="possibilities-grid" id="ideas">
@@ -191,9 +193,9 @@ export default function DemosPage() {
                     <small>{item.mediaLabel}</small>
                   </div>
                   <div className="possibility-copy">
-                    <span>{item.number}</span>
+                    <span>Question {item.number}</span>
                     <h3>{item.title}</h3>
-                    <p>{item.description}</p>
+                    <p><strong>Answer:</strong> {item.description}</p>
                   </div>
                 </article>
               ))}
@@ -203,7 +205,7 @@ export default function DemosPage() {
       </div>
 
       <section className="possibilities-cta">
-        <p className="eyebrow">Have an idea of your own?</p>
+        <p className="eyebrow">Have a question of your own?</p>
         <h2>Let&apos;s make your home work the way you want it to.</h2>
         <Link className="primary-button" href="/book">Book a consultation</Link>
       </section>
