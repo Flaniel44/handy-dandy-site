@@ -19,7 +19,7 @@ const RESULTS = {
   failed: {
     eyebrow: "Something went wrong",
     heading: "The appointment could not be confirmed.",
-    message: "Please try the link again. If the problem continues, contact Handy Dandy for help.",
+    message: "Please try the link again. If the problem continues, contact Digital HandyDan for help.",
   },
 } as const;
 

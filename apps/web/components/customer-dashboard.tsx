@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { ContactLinks } from "./contact-links";
 
 type Appointment = { id: string; status: string; adminNotes: string; clientNotes: string; startsAt: string; endsAt: string; serviceId: string; serviceName: string };
 type Service = { id: string; name: string; durationMinutes: number };
@@ -38,9 +39,9 @@ export function CustomerDashboard({ firstName, bookingsEnabled }: { firstName: s
       ? <AccountScheduler onBooked={load} onMessage={setMessage} />
       : <section className="account-panel scheduler-panel"><p className="eyebrow">Coming soon</p><h2>Online booking is not open yet.</h2><p>Please check back soon. Your existing appointments are still available below.</p></section>}
     <section className="account-panel"><h2>Upcoming appointments</h2>{upcoming.length === 0 ? <p className="empty-state">You have no upcoming appointments.</p> : <div className="customer-appointments">{upcoming.map((appointment) => <UpcomingAppointment key={appointment.id} appointment={appointment} save={saveNotes} cancel={cancelAppointment} onChanged={load} onMessage={setMessage} />)}</div>}</section>
-    <section className="account-panel"><h2>Past appointments</h2>{past.length === 0 ? <p className="empty-state">Your appointment history will appear here.</p> : <div className="customer-appointments">{past.map((appointment) => <article key={appointment.id}><AppointmentHeading appointment={appointment} />{appointment.adminNotes && <div className="shared-notes"><strong>Notes from Handy Dandy</strong><p>{appointment.adminNotes}</p></div>}{appointment.clientNotes && <div className="shared-notes"><strong>Your notes</strong><p>{appointment.clientNotes}</p></div>}</article>)}</div>}</section>
+    <section className="account-panel"><h2>Past appointments</h2>{past.length === 0 ? <p className="empty-state">Your appointment history will appear here.</p> : <div className="customer-appointments">{past.map((appointment) => <article key={appointment.id}><AppointmentHeading appointment={appointment} />{appointment.adminNotes && <div className="shared-notes"><strong>Notes from Digital HandyDan</strong><p>{appointment.adminNotes}</p></div>}{appointment.clientNotes && <div className="shared-notes"><strong>Your notes</strong><p>{appointment.clientNotes}</p></div>}</article>)}</div>}</section>
     <CustomerProfile onMessage={setMessage} />
-    <section className="account-contact"><h2>Contact me</h2><div><a href={process.env.NEXT_PUBLIC_WHATSAPP_URL || "#"} aria-label="WhatsApp"><span aria-hidden="true">◉</span>WhatsApp</a><a href={`mailto:${process.env.NEXT_PUBLIC_BUSINESS_EMAIL || "hello@example.com"}`} aria-label="Email"><span aria-hidden="true">✉</span>Email</a><a href={process.env.NEXT_PUBLIC_MESSENGER_URL || "#"} aria-label="Facebook Messenger"><span aria-hidden="true">f</span>Facebook</a></div></section>
+    <ContactLinks />
   </main>;
 }
 
@@ -117,7 +118,7 @@ function CustomerProfile({ onMessage }: { onMessage: (message: string) => void }
 
 function UpcomingAppointment({ appointment, save, cancel, onChanged, onMessage }: { appointment: Appointment; save: (id: string, notes: string) => Promise<void>; cancel: (id: string) => Promise<void>; onChanged: () => Promise<void>; onMessage: (message: string) => void }) {
   const [notes, setNotes] = useState(appointment.clientNotes);
-  return <article><AppointmentHeading appointment={appointment} />{appointment.adminNotes && <div className="shared-notes"><strong>Notes from Handy Dandy</strong><p>{appointment.adminNotes}</p></div>}<label>Your notes<textarea rows={4} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Anything you want me to know before our appointment" /></label><button onClick={() => save(appointment.id, notes)}>Save notes</button><div className="appointment-change-actions"><AppointmentRescheduler appointment={appointment} onChanged={onChanged} onMessage={onMessage} /><button className="danger-button" onClick={() => cancel(appointment.id)}>Cancel appointment</button></div></article>;
+  return <article><AppointmentHeading appointment={appointment} />{appointment.adminNotes && <div className="shared-notes"><strong>Notes from Digital HandyDan</strong><p>{appointment.adminNotes}</p></div>}<label>Your notes<textarea rows={4} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Anything you want me to know before our appointment" /></label><button onClick={() => save(appointment.id, notes)}>Save notes</button><div className="appointment-change-actions"><AppointmentRescheduler appointment={appointment} onChanged={onChanged} onMessage={onMessage} /><button className="danger-button" onClick={() => cancel(appointment.id)}>Cancel appointment</button></div></article>;
 }
 
 function AppointmentRescheduler({ appointment, onChanged, onMessage }: { appointment: Appointment; onChanged: () => Promise<void>; onMessage: (message: string) => void }) {

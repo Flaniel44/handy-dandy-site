@@ -92,6 +92,13 @@
       "when": 1785052800000,
       "tag": "0012_guest_booking_confirmations",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1785139200000,
+      "tag": "0013_digital_handydan_brand",
+      "breakpoints": true
     }
   ]
 }

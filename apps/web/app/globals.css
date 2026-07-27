@@ -360,7 +360,7 @@ a { color: inherit; }
 .profile-toggle-panel button, .scheduler-toggle { width: 100%; padding: 14px 20px; border: 1px solid #4a5580; border-radius: 8px; background: #242c48; color: var(--ink); cursor: pointer; font: inherit; font-weight: 800; }
 .account-contact { width: min(100%, 1000px); margin: 35px auto 18px; text-align: center; }
 .account-contact h2 { margin-bottom: 14px; font-size: 1rem; color: var(--muted); }
-.account-contact > div { display: flex; justify-content: center; gap: 14px; }
+.account-contact > div { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
 .account-contact a { display: grid; justify-items: center; gap: 6px; color: var(--muted); font-size: .75rem; text-decoration: none; }
 .account-contact a span { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid #465174; border-radius: 50%; background: #171d31; color: var(--ink); font-size: 1.15rem; font-weight: 800; }
 .scheduler-panel { padding: 18px; }

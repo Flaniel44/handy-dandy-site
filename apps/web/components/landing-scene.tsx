@@ -181,6 +181,8 @@ export function LandingScene() {
 
     const demosButton = root.querySelector<HTMLButtonElement>("[data-action='demos']");
     if (demosButton) demosButton.textContent = "What's Possible?";
+    const businessName = root.querySelector<HTMLElement>(".name-ph");
+    if (businessName) businessName.textContent = "Digital HandyDan";
 
     const sceneSvg = root.querySelector<SVGSVGElement>(".stage > svg");
     const wireFlows = Array.from(root.querySelectorAll<SVGPathElement>(".data-wire-flow"));
@@ -330,7 +332,7 @@ export function LandingScene() {
       if (action === "book") router.push(bookingPathRef.current);
       if (action === "demos") router.push("/demos");
       if (action === "admin") router.push("/admin");
-      if (action === "contact") window.location.href = "mailto:hello@example.com";
+      if (action === "contact") window.location.href = "mailto:handydan@whatisthis.place";
     };
 
     const toggleDeviceFrom = (target: EventTarget | null) => {
@@ -654,7 +656,9 @@ export function LandingScene() {
       <div
         ref={containerRef}
         className="landing-scene-shell"
-        dangerouslySetInnerHTML={{ __html: landingSceneMarkup }}
+        dangerouslySetInnerHTML={{
+          __html: landingSceneMarkup.replace(">Handy Dandy</p>", ">Digital HandyDan</p>"),
+        }}
       />
       <style>{`
         .scene-root.lit .lamp { animation: lampFlicker 1s steps(1, end) forwards !important; }

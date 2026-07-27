@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Handy Dandy",
-    short_name: "Handy Dandy",
+    name: "Digital HandyDan",
+    short_name: "HandyDan",
     description: "Friendly, practical smart-home and technology support.",
     start_url: "/",
     display: "standalone",
