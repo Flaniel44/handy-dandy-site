@@ -11,6 +11,7 @@ const demoAnimationSources: Record<string, string> = {
   "06": "/demos/phone-tap-routine.svg",
   "07": "/demos/qr-code-guest-wifi.svg",
   "08": "/demos/automation-builder.svg",
+  "09": "/demos/infrared-devices.svg",
 };
 const possibilitySections = [
   {

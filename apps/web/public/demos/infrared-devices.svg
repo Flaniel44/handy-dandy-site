@@ -1,0 +1,272 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" id="mdi-living-room-perspective-animated">
+  <defs>
+    <style>
+      #ir-wave-on {
+        animation: pulse-on 6s ease-out infinite;
+        transform-origin: 12px 20.2px;
+      }
+      @keyframes pulse-on {
+        0%, 49.9% { transform: scale(0.2); opacity: 0; }
+        50% { transform: scale(0.2); opacity: 1; }
+        62% { transform: scale(1.6); opacity: 0; }
+        63%, 100% { transform: scale(0.2); opacity: 0; }
+      }
+
+      #ir-wave-off {
+        animation: pulse-off 6s ease-out infinite;
+        transform-origin: 12px 20.2px;
+      }
+      @keyframes pulse-off {
+        0% { transform: scale(0.2); opacity: 1; }
+        12% { transform: scale(1.6); opacity: 0; }
+        13%, 100% { transform: scale(0.2); opacity: 0; }
+      }
+
+      .power-tv { animation: tv-state 6s step-end infinite; }
+      .standby-tv { animation: tv-standby-state 6s step-end infinite; }
+      @keyframes tv-state {
+        0%, 51.5% { opacity: 0; }
+        51.6%, 99.9% { opacity: 1; }
+      }
+      @keyframes tv-standby-state {
+        0%, 51.5% { opacity: 1; }
+        51.6%, 99.9% { opacity: 0; }
+      }
+
+      .power-ac { animation: ac-state 6s step-end infinite; }
+      .standby-ac { animation: ac-standby-state 6s step-end infinite; }
+      @keyframes ac-state {
+        0%, 53% { opacity: 0; }
+        53.1%, 99.9% { opacity: 1; }
+      }
+      @keyframes ac-standby-state {
+        0%, 53% { opacity: 1; }
+        53.1%, 99.9% { opacity: 0; }
+      }
+
+      .power-radio { animation: radio-state 6s step-end infinite; }
+      @keyframes radio-state {
+        0%, 54.5% { opacity: 0; }
+        54.6%, 99.9% { opacity: 1; }
+      }
+
+      .power-speaker { animation: speaker-state 6s step-end infinite; }
+      .standby-speaker { animation: speaker-standby-state 6s step-end infinite; }
+      @keyframes speaker-state {
+        0%, 56% { opacity: 0; }
+        56.1%, 99.9% { opacity: 1; }
+      }
+      @keyframes speaker-standby-state {
+        0%, 56% { opacity: 1; }
+        56.1%, 99.9% { opacity: 0; }
+      }
+
+      .static-layer-1 { animation: static-shift-1 0.45s ease-in-out infinite alternate; }
+      .static-layer-2 { animation: static-shift-2 0.35s ease-in-out infinite alternate; }
+      @keyframes static-shift-1 {
+        0% { transform: translate(0, 0); opacity: 0.4; }
+        50% { transform: translate(-0.15px, 0.1px); opacity: 0.55; }
+        100% { transform: translate(0.15px, -0.1px); opacity: 0.35; }
+      }
+      @keyframes static-shift-2 {
+        0% { transform: translate(0, 0); opacity: 0.3; }
+        50% { transform: translate(0.2px, -0.15px); opacity: 0.45; }
+        100% { transform: translate(-0.1px, 0.1px); opacity: 0.25; }
+      }
+
+      .wavy-air-stream {
+        stroke-dasharray: 1.2 0.8;
+        animation: flow-wavy-air 0.6s linear infinite;
+      }
+      @keyframes flow-wavy-air {
+        0% { stroke-dashoffset: 0; }
+        100% { stroke-dashoffset: -2; }
+      }
+
+      .radio-needle { animation: sweep-needle 2.2s ease-in-out infinite alternate; }
+      @keyframes sweep-needle {
+        0% { transform: translateX(-0.5px); }
+        100% { transform: translateX(0.5px); }
+      }
+
+      .speaker-bounce-group {
+        animation: speaker-vibrate 0.22s ease-in-out infinite alternate;
+        transform-origin: 15.9px 15px;
+      }
+      @keyframes speaker-vibrate {
+        0% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-0.25px) scale(1.02, 0.98); }
+        100% { transform: translateY(0.1px) scale(0.99, 1.01); }
+      }
+
+      .note-left {
+        animation: float-note-left 1.4s ease-out infinite;
+        transform-origin: center;
+      }
+      @keyframes float-note-left {
+        0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+        30% { opacity: 1; }
+        100% { transform: translate(-1.2px, -2.2px) scale(1.1) rotate(-12deg); opacity: 0; }
+      }
+
+      .note-right {
+        animation: float-note-right 1.6s ease-out 0.4s infinite;
+        transform-origin: center;
+      }
+      @keyframes float-note-right {
+        0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+        30% { opacity: 1; }
+        100% { transform: translate(1.2px, -2.4px) scale(1.1) rotate(12deg); opacity: 0; }
+      }
+    </style>
+
+    <pattern id="fine-static-1" width="0.5" height="0.5" patternUnits="userSpaceOnUse">
+      <rect width="0.25" height="0.25" fill="#FFFFFF" />
+      <rect x="0.25" width="0.25" height="0.25" fill="#1C2D37" />
+      <rect y="0.25" width="0.25" height="0.25" fill="#80DEEA" />
+      <rect x="0.25" y="0.25" width="0.25" height="0.25" fill="#37474F" />
+    </pattern>
+    <pattern id="fine-static-2" width="0.7" height="0.7" patternUnits="userSpaceOnUse">
+      <rect width="0.35" height="0.35" fill="#00E5FF" opacity="0.6" />
+      <rect x="0.35" width="0.35" height="0.35" fill="#FFFFFF" opacity="0.7" />
+      <rect y="0.35" width="0.35" height="0.35" fill="#263238" />
+      <rect x="0.35" y="0.35" width="0.35" height="0.35" fill="#ECEFF1" opacity="0.8" />
+    </pattern>
+    <clipPath id="tv-screen-clip">
+      <rect x="4.3" y="10.5" width="4.6" height="4" rx="0.3" />
+    </clipPath>
+  </defs>
+
+  <rect width="24" height="24" fill="#1A2332" />
+  <path d="M1 18.5h22" stroke="#37474F" stroke-width="0.5" opacity="0.6" />
+
+  <path d="M3.5 15h17v3.5h-17z" fill="#263238" />
+  <path d="M4 15.5h5v2.5H4zM9.5 15.5h5v2.5h-5zM15 15.5h5v2.5h-5z" fill="#10171A" />
+  <circle cx="6.5" cy="16.7" r="0.4" fill="#090D0F" />
+  <circle cx="12" cy="16.7" r="0.4" fill="#090D0F" />
+  <circle cx="17.5" cy="16.7" r="0.4" fill="#090D0F" />
+
+  <g id="appliance-tv">
+    <path d="M5.5 7.7L6.8 10M8.1 7.7L6.8 10" stroke="#78909C" stroke-width="0.4" stroke-linecap="round" />
+    <circle cx="5.5" cy="7.7" r="0.25" fill="#FFB74D" />
+    <circle cx="8.1" cy="7.7" r="0.25" fill="#FFB74D" />
+    <path d="M3.7 10h6.6v5H3.7z" fill="#607D8B" />
+    <path d="M3.9 10.5v4M4.1 10.5v4" stroke="#455A64" stroke-width="0.15" />
+    <rect x="4.1" y="10.3" width="5" height="4.4" rx="0.3" fill="#1A2327" />
+    <rect x="4.3" y="10.5" width="4.6" height="4" rx="0.3" fill="#10171A" />
+    <g class="standby-tv">
+      <circle cx="9.8" cy="14.2" r="0.2" fill="#D32F2F" />
+    </g>
+    <g class="power-tv">
+      <g clip-path="url(#tv-screen-clip)">
+        <rect x="4.3" y="10.5" width="4.6" height="4" fill="#1C2A35" />
+        <rect x="4.3" y="10.5" width="4.6" height="4" fill="url(#fine-static-1)" class="static-layer-1" />
+        <rect x="4.3" y="10.5" width="4.6" height="4" fill="url(#fine-static-2)" class="static-layer-2" />
+        <path d="M4.3 10.8h4.6M4.3 11.4h4.6M4.3 12h4.6M4.3 12.6h4.6M4.3 13.2h4.6M4.3 13.8h4.6M4.3 14.4h4.6" stroke="#000000" stroke-width="0.12" opacity="0.25" />
+      </g>
+      <rect x="4.5" y="10.7" width="1.2" height="0.5" rx="0.1" fill="#000000" opacity="0.6" />
+      <text x="5.1" y="11.1" font-family="sans-serif" font-weight="bold" font-size="0.4" fill="#00E5FF" text-anchor="middle">CH03</text>
+      <circle cx="9.8" cy="14.2" r="0.2" fill="#00E5FF" />
+    </g>
+    <rect x="9.3" y="10.3" width="0.8" height="4.4" fill="#455A64" />
+    <circle cx="9.7" cy="11" r="0.22" fill="#CFD8DC" />
+    <circle cx="9.7" cy="11.8" r="0.22" fill="#CFD8DC" />
+    <path d="M9.4 12.7h0.6M9.4 13.1h0.6M9.4 13.5h0.6" stroke="#263238" stroke-width="0.18" stroke-linecap="round" />
+  </g>
+
+  <g id="appliance-ac">
+    <rect x="8.5" y="2.8" width="7" height="3.3" rx="0.4" fill="#ECEFF1" />
+    <path d="M9 3.1h6M9 3.4h6M9 3.7h6" stroke="#CFD8DC" stroke-width="0.15" />
+    <path d="M8.8 5.4h6.4v0.4H8.8z" fill="#90A4AE" />
+    <line x1="9" y1="5.6" x2="15" y2="5.6" stroke="#78909C" stroke-width="0.15" />
+    <g class="standby-ac">
+      <circle cx="15.1" cy="5.4" r="0.15" fill="#D32F2F" />
+    </g>
+    <g class="power-ac">
+      <rect x="13.6" y="4.2" width="1.4" height="0.7" rx="0.1" fill="#1A2327" />
+      <text x="14.3" y="4.75" font-family="sans-serif" font-weight="bold" font-size="0.45" fill="#00E5FF" text-anchor="middle">18&#176;C</text>
+      <circle cx="15.1" cy="5.4" r="0.15" fill="#00E676" />
+      <g stroke="#00E5FF" stroke-width="0.25" stroke-linecap="round" fill="none" opacity="0.85" class="wavy-air-stream">
+        <path d="M 9.2 6.1 C 8.8 7, 9.4 8, 8.6 9" />
+        <path d="M 10.7 6.1 C 10.3 7, 10.9 8, 10.3 9.3" />
+        <path d="M 12.2 6.1 C 11.8 7.1, 12.4 8.1, 12.1 9.4" />
+        <path d="M 13.7 6.1 C 13.3 7, 13.9 8, 13.9 9.3" />
+        <path d="M 15 6.1 C 14.6 7, 15.2 8, 15.4 9" />
+      </g>
+    </g>
+  </g>
+
+  <g id="appliance-radio">
+    <rect x="10.8" y="12.2" width="2.4" height="2.8" rx="0.3" fill="#6D4C41" />
+    <rect x="11" y="12.4" width="2" height="2.4" rx="0.2" fill="#4E342E" />
+    <rect x="11.2" y="12.6" width="1.6" height="0.8" rx="0.1" fill="#10171A" />
+    <path d="M11.3 12.8h1.4M11.3 13.2h1.4" stroke="#37474F" stroke-width="0.1" />
+    <line x1="12" y1="12.6" x2="12" y2="13.4" stroke="#D32F2F" stroke-width="0.15" opacity="0.5" />
+    <g class="power-radio">
+      <rect x="11.2" y="12.6" width="1.6" height="0.8" rx="0.1" fill="#FFE082" opacity="0.85" />
+      <g class="radio-needle">
+        <line x1="12" y1="12.6" x2="12" y2="13.4" stroke="#FF1744" stroke-width="0.2" stroke-linecap="round" />
+      </g>
+      <circle cx="13" cy="14.5" r="0.1" fill="#FF5252" />
+      <g fill="#FFE082" font-family="sans-serif" font-weight="bold">
+        <text x="10.8" y="12" font-size="0.9" class="note-left">&#9834;</text>
+        <text x="12.6" y="12" font-size="0.9" class="note-right">&#9835;</text>
+      </g>
+    </g>
+    <rect x="11.2" y="13.6" width="1.6" height="0.7" fill="#3E2723" />
+    <path d="M11.3 13.7l1.4 0.5M11.3 14.2l1.4-0.5" stroke="#5D4037" stroke-width="0.1" />
+    <circle cx="11.4" cy="14.5" r="0.15" fill="#D7CCC8" />
+    <circle cx="12.2" cy="14.5" r="0.15" fill="#D7CCC8" />
+  </g>
+
+  <g id="appliance-speaker">
+    <g class="power-speaker">
+      <g class="speaker-bounce-group">
+        <rect x="14.5" y="10.2" width="2.8" height="4.8" rx="0.3" fill="#37474F" />
+        <rect x="14.7" y="10.4" width="2.4" height="4.4" rx="0.2" fill="#1C2428" />
+        <circle cx="15.9" cy="10.8" r="0.2" fill="#10171A" />
+        <circle cx="15.9" cy="11.7" r="0.45" fill="#37474F" />
+        <circle cx="15.9" cy="11.7" r="0.2" fill="#757575" />
+        <circle cx="15.9" cy="13.5" r="0.95" fill="#263238" />
+        <circle cx="15.9" cy="13.5" r="0.7" fill="#37474F" />
+        <circle cx="15.9" cy="13.5" r="0.25" fill="#00E676" />
+        <circle cx="14.9" cy="10.6" r="0.12" fill="#00E676" />
+      </g>
+      <g fill="#00E676" font-family="sans-serif" font-weight="bold">
+        <text x="14.8" y="9.8" font-size="1" class="note-left">&#9835;</text>
+        <text x="16.5" y="9.8" font-size="0.9" class="note-right">&#9834;</text>
+      </g>
+    </g>
+  </g>
+
+  <g id="speaker-off-body" class="standby-speaker">
+    <rect x="14.5" y="10.2" width="2.8" height="4.8" rx="0.3" fill="#37474F" />
+    <rect x="14.7" y="10.4" width="2.4" height="4.4" rx="0.2" fill="#1C2428" />
+    <circle cx="15.9" cy="10.8" r="0.2" fill="#10171A" />
+    <circle cx="15.9" cy="11.7" r="0.45" fill="#37474F" />
+    <circle cx="15.9" cy="11.7" r="0.2" fill="#757575" />
+    <circle cx="15.9" cy="13.5" r="0.95" fill="#263238" />
+    <circle cx="15.9" cy="13.5" r="0.7" fill="#37474F" />
+    <circle cx="14.9" cy="10.6" r="0.12" fill="#D32F2F" />
+  </g>
+
+  <path d="M5.5 19.5h13l1.5 2.5h-16z" fill="#263238" />
+  <path d="M9.8 19.5l-0.8 2.5M14.2 19.5l0.8 2.5" stroke="#1C2428" stroke-width="0.2" />
+  <path d="M4 22h16v0.4H4z" fill="#10171A" />
+
+  <g transform="translate(12, 20.2)">
+    <ellipse cx="0" cy="0" rx="1.6" ry="0.6" fill="#10171A" />
+    <ellipse cx="0" cy="-0.2" rx="1.3" ry="0.45" fill="#263238" />
+    <ellipse cx="0" cy="-0.3" rx="1.1" ry="0.35" fill="#37474F" />
+    <ellipse cx="0" cy="-0.35" rx="0.5" ry="0.18" fill="#10171A">
+      <animate attributeName="fill" values="#FF1744; #10171A; #FF1744; #10171A" keyTimes="0; 0.12; 0.5; 0.62" dur="6s" repeatCount="indefinite" />
+    </ellipse>
+    <circle cx="0" cy="-0.35" r="0.25" fill="#10171A">
+      <animate attributeName="fill" values="#FF1744; #10171A; #FF1744; #10171A" keyTimes="0; 0.12; 0.5; 0.62" dur="6s" repeatCount="indefinite" />
+      <animate attributeName="r" values="0.25; 0.15; 0.25; 0.15" keyTimes="0; 0.12; 0.5; 0.62" dur="6s" repeatCount="indefinite" />
+    </circle>
+  </g>
+
+  <ellipse id="ir-wave-on" cx="12" cy="20.2" rx="4.5" ry="2" fill="none" stroke="#FF1744" stroke-width="0.4" opacity="0" />
+  <ellipse id="ir-wave-off" cx="12" cy="20.2" rx="4.5" ry="2" fill="none" stroke="#FF1744" stroke-width="0.4" opacity="0" />
+</svg>
