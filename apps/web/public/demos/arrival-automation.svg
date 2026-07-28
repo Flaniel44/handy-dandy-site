@@ -1,0 +1,297 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 480" width="100%" height="100%" overflow="hidden" id="house-root">
+  <defs>
+    <!-- MDI Drop Shadow -->
+    <filter id="mdi-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feOffset dx="0" dy="2" result="offset" />
+      <feComponentTransfer><feFuncA type="linear" slope="0.35"/></feComponentTransfer>
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Intense Light Bloom Glow Filter -->
+    <filter id="glow-filter" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Warm Intense Interior &amp; Window Light Glow Gradient -->
+    <radialGradient id="window-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="1" />
+      <stop offset="40%" stop-color="#FFF176" stop-opacity="1" />
+      <stop offset="80%" stop-color="#FFB300" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#FF6F00" stop-opacity="0.5" />
+    </radialGradient>
+
+    <!-- Clip Path for Roll-up Garage Door -->
+    <clipPath id="garage-clip">
+      <rect x="250" y="150" width="120" height="90" rx="2" />
+    </clipPath>
+  </defs>
+
+  <style>
+    /* ==========================================================
+       Global Animation Settings (12s Cycle)
+       ========================================================== */
+
+    /* Background Canvas */
+    #background { fill: #121212; }
+
+    /* House Exterior &amp; Ground Colors */
+    .wall-main { fill: #37474F; }
+    .roof-main { fill: #263238; }
+    .door-main { fill: #455A64; }
+    .trim { fill: #78909C; }
+    .ground-pavement { fill: #1C2526; }
+    .driveway-laneway { fill: #263238; }
+
+    /* --- ANIMATED ELEMENTS --- */
+
+    /* 1. Window Glow &amp; Lights */
+    .window-dark { fill: #1C2526; }
+    .window-light {
+      fill: url(#window-glow);
+      opacity: 0;
+      filter: url(#glow-filter);
+      animation: house-lights 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes house-lights {
+      0%, 28% { opacity: 0; }
+      33.3%, 80% { opacity: 1; }
+      83.3%, 100% { opacity: 0; }
+    }
+
+    /* 2. Garage Interior Light Glow (Only active when door is open) */
+    .garage-glow {
+      fill: url(#window-glow);
+      opacity: 0;
+      filter: url(#glow-filter);
+      animation: garage-light-glow 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes garage-light-glow {
+      0%, 28% { opacity: 0; }
+      33.3%, 66.6% { opacity: 1; } /* Glowing bright when fully open */
+      83.3%, 100% { opacity: 0; }  /* Fades completely off as door finishes closing */
+    }
+
+    .garage-light-spill {
+      fill: url(#window-glow);
+      opacity: 0;
+      filter: url(#glow-filter);
+      animation: garage-light-spill 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes garage-light-spill {
+      0%, 28% { opacity: 0; }
+      33.3%, 66.6% { opacity: 0.5; }
+      83.3%, 100% { opacity: 0; }
+    }
+
+    /* 3. Garage Door Roll Up Slats */
+    #garage-door-slats {
+      animation: garage-open 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes garage-open {
+      0%, 28% { transform: translateY(0px); }
+      33.3%, 66.6% { transform: translateY(-88px); }
+      83.3%, 100% { transform: translateY(0px); }
+    }
+
+    /* 4. Car Motion */
+    #car-group {
+      animation: car-drive-vertical 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes car-drive-vertical {
+      0% { 
+        transform: translate(0px, 180px) scale(1.3); 
+        opacity: 0; 
+      }
+      3% { opacity: 1; }
+      33.3%, 66.6% { 
+        transform: translate(0px, 0px) scale(1); 
+        opacity: 1; 
+      }
+      83.3% {
+        transform: translate(0px, 70px) scale(1.12);
+        opacity: 1;
+      }
+      92% {
+        transform: translate(0px, 100px) scale(1.18);
+        opacity: 0;
+      }
+      100% { 
+        transform: translate(0px, 190px) scale(1.3); 
+        opacity: 0; 
+      }
+    }
+
+    /* Taillights */
+    .taillights {
+      animation: brake-lights 12s ease-in-out infinite;
+    }
+    @keyframes brake-lights {
+      0%, 28% { fill: #B71C1C; filter: drop-shadow(0 0 0px transparent); }
+      33.3%, 38% { fill: #FF1744; filter: drop-shadow(0 0 10px #FF1744); }
+      60%, 66.6% { fill: #FF1744; filter: drop-shadow(0 0 10px #FF1744); }
+      71.6%, 100% { fill: #B71C1C; filter: drop-shadow(0 0 0px transparent); }
+    }
+
+    /* 5. Music Notes */
+    #music-notes {
+      opacity: 0;
+      animation: music-float 12s ease-in-out infinite;
+      transform-origin: 180px 100px;
+    }
+
+    @keyframes music-float {
+      0%, 33.3% { opacity: 0; transform: translate(0px, 10px) scale(0.8); }
+      38.3% { opacity: 1; }
+      61.6% { opacity: 1; transform: translate(-15px, -35px) scale(1.1); }
+      66.6%, 100% { opacity: 0; transform: translate(-25px, -50px) scale(0.8); }
+    }
+
+    .note-pulse {
+      animation: note-wiggle 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes note-wiggle {
+      0% { transform: rotate(-5deg); }
+      100% { transform: rotate(10deg); }
+    }
+  </style>
+
+  <!-- Night Sky Canvas -->
+  <rect id="background" width="100%" height="100%" rx="16" />
+
+  <!-- Moon in Sky -->
+  <path d="M430,35 A18,18 0 0,1 410,65 A22,22 0 1,0 430,35 Z" fill="#ECEFF1" opacity="0.85" />
+
+  <!-- Ground &amp; Wide Driveway Perspective -->
+  <rect class="ground-pavement" x="0" y="300" width="500" height="180" />
+  <polygon class="driveway-laneway" points="230,280 390,280 480,480 140,480" />
+
+  <!-- ==========================================================
+       HOUSE STRUCTURE
+       ========================================================== -->
+  <g id="house" transform="translate(30, 90)">
+    <!-- Warm garage light spilling onto the driveway -->
+    <path class="garage-light-spill" d="M250,215 L370,215 L410,330 L210,330 Z" />
+
+    <!-- Main House Body -->
+    <rect class="wall-main" x="50" y="100" width="200" height="140" rx="2" />
+    <!-- Roof Main -->
+    <polygon class="roof-main" points="30,100 150,10 270,100" />
+    <polygon class="trim" points="30,100 150,10 42,100" opacity="0.3" />
+
+    <!-- Garage Extension Body -->
+    <rect class="wall-main" x="230" y="130" width="160" height="110" rx="2" />
+    <path class="roof-main" d="M220,130 L400,130 L380,100 L240,100 Z" />
+
+    <!-- Front Door -->
+    <rect class="door-main" x="180" y="165" width="38" height="75" rx="2" />
+    <circle cx="187" cy="205" r="2.5" fill="#FFB74D" />
+
+    <!-- ==========================================================
+         WINDOWS
+         ========================================================== -->
+    <!-- Window 1: Attic Oval -->
+    <circle class="window-dark" cx="150" cy="55" r="18" />
+    <circle class="window-light" cx="150" cy="55" r="18" />
+    <circle cx="150" cy="55" r="18" fill="none" stroke="#263238" stroke-width="3" />
+
+    <!-- Window 2: Ground Floor Left -->
+    <rect class="window-dark" x="75" y="140" width="50" height="45" rx="3" />
+    <rect class="window-light" x="75" y="140" width="50" height="45" rx="3" />
+    <rect x="75" y="140" width="50" height="45" rx="3" fill="none" stroke="#263238" stroke-width="3" />
+    <line x1="100" y1="140" x2="100" y2="185" stroke="#263238" stroke-width="2" />
+    <line x1="75" y1="162.5" x2="125" y2="162.5" stroke="#263238" stroke-width="2" />
+
+    <!-- ==========================================================
+         GARAGE DOOR &amp; INTERIOR ANIMATED GLOW
+         ========================================================== -->
+    <!-- Dark Interior Cavity Base -->
+    <rect fill="#121212" x="250" y="150" width="120" height="90" rx="2" />
+    
+    <!-- Dynamic Glowing Interior Light (Animated overlay) -->
+    <rect class="garage-glow" x="250" y="150" width="120" height="90" rx="2" />
+
+    <!-- Garage Outer Frame -->
+    <rect x="245" y="145" width="130" height="95" rx="3" fill="none" stroke="#78909C" stroke-width="6" />
+    
+    <!-- Retracting Slat Door -->
+    <g clip-path="url(#garage-clip)">
+      <g id="garage-door-slats">
+        <rect fill="#78909C" x="250" y="150" width="120" height="90" />
+        <line x1="250" y1="168" x2="370" y2="168" stroke="#455A64" stroke-width="2.5" />
+        <line x1="250" y1="186" x2="370" y2="186" stroke="#455A64" stroke-width="2.5" />
+        <line x1="250" y1="204" x2="370" y2="204" stroke="#455A64" stroke-width="2.5" />
+        <line x1="250" y1="222" x2="370" y2="222" stroke="#455A64" stroke-width="2.5" />
+      </g>
+    </g>
+
+    <!-- ==========================================================
+         MUSIC NOTES
+         ========================================================== -->
+    <g id="music-notes">
+      <g class="note-pulse">
+        <path fill="#29B6F6" transform="translate(130, -10) scale(1.2)"
+              d="M12 3v10.55A4 4 0 0 0 10 13a4 4 0 0 0-4 4a4 4 0 0 0 4 4a4 4 0 0 0 4-4V7h4V3h-6z" />
+        <path fill="#81D4FA" transform="translate(160, 10) scale(0.9)"
+              d="M12 3v10.55A4 4 0 0 0 10 13a4 4 0 0 0-4 4a4 4 0 0 0 4 4a4 4 0 0 0 4-4V7h4V3h-6z" />
+        <path fill="#FFD54F" transform="translate(110, 15) scale(0.9)"
+              d="M12 3v10.55A4 4 0 0 0 10 13a4 4 0 0 0-4 4a4 4 0 0 0 4 4a4 4 0 0 0 4-4V7h4V3h-6z" />
+      </g>
+    </g>
+  </g>
+
+  <!-- ==========================================================
+       ARRIVING CAR: BRIGHT RED 1990s SEDAN
+       ========================================================== -->
+  <g id="car-group">
+    <g transform="translate(260, 310)" filter="url(#mdi-shadow)">
+      
+      <!-- Rear Tires -->
+      <rect x="4" y="44" width="14" height="16" rx="3" fill="#111111" />
+      <rect x="72" y="44" width="14" height="16" rx="3" fill="#111111" />
+
+      <!-- Lower Bumper / Underbody -->
+      <rect x="8" y="42" width="74" height="12" rx="3" fill="#1C1C1C" />
+
+      <!-- Main Body Lower Shell -->
+      <path d="M 6,28 L 10,24 L 80,24 L 84,28 L 82,45 L 8,45 Z" fill="#D32F2F" />
+
+      <!-- Rear Trunk Lid Flat Top -->
+      <polygon points="12,24 16,18 74,18 78,24" fill="#E53935" />
+
+      <!-- Cabin Roof Slanted Pillars &amp; Rear Window -->
+      <path d="M 18,18 L 24,4 L 66,4 L 72,18 Z" fill="#C62828" />
+      <polygon points="21,16 26,6 64,6 69,16" fill="#81D4FA" opacity="0.8" />
+
+      <!-- Trunk Keyhole &amp; Chrome Trim -->
+      <rect x="42" y="28" width="6" height="2" fill="#FFFFFF" rx="0.5" />
+      <circle cx="45" cy="35" r="1.5" fill="#212121" />
+
+      <!-- 90s Light Bar Housing -->
+      <rect x="10" y="27" width="70" height="11" rx="2" fill="#1A0000" stroke="#B71C1C" stroke-width="1" />
+
+      <!-- License Plate Recess -->
+      <rect x="33" y="28" width="24" height="9" rx="1" fill="#FFFFFF" />
+      <rect x="37" y="30" width="16" height="5" fill="#212121" />
+
+      <!-- Taillights &amp; Amber Signals -->
+      <rect class="taillights" x="12" y="29" width="12" height="7" rx="1" fill="#B71C1C" />
+      <rect x="24" y="29" width="6" height="7" fill="#FF8F00" />
+      <rect x="60" y="29" width="6" height="7" fill="#FF8F00" />
+      <rect class="taillights" x="66" y="29" width="12" height="7" rx="1" fill="#B71C1C" />
+
+    </g>
+  </g>
+</svg>
