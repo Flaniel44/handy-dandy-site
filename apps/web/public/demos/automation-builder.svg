@@ -1,0 +1,270 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%" id="ifttt-home-automation-root">
+  <defs>
+    <filter id="shadow-card" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+    <filter id="shadow-node" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+    <filter id="glow-cyan" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#00E5FF" flood-opacity="0.85" />
+    </filter>
+    <filter id="data-pulse-glow" x="-35" y="-35" width="70" height="70" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="0" stdDeviation="4.5" flood-color="#00E5FF" flood-opacity="0.55" />
+    </filter>
+    <filter id="glow-green" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#00E676" flood-opacity="0.85" />
+    </filter>
+    <filter id="glow-warm" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#FFD54F" flood-opacity="0.6" />
+    </filter>
+    <linearGradient id="card-grad-trigger" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#263238" />
+      <stop offset="100%" stop-color="#192125" />
+    </linearGradient>
+    <linearGradient id="lamp-light-beam" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFD54F" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#FFD54F" stop-opacity="0" />
+    </linearGradient>
+    <pattern id="blueprint-small-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#4C9AB8" stroke-width="0.7" opacity="0.16" />
+    </pattern>
+    <pattern id="blueprint-grid" width="100" height="100" patternUnits="userSpaceOnUse">
+      <rect width="100" height="100" fill="url(#blueprint-small-grid)" />
+      <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#6EC5DF" stroke-width="1.4" opacity="0.25" />
+    </pattern>
+  </defs>
+
+  <style>
+    #motion-radar-ring {
+      animation: radar-ping 2.5s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+      transform-origin: 90px 220px;
+    }
+    @keyframes radar-ping {
+      0% { r: 15px; opacity: 0.9; stroke-width: 3px; }
+      70% { r: 50px; opacity: 0.1; stroke-width: 1px; }
+      100% { r: 55px; opacity: 0; stroke-width: 0px; }
+    }
+
+    #motion-icon-glow {
+      animation: sensor-alert 2.5s ease-in-out infinite;
+    }
+    @keyframes sensor-alert {
+      0%, 100% { fill: #FF6D00; filter: drop-shadow(0 0 2px #FF6D00); }
+      20%, 45% { fill: #FF9E80; filter: drop-shadow(0 0 8px #FF6D00); }
+    }
+
+    #lock-body-assembly {
+      animation: lock-body-swing 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      transform-origin: 28px 16px;
+    }
+    #lock-status-dot {
+      animation: lock-color-swap 2.5s ease-in-out infinite;
+    }
+    @keyframes lock-body-swing {
+      0%, 67% { transform: rotate(0deg); }
+      70%, 90% { transform: rotate(-35deg); }
+      100% { transform: rotate(0deg); }
+    }
+    @keyframes lock-color-swap {
+      0%, 67% { fill: #FF5252; filter: none; }
+      70%, 90% { fill: #00E676; filter: drop-shadow(0 0 5px #00E676); }
+      100% { fill: #FF5252; filter: none; }
+    }
+
+    #hallway-light-cone,
+    #bulb-filament {
+      animation: light-turn-on 2.5s ease-in-out infinite;
+    }
+    @keyframes light-turn-on {
+      0%, 71% { opacity: 0; }
+      74%, 90% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    #thermostat-dial-indicator {
+      animation: temp-dial-spin 2.5s ease-in-out infinite;
+      transform-origin: 500px 375px;
+    }
+    #thermostat-text-readout {
+      animation: temp-text-switch 2.5s step-end infinite;
+    }
+    @keyframes temp-dial-spin {
+      0%, 74% { transform: rotate(0deg); }
+      77%, 90% { transform: rotate(42deg); }
+      100% { transform: rotate(0deg); }
+    }
+    @keyframes temp-text-switch {
+      0%, 74% { fill: #90A4AE; }
+      75%, 90% { fill: #00E5FF; }
+    }
+  </style>
+
+  <rect width="800" height="500" rx="16" fill="#10232D" />
+  <rect width="800" height="500" rx="16" fill="url(#blueprint-grid)" />
+
+  <g id="circuit-traces" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 160 220 L 280 220" stroke="#37474F" stroke-width="4" />
+    <path d="M 340 220 L 380 220 L 380 145 L 420 145" stroke="#37474F" stroke-width="3" />
+    <path d="M 340 220 L 420 220" stroke="#37474F" stroke-width="3" />
+    <path d="M 340 220 L 380 220 L 380 375 L 420 375" stroke="#37474F" stroke-width="3" />
+  </g>
+
+  <!-- The trigger reaches THEN first; only afterward do three new pulses split toward the actions. -->
+  <g id="data-pulses">
+    <rect x="-7" y="-3" width="14" height="6" rx="3" fill="#00E5FF" filter="url(#data-pulse-glow)" opacity="0">
+      <animateMotion
+        dur="2.5s"
+        repeatCount="indefinite"
+        path="M 160 220 L 280 220"
+        keyPoints="0;0;1;1"
+        keyTimes="0;0.08;0.38;1"
+        calcMode="linear"
+        rotate="auto"
+      />
+      <animate
+        attributeName="opacity"
+        dur="2.5s"
+        repeatCount="indefinite"
+        values="0;1;1;0;0"
+        keyTimes="0;0.08;0.38;0.4;1"
+      />
+    </rect>
+
+    <rect x="-7" y="-3" width="14" height="6" rx="3" fill="#00E5FF" filter="url(#data-pulse-glow)" opacity="0">
+      <animateMotion
+        dur="2.5s"
+        repeatCount="indefinite"
+        path="M 340 220 L 380 220 L 380 145 L 420 145"
+        keyPoints="0;0;1;1"
+        keyTimes="0;0.42;0.68;1"
+        calcMode="linear"
+        rotate="auto"
+      />
+      <animate
+        attributeName="opacity"
+        dur="2.5s"
+        repeatCount="indefinite"
+        values="0;0;1;1;0;0"
+        keyTimes="0;0.419;0.42;0.68;0.7;1"
+      />
+    </rect>
+
+    <rect x="-7" y="-3" width="14" height="6" rx="3" fill="#00E5FF" filter="url(#data-pulse-glow)" opacity="0">
+      <animateMotion
+        dur="2.5s"
+        repeatCount="indefinite"
+        path="M 340 220 L 420 220"
+        keyPoints="0;0;1;1"
+        keyTimes="0;0.42;0.72;1"
+        calcMode="linear"
+        rotate="auto"
+      />
+      <animate
+        attributeName="opacity"
+        dur="2.5s"
+        repeatCount="indefinite"
+        values="0;0;1;1;0;0"
+        keyTimes="0;0.419;0.42;0.72;0.74;1"
+      />
+    </rect>
+
+    <rect x="-7" y="-3" width="14" height="6" rx="3" fill="#00E5FF" filter="url(#data-pulse-glow)" opacity="0">
+      <animateMotion
+        dur="2.5s"
+        repeatCount="indefinite"
+        path="M 340 220 L 380 220 L 380 375 L 420 375"
+        keyPoints="0;0;1;1"
+        keyTimes="0;0.42;0.75;1"
+        calcMode="linear"
+        rotate="auto"
+      />
+      <animate
+        attributeName="opacity"
+        dur="2.5s"
+        repeatCount="indefinite"
+        values="0;0;1;1;0;0"
+        keyTimes="0;0.419;0.42;0.75;0.77;1"
+      />
+    </rect>
+  </g>
+
+  <g id="header-bar" transform="translate(30, 25)">
+    <rect width="210" height="34" rx="17" fill="#263238" />
+    <circle cx="17" cy="17" r="7" fill="#00E676" filter="url(#glow-green)" />
+    <text x="36" y="22" font-family="sans-serif" font-weight="bold" font-size="14" fill="#ECEFF1" letter-spacing="0.5">ROUTINE ACTIVE</text>
+  </g>
+
+  <g id="card-if-this" transform="translate(30, 105)" filter="url(#shadow-card)">
+    <rect width="130" height="230" rx="12" fill="url(#card-grad-trigger)" stroke="#FF6D00" stroke-width="1.5" />
+    <rect x="12" y="12" width="75" height="24" rx="6" fill="#FF6D00" opacity="0.25" />
+    <text x="50" y="28" font-family="sans-serif" font-weight="bold" font-size="12" fill="#FF9E80" text-anchor="middle">IF THIS</text>
+    <g transform="translate(65, 115)">
+      <circle id="motion-radar-ring" cx="0" cy="0" r="15" fill="none" stroke="#FF6D00" />
+      <circle cx="0" cy="0" r="28" fill="#1C2428" stroke="#37474F" stroke-width="2" />
+      <circle cx="0" cy="0" r="20" fill="#263238" />
+      <path id="motion-icon-glow" fill="#FF6D00" d="M -8,-2 L 8,-2 L 12,6 L -12,6 Z M 0,-10 L 6,-3 L -6,-3 Z M -6,8 L 6,8 L 0,14 Z" />
+    </g>
+    <text x="65" y="180" font-family="sans-serif" font-weight="bold" font-size="14" fill="#FFFFFF" text-anchor="middle">FRONT DOOR</text>
+    <text x="65" y="200" font-family="sans-serif" font-weight="bold" font-size="12" fill="#FF9E80" text-anchor="middle">Motion Detected</text>
+  </g>
+
+  <g id="logic-hub-node" transform="translate(280, 175)" filter="url(#shadow-node)">
+    <rect width="60" height="90" rx="10" fill="#10171A" stroke="#00E5FF" stroke-width="2" filter="url(#glow-cyan)" />
+    <path fill="none" stroke="#00E5FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+          d="M 18,34 L 32,45 L 18,56 M 32,45 L 44,45" />
+    <text x="30" y="76" font-family="sans-serif" font-weight="bold" font-size="11" fill="#B0BEC5" text-anchor="middle">THEN</text>
+  </g>
+
+  <g id="card-action-lock" transform="translate(420, 85)">
+    <rect width="335" height="90" rx="12" fill="#0B0D16" stroke="#37474F" stroke-width="1.5" />
+    <g transform="translate(15, 12)">
+      <rect width="66" height="66" rx="8" fill="#1E1E1E" stroke="#2C2C2C" />
+      <g transform="translate(15, 12)">
+        <path fill="none" stroke="#ECEFF1" stroke-width="3.5" stroke-linecap="round"
+              d="M 8,16 L 8,10 C 8,4.5 12.5,1 18,1 C 23.5,1 28,4.5 28,10 L 28,16" />
+        <g id="lock-body-assembly">
+          <rect x="2" y="15" width="32" height="26" rx="4" fill="#37474F" stroke="#455A64" stroke-width="1" />
+          <circle id="lock-status-dot" cx="18" cy="28" r="4.5" fill="#FF5252" />
+        </g>
+      </g>
+    </g>
+    <text x="98" y="38" font-family="sans-serif" font-weight="bold" font-size="15" fill="#FFFFFF">ENTRYWAY LOCK</text>
+    <text x="98" y="60" font-family="sans-serif" font-size="13" fill="#90A4AE">Action: <tspan fill="#00E676" font-weight="bold">Unlock Door</tspan></text>
+  </g>
+
+  <g id="card-action-light" transform="translate(420, 190)">
+    <rect width="335" height="90" rx="12" fill="#0B0D16" stroke="#37474F" stroke-width="1.5" />
+    <polygon id="hallway-light-cone" points="48,22 18,78 78,78" fill="url(#lamp-light-beam)" opacity="0" />
+    <g transform="translate(15, 12)">
+      <rect width="66" height="66" rx="8" fill="#1E1E1E" stroke="#2C2C2C" />
+      <g transform="translate(18, 12)">
+        <path id="bulb-filament" fill="#FFD54F" filter="url(#glow-warm)" opacity="0"
+              d="M 15,2 A 11,11 0 0,0 6,18 C 8.5,21.5 10,23.5 10,26 L 20,26 C 20,23.5 21.5,21.5 24,18 A 11,11 0 0,0 15,2 Z" />
+        <path fill="none" stroke="#ECEFF1" stroke-width="2" stroke-linejoin="round"
+              d="M 15,2 A 11,11 0 0,0 6,18 C 8.5,21.5 10,23.5 10,26 L 20,26 C 20,23.5 21.5,21.5 24,18 A 11,11 0 0,0 15,2 Z" />
+        <rect x="11" y="27" width="8" height="4" rx="1" fill="#90A4AE" />
+        <rect x="12" y="32" width="6" height="2" rx="1" fill="#607D8B" />
+      </g>
+    </g>
+    <text x="98" y="38" font-family="sans-serif" font-weight="bold" font-size="15" fill="#FFFFFF">HALLWAY LIGHTS</text>
+    <text x="98" y="60" font-family="sans-serif" font-size="13" fill="#90A4AE">Action: <tspan fill="#FFD54F" font-weight="bold">Set Brightness 80%</tspan></text>
+  </g>
+
+  <g id="card-action-climate" transform="translate(420, 295)">
+    <rect width="335" height="90" rx="12" fill="#0B0D16" stroke="#37474F" stroke-width="1.5" />
+    <g transform="translate(15, 12)">
+      <rect width="66" height="66" rx="8" fill="#1E1E1E" stroke="#2C2C2C" />
+      <g transform="translate(33, 33)">
+        <circle cx="0" cy="0" r="22" fill="#263238" stroke="#455A64" stroke-width="2" />
+        <circle cx="0" cy="0" r="17" fill="#10171A" />
+        <g id="thermostat-dial-indicator">
+          <line x1="0" y1="-12" x2="0" y2="-16" stroke="#00E5FF" stroke-width="3" stroke-linecap="round" filter="url(#glow-cyan)" />
+        </g>
+        <text id="thermostat-text-readout" x="0" y="5" font-family="sans-serif" font-weight="bold" font-size="13" fill="#90A4AE" text-anchor="middle">21&#176;</text>
+      </g>
+    </g>
+    <text x="98" y="38" font-family="sans-serif" font-weight="bold" font-size="15" fill="#FFFFFF">THERMOSTAT</text>
+    <text x="98" y="60" font-family="sans-serif" font-size="13" fill="#90A4AE">Action: <tspan fill="#00E5FF" font-weight="bold">Set Home Temp 21&#176;C</tspan></text>
+  </g>
+</svg>

@@ -10,6 +10,7 @@ const demoAnimationSources: Record<string, string> = {
   "05": "/demos/physical-controls.svg",
   "06": "/demos/phone-tap-routine.svg",
   "07": "/demos/qr-code-guest-wifi.svg",
+  "08": "/demos/automation-builder.svg",
 };
 const possibilitySections = [
   {
@@ -40,8 +41,8 @@ const possibilitySections = [
       },
       {
         number: "04",
-        title: "Can my home get ready when I arrive—and power down when I leave?",
-        emphasis: "get ready when I arrive—and power down when I leave",
+        title: "Can my home react to my arrival and departure?",
+        emphasis: "arrival and departure",
         description: "Yes. Your home can prepare for your arrival, then turn off selected lights and devices after everyone has left.",
         mediaLabel: "Arrival and departure automation",
       },
@@ -55,7 +56,7 @@ const possibilitySections = [
       {
         number: "05",
         title: "Can I have simple physical controls in every room?",
-        emphasis: "physical controls in every room",
+        emphasis: "physical controls",
         description: "Absolutely. Buttons can control lights, music, scenes, or almost any connected device—and do something different when pressed, held, or pressed multiple times.",
         mediaLabel: "Custom physical button controls",
       },
@@ -76,7 +77,7 @@ const possibilitySections = [
       {
         number: "08",
         title: "Can I build my own automations without learning to code?",
-        emphasis: "build my own automations",
+        emphasis: "build my own",
         description: "Absolutely. Think of it as: IF this happens, THEN do that. If motion is detected, turn on a light. If you leave home, switch everything off.",
         mediaLabel: "If-this-then-that automation builder",
       },
@@ -89,8 +90,8 @@ const possibilitySections = [
     items: [
       {
         number: "09",
-        title: "Can older remote-controlled devices become part of my smart home?",
-        emphasis: "older remote-controlled devices",
+        title: "Can older devices become part of my smart home?",
+        emphasis: "older devices",
         description: "In many cases, yes. An infrared controller can automate televisions, stereos, air conditioners, and other devices that normally need an IR remote.",
         mediaLabel: "Infrared remote automation demo",
       },
@@ -103,13 +104,6 @@ const possibilitySections = [
     items: [
       {
         number: "10",
-        title: "Do I need to replace everything to make my home smart?",
-        emphasis: "replace everything",
-        description: "No. Many existing appliances can gain smart control through plugs, relays, infrared controllers, or button pushers.",
-        mediaLabel: "Non-smart device conversion examples",
-      },
-      {
-        number: "11",
         title: "Can my coffee maker start itself every morning?",
         emphasis: "coffee maker start itself",
         description: "Yes. A scheduled button pusher can start a compatible coffee maker—or press another everyday button automatically.",
@@ -123,7 +117,7 @@ const possibilitySections = [
     title: "Your home at a glance",
     items: [
       {
-        number: "12",
+        number: "11",
         title: "Can one simple screen control my home and show useful information?",
         emphasis: "control my home and show useful information",
         description: "Yes. A Home Assistant dashboard can bring your devices and automations together, while smart or e-ink displays can show calendars, weather, reminders, and device status without becoming another distraction.",
@@ -178,7 +172,10 @@ export default function DemosPage() {
           <section className="possibility-section" id={section.id} key={section.id} aria-label={section.title}>
             <div className="possibility-section-grid">
               {section.items.map((item) => (
-                <article className="possibility-card" key={item.number}>
+                <article
+                  className={`possibility-card ${item.number === "08" ? "has-wide-demo" : ""}`}
+                  key={item.number}
+                >
                   <div className={`possibility-media ${demoAnimationSources[item.number] ? "has-demo-animation" : ""}`}>
                     <span>{item.number}</span>
                     {demoAnimationSources[item.number] ? (

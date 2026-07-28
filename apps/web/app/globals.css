@@ -183,9 +183,11 @@ a { color: inherit; }
 .possibilities-topics a:hover, .possibilities-topics a:focus-visible { padding-left: 6px; color: var(--ink); }
 .possibilities-grid { display: grid; gap: clamp(100px, 15vw, 190px); }
 .possibility-section { scroll-margin-top: 50px; }
-.possibility-section-grid { display: grid; gap: clamp(55px, 9vw, 110px); }
+.possibility-section-grid { display: grid; gap: clamp(70px, 10vw, 130px); }
 .possibility-card { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: clamp(30px, 6vw, 80px); align-items: center; }
+.possibility-card.has-wide-demo { grid-template-columns: minmax(280px, .55fr) minmax(0, 1.55fr); gap: clamp(28px, 4vw, 52px); }
 .possibility-section-grid .possibility-card:nth-child(even) .possibility-media { order: 2; }
+.possibility-section-grid .possibility-card.has-wide-demo .possibility-media { order: 2; width: 100%; min-height: 0; }
 .possibility-media { position: relative; min-height: clamp(270px, 42vw, 500px); display: grid; align-content: center; justify-items: center; padding: 30px; overflow: hidden; border: 1px solid #343c5b; border-radius: 14px; background: linear-gradient(135deg, #171d31, #10131f); color: var(--muted); text-align: center; }
 .possibility-media::before { content: ""; position: absolute; width: 55%; aspect-ratio: 1; border: 1px solid #8279e555; border-radius: 50%; box-shadow: 0 0 80px #6259c333; }
 .possibility-media.has-demo-animation::before { display: none; }
@@ -195,6 +197,8 @@ a { color: inherit; }
 .possibility-media p { color: var(--ink); font-size: .8rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .possibility-media small { margin-top: 8px; color: var(--muted); }
 .possibility-demo-animation { position: relative; z-index: 1; width: min(100%, 500px); aspect-ratio: 1; }
+.possibility-card.has-wide-demo .possibility-demo-animation { width: 100%; max-width: none; aspect-ratio: 8 / 5; }
+.possibility-card.has-wide-demo .possibility-copy { width: 100%; }
 .possibility-copy > span { color: #f25d9c; font-size: .72rem; font-weight: 800; letter-spacing: .15em; }
 .possibility-copy h3 { margin: 15px 0 20px; color: #d4d1c9; font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Helvetica Neue", Arial, sans-serif; font-size: clamp(2rem, 4vw, 4rem); font-weight: 100; line-height: .98; letter-spacing: -.04em; }
 .possibility-copy h3 strong { color: var(--ink); font-weight: 700; }
@@ -207,8 +211,10 @@ a { color: inherit; }
   .possibilities-page { padding-top: 120px; }
   .possibilities-hero { grid-template-columns: 1fr; gap: 50px; padding-bottom: 90px; }
   .possibilities-grid { gap: 110px; }
+  .possibility-section-grid { gap: 105px; }
   .possibility-card { grid-template-columns: 1fr; }
-  .possibility-section-grid .possibility-card:nth-child(even) .possibility-media { order: 0; }
+  .possibility-card.has-wide-demo { grid-template-columns: 1fr; }
+  .possibility-section-grid .possibility-card:nth-child(n) .possibility-media { order: 0; }
   .possibility-media { min-height: 280px; }
   .possibilities-cta { padding-inline: 24px; }
 }
