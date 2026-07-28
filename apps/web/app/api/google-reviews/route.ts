@@ -30,7 +30,7 @@ export async function GET() {
   if (!apiKey || !placeId) {
     return NextResponse.json({
       configured: false,
-      placeName: "Digital HandyDan",
+      placeName: "Digital Handyman",
       rating: null,
       reviewCount: 0,
       reviewsUrl: configuredReviewsUrl,
@@ -72,7 +72,7 @@ export async function GET() {
     return NextResponse.json(
       {
         configured: true,
-        placeName: place.displayName?.text || "Digital HandyDan",
+        placeName: place.displayName?.text || "Digital Handyman",
         rating: place.rating ?? null,
         reviewCount: place.userRatingCount ?? reviews.length,
         reviewsUrl: place.googleMapsUri || configuredReviewsUrl,
@@ -89,7 +89,7 @@ export async function GET() {
     return NextResponse.json(
       {
         configured: true,
-        placeName: "Digital HandyDan",
+        placeName: "Digital Handyman",
         rating: null,
         reviewCount: 0,
         reviewsUrl: configuredReviewsUrl,

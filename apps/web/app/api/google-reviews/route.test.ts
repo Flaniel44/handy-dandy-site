@@ -27,7 +27,7 @@ describe("GET /api/google-reviews", () => {
     vi.stubEnv("GOOGLE_PLACES_API_KEY", "secret-key");
     vi.stubEnv("GOOGLE_PLACE_ID", "place-123");
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      displayName: { text: "Digital HandyDan" },
+      displayName: { text: "Digital Handyman" },
       rating: 5,
       userRatingCount: 1,
       googleMapsUri: "https://maps.google.com/place",

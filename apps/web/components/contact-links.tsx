@@ -51,7 +51,7 @@ function ContactIcon({ name }: { name: ContactIconName }) {
 
 export function ContactLinks({
   className = "",
-  title = "Contact Digital HandyDan",
+  title = "Contact Digital Handyman",
 }: {
   className?: string;
   title?: string;

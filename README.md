@@ -1,4 +1,4 @@
-# Digital HandyDan
+# Digital Handyman
 
 Web-first booking platform for smart-home consultations and personal technology help.
 

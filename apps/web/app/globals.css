@@ -172,17 +172,17 @@ a { color: inherit; }
 
 .possibilities-page { min-height: 100vh; padding: 150px clamp(20px, 6vw, 90px) 100px; background: radial-gradient(circle at 85% 5%, #342d7055, transparent 30%), var(--night); }
 .possibilities-hero, .possibilities-grid, .possibilities-cta { width: min(100%, 1180px); margin-inline: auto; }
-.possibilities-hero { padding: 4vh 0 14vh; }
-.possibilities-hero h1 { max-width: 900px; margin: 18px 0 30px; font-size: clamp(3.25rem, 7vw, 6.5rem); line-height: .88; letter-spacing: -.058em; }
-.possibilities-hero > p:not(.eyebrow) { max-width: 650px; color: var(--muted); font-size: clamp(1rem, 2vw, 1.2rem); line-height: 1.75; }
-.possibilities-jump { display: inline-flex; gap: 12px; align-items: center; margin-top: 35px; color: var(--ink); font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-decoration: none; text-transform: uppercase; }
-.possibilities-jump span { color: #f4a04f; font-size: 1.2rem; }
+.possibilities-hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: clamp(50px, 8vw, 120px); align-items: end; padding: 4vh 0 14vh; }
+.possibilities-hero-copy h1 { max-width: 900px; margin: 18px 0 30px; font-size: clamp(3.25rem, 7vw, 6.5rem); line-height: .88; letter-spacing: -.058em; }
+.possibilities-hero-copy > p:not(.eyebrow) { max-width: 650px; color: var(--muted); font-size: clamp(1rem, 2vw, 1.2rem); line-height: 1.75; }
+.possibilities-topics > p { margin: 0 0 16px; color: #f25d9c; font-size: .7rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+.possibilities-topics ol { margin: 0; padding: 0; list-style: none; }
+.possibilities-topics a { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; padding: 13px 0; border-top: 1px solid #343c5b; color: var(--muted); font-size: .92rem; line-height: 1.3; text-decoration: none; transition: color .2s ease, padding-left .2s ease; }
+.possibilities-topics li:last-child a { border-bottom: 1px solid #343c5b; }
+.possibilities-topics a span { color: #f4a04f; font-size: .65rem; font-weight: 800; letter-spacing: .12em; }
+.possibilities-topics a:hover, .possibilities-topics a:focus-visible { padding-left: 6px; color: var(--ink); }
 .possibilities-grid { display: grid; gap: clamp(100px, 15vw, 190px); }
 .possibility-section { scroll-margin-top: 50px; }
-.possibility-section-heading { display: grid; grid-template-columns: auto minmax(0, 780px); gap: clamp(18px, 4vw, 48px); align-items: start; margin-bottom: clamp(45px, 8vw, 90px); padding-top: 24px; border-top: 1px solid #343c5b; }
-.possibility-section-heading > span { color: #f4a04f; font-size: .72rem; font-weight: 800; letter-spacing: .15em; }
-.possibility-section-heading h2 { margin: -8px 0 18px; font-size: clamp(2.5rem, 6vw, 5.5rem); line-height: .95; letter-spacing: -.055em; }
-.possibility-section-heading p { max-width: 670px; margin: 0; color: var(--muted); line-height: 1.75; }
 .possibility-section-grid { display: grid; gap: clamp(55px, 9vw, 110px); }
 .possibility-card { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: clamp(30px, 6vw, 80px); align-items: center; }
 .possibility-section-grid .possibility-card:nth-child(even) .possibility-media { order: 2; }
@@ -196,7 +196,8 @@ a { color: inherit; }
 .possibility-media small { margin-top: 8px; color: var(--muted); }
 .possibility-demo-animation { position: relative; z-index: 1; width: min(100%, 500px); aspect-ratio: 1; }
 .possibility-copy > span { color: #f25d9c; font-size: .72rem; font-weight: 800; letter-spacing: .15em; }
-.possibility-copy h3 { margin: 15px 0 20px; font-size: clamp(2rem, 4vw, 4rem); line-height: .98; letter-spacing: -.04em; }
+.possibility-copy h3 { margin: 15px 0 20px; color: #d4d1c9; font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Helvetica Neue", Arial, sans-serif; font-size: clamp(2rem, 4vw, 4rem); font-weight: 100; line-height: .98; letter-spacing: -.04em; }
+.possibility-copy h3 strong { color: var(--ink); font-weight: 700; }
 .possibility-copy p { margin: 0; color: var(--muted); line-height: 1.75; }
 .possibility-copy p strong { color: #f4a04f; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; }
 .possibilities-cta { margin-top: clamp(100px, 18vw, 220px); padding: clamp(45px, 8vw, 90px); border: 1px solid #343c5b; border-radius: 14px; background: #111522; text-align: center; }
@@ -204,10 +205,8 @@ a { color: inherit; }
 
 @media (max-width: 760px) {
   .possibilities-page { padding-top: 120px; }
-  .possibilities-hero { padding-bottom: 90px; }
+  .possibilities-hero { grid-template-columns: 1fr; gap: 50px; padding-bottom: 90px; }
   .possibilities-grid { gap: 110px; }
-  .possibility-section-heading { grid-template-columns: 1fr; gap: 18px; margin-bottom: 45px; }
-  .possibility-section-heading h2 { margin-top: 0; }
   .possibility-card { grid-template-columns: 1fr; }
   .possibility-section-grid .possibility-card:nth-child(even) .possibility-media { order: 0; }
   .possibility-media { min-height: 280px; }

@@ -3,7 +3,7 @@ import { SiteSessionNav } from "../components/site-session-nav";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Digital HandyDan | Smart-home consultations and tech help",
+  title: "Digital Handyman | Smart-home consultations and tech help",
   description: "Friendly, practical smart-home guidance built around your home.",
 };
 

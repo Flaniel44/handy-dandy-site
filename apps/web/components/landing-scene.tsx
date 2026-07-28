@@ -184,7 +184,7 @@ export function LandingScene() {
     const demosButton = root.querySelector<HTMLButtonElement>("[data-action='demos']");
     if (demosButton) demosButton.textContent = "What's Possible?";
     const businessName = root.querySelector<HTMLElement>(".name-ph");
-    if (businessName) businessName.textContent = "Digital HandyDan";
+    if (businessName) businessName.textContent = "Digital Handyman";
     const actions = root.querySelector<HTMLElement>(".cta-row");
     let reviewJump = root.querySelector<HTMLAnchorElement>(".landing-review-jump");
     if (actions && !reviewJump) {
@@ -670,19 +670,19 @@ export function LandingScene() {
 
   return (
     <main className="landing-page">
-      <section className="landing-hero" aria-label="Digital HandyDan">
+      <section className="landing-hero" aria-label="Digital Handyman">
         <div
           ref={containerRef}
           className="landing-scene-shell"
           dangerouslySetInnerHTML={{
-            __html: landingSceneMarkup.replace(">Handy Dandy</p>", ">Digital HandyDan</p>"),
+            __html: landingSceneMarkup.replace(">Handy Dandy</p>", ">Digital Handyman</p>"),
           }}
         />
       </section>
       <GoogleReviews />
       <footer className="landing-footer">
         <ContactLinks className="landing-contact" title="Let’s get connected" />
-        <p>© {new Date().getFullYear()} Digital HandyDan</p>
+        <p>© {new Date().getFullYear()} Digital Handyman</p>
       </footer>
       <style>{`
         .scene-root.lit .lamp { animation: lampFlicker 1s steps(1, end) forwards !important; }

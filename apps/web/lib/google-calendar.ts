@@ -131,7 +131,7 @@ export async function createGoogleEventForAppointment(appointmentId: string) {
   const response = await googleFetch(`/calendars/${encodeURIComponent(connection.calendarId)}/events`, accessToken, {
     method: "POST",
     body: JSON.stringify({
-      summary: `Digital HandyDan: ${row.serviceName} — ${row.customerName}`,
+      summary: `Digital Handyman: ${row.serviceName} — ${row.customerName}`,
       description: [`Client: ${row.customerName} <${row.customerEmail}>`, row.clientNotes && `Client notes: ${row.clientNotes}`, row.adminNotes && `Admin notes: ${row.adminNotes}`].filter(Boolean).join("\n\n"),
       start: { dateTime: row.startsAt.toISOString() }, end: { dateTime: row.endsAt.toISOString() },
       extendedProperties: { private: { handyDandyAppointmentId: appointmentId } },
