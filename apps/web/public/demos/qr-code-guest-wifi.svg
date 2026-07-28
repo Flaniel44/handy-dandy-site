@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 500" width="100%" height="100%" id="wifi-qr-scan-root">
+  <defs>
+    <filter id="shadow-deep" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+    <filter id="shadow-soft" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.3" />
+    </filter>
+    <filter id="wifi-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#00E676" flood-opacity="0.9" />
+    </filter>
+    <radialGradient id="scan-beam-grad" cx="50%" cy="0%" r="100%">
+      <stop offset="0%" stop-color="#00E5FF" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#00E5FF" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="blue-lamp-flare" cx="50%" cy="0%" r="100%">
+      <stop offset="0%" stop-color="#00E5FF" stop-opacity="0.8" />
+      <stop offset="35%" stop-color="#00B0FF" stop-opacity="0.45" />
+      <stop offset="70%" stop-color="#0088FF" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#0088FF" stop-opacity="0" />
+    </radialGradient>
+    <clipPath id="phone-screen-clip">
+      <rect x="5" y="8" width="95" height="174" rx="12" />
+    </clipPath>
+    <clipPath id="scene-bounds">
+      <rect x="0" y="0" width="600" height="500" />
+    </clipPath>
+  </defs>
+
+  <style>
+    #blue-light-cone {
+      animation: blue-cone-flash 8s ease-in-out infinite;
+      transform-origin: 300px 50px;
+    }
+    @keyframes blue-cone-flash {
+      0%, 42% { opacity: 0; transform: scale(0.85); }
+      46% { opacity: 1; transform: scale(1.15); }
+      50% { opacity: 0.25; transform: scale(0.95); }
+      54% { opacity: 1; transform: scale(1.15); }
+      60%, 100% { opacity: 0; transform: scale(0.85); }
+    }
+
+    #ceiling-lamp-glow {
+      animation: lamp-glow-sequence 8s ease-in-out infinite;
+    }
+    @keyframes lamp-glow-sequence {
+      0%, 42% { fill: #FFF176; filter: none; }
+      46% { fill: #00E5FF; filter: drop-shadow(0 0 12px #00E5FF); }
+      50% { fill: #FFF176; filter: none; }
+      54% { fill: #00E5FF; filter: drop-shadow(0 0 12px #00E5FF); }
+      60%, 100% { fill: #FFF176; filter: none; }
+    }
+
+    #phone-scanner-line {
+      animation: scan-laser 8s linear infinite;
+    }
+    @keyframes scan-laser {
+      0% { transform: translateY(0px); opacity: 0; }
+      5% { opacity: 1; }
+      28% { transform: translateY(110px); opacity: 1; }
+      32%, 100% { opacity: 0; transform: translateY(0px); }
+    }
+
+    #viewfinder-box {
+      animation: viewfinder-state 8s linear infinite;
+    }
+    @keyframes viewfinder-state {
+      0%, 30% { stroke: #00E5FF; opacity: 0.9; }
+      33%, 88% { opacity: 0; }
+      92%, 100% { stroke: #00E5FF; opacity: 0.9; }
+    }
+
+    #success-ui-card {
+      animation: success-card-pop 8s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite;
+    }
+    @keyframes success-card-pop {
+      0%, 32% { opacity: 0; transform: scale(0.85); transform-origin: 52.5px 95px; }
+      36%, 88% { opacity: 1; transform: scale(1); transform-origin: 52.5px 95px; }
+      94%, 100% { opacity: 0; transform: scale(0.85); transform-origin: 52.5px 95px; }
+    }
+
+    #first-person-arm {
+      animation: arm-scan-motion 8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+      transform-origin: 300px 500px;
+    }
+    @keyframes arm-scan-motion {
+      0% { transform: translate(0px, 0px) rotate(0deg); }
+      20%, 32% { transform: translate(-10px, -25px) rotate(-1.5deg); }
+      38%, 88% { transform: translate(0px, -10px) rotate(0deg); }
+      100% { transform: translate(0px, 0px) rotate(0deg); }
+    }
+
+    #phone-camera-preview {
+      animation: camera-feed-counter-motion 8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+      transform-origin: 52.5px 95px;
+    }
+    @keyframes camera-feed-counter-motion {
+      0% { transform: translate(0px, -15px) scale(0.52) rotate(10deg); }
+      20%, 32% { transform: translate(16px, 18px) scale(0.52) rotate(11.5deg); }
+      38%, 88% { transform: translate(6px, 2px) scale(0.52) rotate(10deg); }
+      100% { transform: translate(0px, -15px) scale(0.52) rotate(10deg); }
+    }
+  </style>
+
+  <rect id="bg-wall" width="600" height="370" fill="#2E3B42" />
+  <rect id="bg-floor" x="0" y="370" width="600" height="130" fill="#1C1C1C" />
+  <rect id="baseboard" x="0" y="360" width="600" height="10" fill="#212D33" />
+
+  <g id="ceiling-light-fixture" transform="translate(300, 0)">
+    <line x1="0" y1="0" x2="0" y2="35" stroke="#101010" stroke-width="3" />
+    <polygon points="-25,50 25,50 15,35 -15,35" fill="#37474F" />
+    <ellipse id="ceiling-lamp-glow" cx="0" cy="50" rx="18" ry="5" fill="#FFF176" />
+  </g>
+
+  <g id="wifi-qr-plaque" transform="translate(230, 80)" filter="url(#shadow-soft)">
+    <rect x="0" y="0" width="140" height="170" rx="8" fill="#FFFFFF" stroke="#CFD8DC" stroke-width="2" />
+    <g id="mdi-wifi-icon" transform="translate(52, 18) scale(1.5)">
+      <path fill="#0288D1" d="M12,3C7.95,3 4.21,4.34 1.2,6.6L3,9C5.5,7.12 8.62,6 12,6C15.38,6 18.5,7.12 21,9L22.8,6.6C19.79,4.34 16.05,3 12,3M12,9C9.3,9 6.8,9.89 4.8,11.4L6.6,13.8C8.1,12.67 9.97,12 12,12C14.03,12 15.9,12.67 17.4,13.8L19.2,11.4C17.2,9.89 14.7,9 12,9M12,15C10.65,15 9.4,15.45 8.4,16.2L12,21L15.6,16.2C14.6,15.45 13.35,15 12,15Z" />
+    </g>
+    <text x="70" y="73" font-family="sans-serif" font-weight="bold" font-size="10" fill="#37474F" text-anchor="middle">GUEST WI-FI</text>
+    <g id="qr-code-pattern" transform="translate(25, 80)">
+      <rect x="-5" y="-5" width="100" height="85" fill="#FFFFFF" />
+      <rect x="0" y="0" width="24" height="24" fill="#101010" />
+      <rect x="3" y="3" width="18" height="18" fill="#FFFFFF" />
+      <rect x="6" y="6" width="12" height="12" fill="#101010" />
+      <rect x="66" y="0" width="24" height="24" fill="#101010" />
+      <rect x="69" y="3" width="18" height="18" fill="#FFFFFF" />
+      <rect x="72" y="6" width="12" height="12" fill="#101010" />
+      <rect x="0" y="51" width="24" height="24" fill="#101010" />
+      <rect x="3" y="54" width="18" height="18" fill="#FFFFFF" />
+      <rect x="6" y="57" width="12" height="12" fill="#101010" />
+      <rect x="33" y="3" width="6" height="6" fill="#101010" />
+      <rect x="45" y="0" width="6" height="12" fill="#101010" />
+      <rect x="57" y="6" width="6" height="6" fill="#101010" />
+      <rect x="30" y="15" width="12" height="6" fill="#101010" />
+      <rect x="48" y="18" width="12" height="6" fill="#101010" />
+      <rect x="0" y="30" width="6" height="15" fill="#101010" />
+      <rect x="12" y="33" width="12" height="6" fill="#101010" />
+      <rect x="30" y="27" width="6" height="18" fill="#101010" />
+      <rect x="42" y="33" width="18" height="6" fill="#101010" />
+      <rect x="66" y="30" width="12" height="6" fill="#101010" />
+      <rect x="81" y="27" width="9" height="12" fill="#101010" />
+      <rect x="30" y="51" width="12" height="6" fill="#101010" />
+      <rect x="48" y="48" width="6" height="15" fill="#101010" />
+      <rect x="60" y="54" width="12" height="6" fill="#101010" />
+      <rect x="78" y="48" width="12" height="12" fill="#101010" />
+      <rect x="33" y="66" width="18" height="9" fill="#101010" />
+      <rect x="57" y="66" width="9" height="9" fill="#101010" />
+      <rect x="72" y="63" width="12" height="12" fill="#101010" />
+    </g>
+  </g>
+
+  <polygon id="blue-light-cone" points="300,50 0,500 600,500" fill="url(#blue-lamp-flare)" opacity="0" style="mix-blend-mode: screen; pointer-events: none;" />
+
+  <g clip-path="url(#scene-bounds)">
+  <g id="first-person-arm" filter="url(#shadow-deep)">
+    <path d="M 230,650 L 210,360 C 200,320 230,290 270,300 C 300,308 320,330 320,350 L 370,650 Z" fill="#5C382A" />
+    <g id="smartphone" transform="translate(180, 180) rotate(-10)">
+      <rect x="0" y="0" width="105" height="190" rx="16" fill="#212121" stroke="#424242" stroke-width="3" />
+      <rect x="5" y="8" width="95" height="174" rx="12" fill="#12191D" />
+      <g id="viewfinder-group" clip-path="url(#phone-screen-clip)">
+        <g id="phone-camera-preview">
+          <rect x="0" y="0" width="140" height="170" rx="8" fill="#FFFFFF" stroke="#B0BEC5" stroke-width="2" />
+          <g transform="translate(52, 18) scale(1.5)">
+            <path fill="#0288D1" d="M12,3C7.95,3 4.21,4.34 1.2,6.6L3,9C5.5,7.12 8.62,6 12,6C15.38,6 18.5,7.12 21,9L22.8,6.6C19.79,4.34 16.05,3 12,3M12,9C9.3,9 6.8,9.89 4.8,11.4L6.6,13.8C8.1,12.67 9.97,12 12,12C14.03,12 15.9,12.67 17.4,13.8L19.2,11.4C17.2,9.89 14.7,9 12,9M12,15C10.65,15 9.4,15.45 8.4,16.2L12,21L15.6,16.2C14.6,15.45 13.35,15 12,15Z" />
+          </g>
+          <text x="70" y="73" font-family="sans-serif" font-weight="bold" font-size="10" fill="#37474F" text-anchor="middle">GUEST WI-FI</text>
+          <g transform="translate(25, 80)">
+            <rect x="-5" y="-5" width="100" height="85" fill="#FFFFFF" />
+            <rect x="0" y="0" width="24" height="24" fill="#101010" /><rect x="3" y="3" width="18" height="18" fill="#FFFFFF" /><rect x="6" y="6" width="12" height="12" fill="#101010" />
+            <rect x="66" y="0" width="24" height="24" fill="#101010" /><rect x="69" y="3" width="18" height="18" fill="#FFFFFF" /><rect x="72" y="6" width="12" height="12" fill="#101010" />
+            <rect x="0" y="51" width="24" height="24" fill="#101010" /><rect x="3" y="54" width="18" height="18" fill="#FFFFFF" /><rect x="6" y="57" width="12" height="12" fill="#101010" />
+            <rect x="33" y="3" width="6" height="6" fill="#101010" /><rect x="45" y="0" width="6" height="12" fill="#101010" /><rect x="57" y="6" width="6" height="6" fill="#101010" />
+            <rect x="30" y="15" width="12" height="6" fill="#101010" /><rect x="48" y="18" width="12" height="6" fill="#101010" />
+            <rect x="0" y="30" width="6" height="15" fill="#101010" /><rect x="12" y="33" width="12" height="6" fill="#101010" /><rect x="30" y="27" width="6" height="18" fill="#101010" />
+            <rect x="42" y="33" width="18" height="6" fill="#101010" /><rect x="66" y="30" width="12" height="6" fill="#101010" /><rect x="81" y="27" width="9" height="12" fill="#101010" />
+            <rect x="30" y="51" width="12" height="6" fill="#101010" /><rect x="48" y="48" width="6" height="15" fill="#101010" /><rect x="60" y="54" width="12" height="6" fill="#101010" />
+            <rect x="78" y="48" width="12" height="12" fill="#101010" /><rect x="33" y="66" width="18" height="9" fill="#101010" /><rect x="57" y="66" width="9" height="9" fill="#101010" />
+            <rect x="72" y="63" width="12" height="12" fill="#101010" />
+          </g>
+        </g>
+        <rect x="5" y="8" width="95" height="174" rx="12" fill="#00111A" opacity="0.2" />
+        <path id="viewfinder-box" fill="none" stroke="#00E5FF" stroke-width="2.5" stroke-linecap="round"
+              d="M 20,38 L 10,38 L 10,48 M 85,38 L 95,38 L 95,48 M 10,138 L 10,148 L 20,148 M 95,138 L 95,148 L 85,148" />
+        <g id="phone-scanner-line" transform="translate(0, 38)">
+          <line x1="10" y1="0" x2="95" y2="0" stroke="#00E676" stroke-width="2" filter="url(#wifi-glow)" />
+          <rect x="10" y="-12" width="85" height="12" fill="url(#scan-beam-grad)" />
+        </g>
+      </g>
+      <g id="success-ui-card">
+        <rect x="5" y="8" width="95" height="174" rx="12" fill="#0D181C" stroke="#00E676" stroke-width="2" filter="url(#wifi-glow)" />
+        <circle cx="52.5" cy="50" r="22" fill="#00E676" />
+        <path fill="none" stroke="#0D181C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M 41,50 L 49,58 L 64,42" />
+        <path fill="#00E5FF" filter="url(#wifi-glow)" d="M 52.5,88 A 18,18 0 0,0 34.5,97 L 39.5,102 A 12,12 0 0,1 52.5,96 A 12,12 0 0,1 65.5,102 L 70.5,97 A 18,18 0 0,0 52.5,88 Z M 52.5,105 A 4,4 0 1,0 52.5,113 A 4,4 0 1,0 52.5,105 Z" />
+        <text x="52.5" y="138" font-family="sans-serif" font-weight="bold" font-size="11" fill="#FFFFFF" text-anchor="middle">CONNECTED</text>
+      </g>
+      <rect x="35" y="174" width="35" height="3" rx="1.5" fill="#FFFFFF" opacity="0.6" />
+    </g>
+
+    <g id="hand-fingers">
+      <rect x="166" y="222" width="20" height="15" rx="6" fill="#5C382A" transform="rotate(-10 166 222)" />
+      <rect x="171" y="244" width="20" height="15" rx="6" fill="#5C382A" transform="rotate(-10 171 244)" />
+      <rect x="176" y="266" width="20" height="15" rx="6" fill="#5C382A" transform="rotate(-10 176 266)" />
+      <rect x="181" y="288" width="20" height="15" rx="6" fill="#5C382A" transform="rotate(-10 181 288)" />
+      <g transform="translate(180, 180) rotate(-10)">
+        <path d="M 108,110 C 123,95 126,70 108,72 C 101,73 102,95 106,112 Z" fill="#5C382A" />
+        <path d="M 108,98 C 117,88 119,75 108,76 C 104,77 104,88 106,100 Z" fill="#734837" opacity="0.4" />
+      </g>
+    </g>
+  </g>
+  </g>
+</svg>

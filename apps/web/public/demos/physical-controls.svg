@@ -50,7 +50,7 @@
     .lamp-shade { fill: #CFD8DC; }
 
     /* Dynamic Thumb Motion */
-    #animated-thumb {
+    .animated-thumb-part {
       animation: thumb-press-sequence 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
       transform-origin: 20px 70px;
     }
@@ -228,8 +228,19 @@
   <g id="first-person-arm" transform="translate(190, 260)">
     
     <!-- Arm / Wrist coming up from bottom center -->
-    <path d="M 32,220 L 25,120 L 75,120 L 82,220 Z" fill="#FF8A65" />
-    <path d="M 27,130 L 29,90 L 71,90 L 73,130 Z" fill="#FFCCBC" />
+    <path d="M 25,220 L 20,118 L 80,118 L 87,220 Z" fill="#FFCCBC" />
+    <path d="M 20,132 L 22,88 L 78,88 L 80,132 Z" fill="#FFCCBC" />
+
+    <!-- Palm emerging beneath and around the remote -->
+    <path
+      d="M 20,104 C 18,94 26,86 37,84 L 63,84 C 75,86 82,94 80,106 L 80,137 C 79,148 71,154 61,154 L 39,154 C 29,154 21,148 20,137 Z"
+      fill="#FFCCBC"
+    />
+
+    <!-- Rear of the thumb, partially hidden by the remote so the grip wraps around it -->
+    <g class="animated-thumb-part">
+      <path d="M 27,52 C 15,46 3,51 1,63 C 0,74 10,82 25,80 L 34,70 L 32,57 Z" fill="#FFCCBC" />
+    </g>
 
     <!-- SLIM Remote Control Body -->
     <g id="remote-control" filter="url(#md-shadow-deep)">
@@ -259,12 +270,10 @@
       <rect x="72" y="86" width="10" height="14" rx="4" fill="#FFCCBC" />
 
       <!-- ANIMATED THUMB -->
-      <g id="animated-thumb">
-        <path d="M 12,50 C 4,50 0,60 5,72 C 10,80 28,78 28,64 Z" fill="#FFCCBC" />
-        <path d="M 18,52 C 22,52 28,58 26,66 Z" fill="#FFE0B2" opacity="0.6" />
+      <g id="animated-thumb" class="animated-thumb-part">
+        <path d="M 12,50 C 4,50 0,60 5,72 C 10,80 31,78 32,64 Z" fill="#FFCCBC" />
+        <path d="M 18,52 C 23,52 31,58 29,66 Z" fill="#FFE0B2" opacity="0.6" />
       </g>
     </g>
   </g>
 </svg>
-
-

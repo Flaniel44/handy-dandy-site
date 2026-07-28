@@ -11,6 +11,11 @@
       <stop id="beam-mid" offset="50%" stop-color="#FFE082" stop-opacity="0.6" />
       <stop id="beam-bot" offset="100%" stop-color="#FFB300" stop-opacity="0.05" />
     </radialGradient>
+    <radialGradient id="grow-light-halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9" />
+      <stop offset="28%" stop-color="#FFF9C4" stop-opacity="0.65" />
+      <stop offset="100%" stop-color="#FFE082" stop-opacity="0" />
+    </radialGradient>
   </defs>
 
   <style>
@@ -29,11 +34,11 @@
     }
     @keyframes sunArc {
       0%, 10% { transform: translate(62px, 235px); fill: #FF8A65; opacity: 0; }
-      15% { transform: translate(78px, 220px); fill: #FFB74D; opacity: 1; }
-      30% { transform: translate(108px, 148px); fill: #FFF176; opacity: 1; }
-      45% { transform: translate(135px, 124px); fill: #FFF59D; opacity: 1; }
-      60% { transform: translate(166px, 148px); fill: #FFF176; opacity: 1; }
-      76% { transform: translate(195px, 220px); fill: #FF7043; opacity: 1; }
+      15% { transform: translate(78px, 225px); fill: #FFB74D; opacity: 1; }
+      30% { transform: translate(108px, 170px); fill: #FFF176; opacity: 1; }
+      45% { transform: translate(135px, 154px); fill: #FFF59D; opacity: 1; }
+      60% { transform: translate(166px, 170px); fill: #FFF176; opacity: 1; }
+      76% { transform: translate(195px, 225px); fill: #FF7043; opacity: 1; }
       84%, 100% { transform: translate(210px, 240px); fill: #FF8A65; opacity: 0; }
     }
 
@@ -41,18 +46,18 @@
       animation: moonArc 10s linear infinite;
     }
     @keyframes moonArc {
-      0% { transform: translate(173px, 169px); opacity: 1; }
-      5% { transform: translate(184px, 195px); opacity: 1; }
-      10% { transform: translate(192px, 220px); opacity: 1; }
+      0% { transform: translate(173px, 186px); opacity: 1; }
+      5% { transform: translate(184px, 206px); opacity: 1; }
+      10% { transform: translate(192px, 225px); opacity: 1; }
       15% { transform: translate(202px, 238px); opacity: 0; }
       65% { transform: translate(68px, 238px); opacity: 0; }
-      70% { transform: translate(78px, 220px); opacity: 0.3; }
-      75% { transform: translate(87px, 195px); opacity: 1; }
-      80% { transform: translate(97px, 169px); opacity: 1; }
-      85% { transform: translate(113px, 143px); opacity: 1; }
-      90% { transform: translate(135px, 130px); opacity: 1; }
-      95% { transform: translate(157px, 143px); opacity: 1; }
-      100% { transform: translate(173px, 169px); opacity: 1; }
+      70% { transform: translate(78px, 225px); opacity: 0.3; }
+      75% { transform: translate(87px, 206px); opacity: 1; }
+      80% { transform: translate(97px, 186px); opacity: 1; }
+      85% { transform: translate(113px, 167px); opacity: 1; }
+      90% { transform: translate(135px, 158px); opacity: 1; }
+      95% { transform: translate(157px, 167px); opacity: 1; }
+      100% { transform: translate(173px, 186px); opacity: 1; }
     }
 
     .indoor-bg {
@@ -60,9 +65,19 @@
     }
     @keyframes indoorAmbient {
       0%, 100% { fill: #12161A; }
-      15% { fill: #2C2220; }
-      35%, 65% { fill: #FFF8E1; }
-      80% { fill: #2A1D1A; }
+      15% { fill: #211D1C; }
+      35%, 65% { fill: #252C30; }
+      80% { fill: #201B1A; }
+    }
+
+    .grow-light-halo {
+      animation: haloIntensity 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes haloIntensity {
+      0%, 100% { opacity: 0.03; }
+      15% { opacity: 0.35; }
+      35%, 65% { opacity: 0.95; }
+      80% { opacity: 0.3; }
     }
 
     .smart-bulb {
@@ -128,6 +143,7 @@
     </g>
 
     <line x1="40" y1="380" x2="440" y2="380" stroke="#37474F" stroke-width="4" stroke-linecap="round" />
+    <circle class="grow-light-halo" cx="340" cy="98" r="90" fill="url(#grow-light-halo)" />
     <polygon class="light-cone" points="340,80 200,380 440,380" fill="url(#indoor-beam)" />
 
     <g transform="translate(340, 40)">
