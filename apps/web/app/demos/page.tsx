@@ -60,7 +60,7 @@ const possibilitySections = [
       },
       {
         number: "06",
-        title: "Can I tap my phone on something to trigger a routine?",
+        title: "Can I tap my phone to trigger a routine?",
         emphasis: "tap my phone",
         description: "Yes. An NFC tag can play music, run a scene, adjust a room, or trigger almost any automation with one quick phone tap.",
         mediaLabel: "NFC tag automation examples",
@@ -88,20 +88,6 @@ const possibilitySections = [
     items: [
       {
         number: "09",
-        title: "Can I tap an album cover and play it throughout the house?",
-        emphasis: "tap an album cover",
-        description: "Yes. Place an NFC tag on an album cover, tap it with your phone, and start that music across your smart speakers.",
-        mediaLabel: "NFC whole-home audio demo",
-      },
-      {
-        number: "10",
-        title: "Can I control my TV from my phone, dashboard, or another remote?",
-        emphasis: "control my TV",
-        description: "Yes. Your television, movies, shows, and playback can be controlled from a phone, physical remote, dashboard, or automation.",
-        mediaLabel: "Flexible smart TV controls",
-      },
-      {
-        number: "11",
         title: "Can older remote-controlled devices become part of my smart home?",
         emphasis: "older remote-controlled devices",
         description: "In many cases, yes. An infrared controller can automate televisions, stereos, air conditioners, and other devices that normally need an IR remote.",
@@ -110,47 +96,19 @@ const possibilitySections = [
     ],
   },
   {
-    id: "security-and-awareness",
-    number: "04",
-    title: "Security and awareness",
-    items: [
-      {
-        number: "12",
-        title: "Can my phone tell me when motion is detected?",
-        emphasis: "when motion is detected",
-        description: "Yes. You can receive useful motion notifications without needing to constantly watch a camera feed.",
-        mediaLabel: "Smart motion notification demo",
-      },
-      {
-        number: "13",
-        title: "Can my cameras and locks work together when I leave or go to bed?",
-        emphasis: "cameras and locks work together",
-        description: "Yes. Cameras and smart locks can be managed together and included in arrival, bedtime, or away routines.",
-        mediaLabel: "Camera, lock, and security dashboard",
-      },
-    ],
-  },
-  {
     id: "ordinary-devices",
-    number: "05",
+    number: "04",
     title: "Make ordinary devices smart",
     items: [
       {
-        number: "14",
+        number: "10",
         title: "Do I need to replace everything to make my home smart?",
         emphasis: "replace everything",
         description: "No. Many existing appliances can gain smart control through plugs, relays, infrared controllers, or button pushers.",
         mediaLabel: "Non-smart device conversion examples",
       },
       {
-        number: "15",
-        title: "Can something physically press a button for me?",
-        emphasis: "physically press a button",
-        description: "Often, yes. A small button-pushing device can automate equipment that cannot otherwise be controlled electronically.",
-        mediaLabel: "Physical button-pusher demo",
-      },
-      {
-        number: "16",
+        number: "11",
         title: "Can my coffee maker start itself every morning?",
         emphasis: "coffee maker start itself",
         description: "Yes. A scheduled button pusher can start a compatible coffee maker—or press another everyday button automatically.",
@@ -160,22 +118,15 @@ const possibilitySections = [
   },
   {
     id: "dashboards-and-displays",
-    number: "06",
+    number: "05",
     title: "Your home at a glance",
     items: [
       {
-        number: "17",
-        title: "Can I control my entire home from one simple screen?",
-        emphasis: "entire home from one simple screen",
-        description: "Yes. Lighting, climate, entertainment, sensors, security, and automations can come together in one clear Home Assistant dashboard.",
-        mediaLabel: "Home Assistant dashboard tour",
-      },
-      {
-        number: "18",
-        title: "Can a display show useful information without becoming another distraction?",
-        emphasis: "useful information without becoming another distraction",
-        description: "Yes. Calendars, weather, reminders, and device status can appear on a smart display or a quiet, low-power e-ink screen.",
-        mediaLabel: "Smart and e-ink display examples",
+        number: "12",
+        title: "Can one simple screen control my home and show useful information?",
+        emphasis: "control my home and show useful information",
+        description: "Yes. A Home Assistant dashboard can bring your devices and automations together, while smart or e-ink displays can show calendars, weather, reminders, and device status without becoming another distraction.",
+        mediaLabel: "Home Assistant dashboard and smart display examples",
       },
     ],
   },
