@@ -1,0 +1,270 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 480" width="100%" height="100%" id="remote-perspective-root">
+  <defs>
+    <!-- Material Design Drop Shadows using clean feDropShadow to prevent bounding box artifacts -->
+    <filter id="md-shadow-deep" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+
+    <filter id="md-shadow-soft" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.3" />
+    </filter>
+
+    <!-- Light Glow Filter -->
+    <filter id="glow-effect" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Green Glow Gradient -->
+    <radialGradient id="green-glow-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#B9F6CA" stop-opacity="1" />
+      <stop offset="40%" stop-color="#00E676" stop-opacity="0.8" />
+      <stop offset="80%" stop-color="#00C853" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#00E676" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Red Glow Gradient -->
+    <radialGradient id="red-glow-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FF8A80" stop-opacity="1" />
+      <stop offset="40%" stop-color="#FF1744" stop-opacity="0.8" />
+      <stop offset="80%" stop-color="#D50000" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#FF1744" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <style>
+    /* Background Canvas */
+    #bg-wall { fill: #212121; }
+    #floor { fill: #1A1A1A; }
+    #table-top { fill: #37474F; }
+    #table-leg { fill: #263238; }
+
+    /* Material Furniture &amp; Gadgets */
+    .stereo-body { fill: #455A64; }
+    .stereo-accent { fill: #263238; }
+    .speaker-grill { fill: #1C2526; }
+    .lamp-base { fill: #78909C; }
+    .lamp-shade { fill: #CFD8DC; }
+
+    /* Dynamic Thumb Motion */
+    #animated-thumb {
+      animation: thumb-press-sequence 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      transform-origin: 20px 70px;
+    }
+
+    @keyframes thumb-press-sequence {
+      /* Pressing Button 1 (Top) */
+      0%, 42% {
+        transform: translate(16px, -24px) rotate(12deg) scale(0.95);
+      }
+      /* Transitioning between buttons */
+      46% {
+        transform: translate(2px, -8px) rotate(0deg) scale(1);
+      }
+      /* Pressing Button 2 (Bottom) */
+      50%, 92% {
+        transform: translate(16px, 20px) rotate(12deg) scale(0.95);
+      }
+      /* Returning to Top Button */
+      96%, 100% {
+        transform: translate(16px, -24px) rotate(12deg) scale(0.95);
+      }
+    }
+
+    /* Button 1 Press (Green State) */
+    #btn-1-indicator {
+      animation: press-btn1 8s ease-in-out infinite;
+      transform-origin: 50px 46px;
+    }
+    @keyframes press-btn1 {
+      0%, 44% { fill: #00E676; transform: scale(0.88); }
+      48%, 100% { fill: #37474F; transform: scale(1); }
+    }
+
+    /* Button 2 Press (Red State) */
+    #btn-2-indicator {
+      animation: press-btn2 8s ease-in-out infinite;
+      transform-origin: 50px 90px;
+    }
+    @keyframes press-btn2 {
+      0%, 48% { fill: #37474F; transform: scale(1); }
+      52%, 94% { fill: #FF1744; transform: scale(0.88); }
+      98%, 100% { fill: #37474F; transform: scale(1); }
+    }
+
+    /* Lamp &amp; Room Green Glow */
+    .glow-green {
+      opacity: 0;
+      animation: green-light-sequence 8s ease-in-out infinite;
+    }
+    @keyframes green-light-sequence {
+      0%, 45% { opacity: 0.95; }
+      50%, 100% { opacity: 0; }
+    }
+
+    /* Lamp &amp; Room Red Glow */
+    .glow-red {
+      opacity: 0;
+      animation: red-light-sequence 8s ease-in-out infinite;
+    }
+    @keyframes red-light-sequence {
+      0%, 45% { opacity: 0; }
+      50%, 95% { opacity: 0.95; }
+      100% { opacity: 0; }
+    }
+
+    /* Stereo Indicator LEDs */
+    .led-indicator {
+      animation: led-color-swap 8s linear infinite;
+    }
+    @keyframes led-color-swap {
+      0%, 48% { fill: #00E676; }
+      50%, 100% { fill: #FF1744; }
+    }
+
+    /* --- MUSIC NOTES --- */
+    #music-notes-green {
+      animation: notes-green-anim 8s ease-in-out infinite;
+      transform-origin: 250px 170px;
+    }
+    @keyframes notes-green-anim {
+      0% { opacity: 0; transform: translate(0px, 10px) scale(0.7); }
+      5%, 40% { opacity: 1; transform: translate(15px, -25px) scale(1); }
+      45%, 100% { opacity: 0; transform: translate(25px, -45px) scale(0.8); }
+    }
+
+    #music-notes-red {
+      animation: notes-red-anim 8s ease-in-out infinite;
+      transform-origin: 250px 170px;
+    }
+    @keyframes notes-red-anim {
+      0%, 48% { opacity: 0; transform: translate(0px, 10px) scale(0.5); }
+      53%, 90% { opacity: 1; transform: translate(-20px, -35px) scale(1.35) rotate(-8deg); }
+      95%, 100% { opacity: 0; transform: translate(-30px, -55px) scale(0.9); }
+    }
+
+    .wiggle {
+      animation: wiggle-motion 1.2s ease-in-out infinite alternate;
+    }
+    @keyframes wiggle-motion {
+      0% { transform: rotate(-6deg); }
+      100% { transform: rotate(8deg); }
+    }
+  </style>
+
+  <!-- Background Wall &amp; Floor -->
+  <rect id="bg-wall" width="500" height="300" />
+  <rect id="floor" x="0" y="300" width="500" height="180" />
+
+  <!-- Credenza Table Top -->
+  <polygon id="table-top" points="40,260 460,260 490,320 10,320" filter="url(#md-shadow-soft)" />
+  <rect id="table-leg" x="60" y="320" width="380" height="15" />
+
+  <!-- ROOM GLOW EFFECTS -->
+  <g class="glow-green" filter="url(#glow-effect)">
+    <circle cx="200" cy="120" r="80" fill="url(#green-glow-grad)" />
+    <circle cx="280" cy="210" r="100" fill="url(#green-glow-grad)" />
+  </g>
+
+  <g class="glow-red" filter="url(#glow-effect)">
+    <circle cx="200" cy="120" r="80" fill="url(#red-glow-grad)" />
+    <circle cx="280" cy="210" r="100" fill="url(#red-glow-grad)" />
+  </g>
+
+  <!-- LAMP &amp; STEREO -->
+  <g id="lamp" filter="url(#md-shadow-soft)">
+    <rect class="lamp-base" x="195" y="245" width="10" height="15" rx="2" />
+    <rect class="lamp-base" x="198" y="150" width="4" height="95" />
+    <polygon class="lamp-shade" points="180,150 220,150 230,110 170,110" />
+    <circle cx="200" cy="125" r="8" fill="#FFF59D" />
+  </g>
+
+  <g id="stereo" filter="url(#md-shadow-deep)">
+    <rect class="stereo-body" x="240" y="190" width="130" height="70" rx="4" />
+    <rect class="stereo-accent" x="275" y="184" width="60" height="6" rx="2" />
+    
+    <circle class="speaker-grill" cx="270" cy="225" r="22" />
+    <circle cx="270" cy="225" r="14" fill="#263238" />
+
+    <circle class="speaker-grill" cx="340" cy="225" r="22" />
+    <circle cx="340" cy="225" r="14" fill="#263238" />
+
+    <rect class="stereo-accent" x="298" y="200" width="14" height="50" rx="2" />
+    <rect class="stereo-body" x="301" y="205" width="8" height="12" rx="1" />
+    
+    <circle class="led-indicator" cx="305" cy="225" r="2" />
+    <circle class="led-indicator" cx="305" cy="233" r="2" />
+    <circle class="led-indicator" cx="305" cy="241" r="2" />
+  </g>
+
+  <!-- MUSIC NOTES (GREEN) -->
+  <g id="music-notes-green">
+    <g class="wiggle">
+      <path fill="#00E676" stroke="none" filter="url(#md-shadow-soft)" transform="translate(240, 140) scale(1.1)"
+            d="M12 3v10.55A4 4 0 0 0 10 13a4 4 0 0 0-4 4a4 4 0 0 0 4 4a4 4 0 0 0 4-4V7h4V3h-6z" />
+      <path fill="#B9F6CA" stroke="none" filter="url(#md-shadow-soft)" transform="translate(275, 120) scale(0.9)"
+            d="M9 3v10.55A4 4 0 0 0 7 13a4 4 0 0 0-4 4a4 4 0 0 0 4 4a4 4 0 0 0 4-4V7h8v6.55A4 4 0 0 0 17 13a4 4 0 0 0-4 4a4 4 0 0 0 4 4a4 4 0 0 0 4-4V3H9z" />
+      <path fill="#69F0AE" stroke="none" filter="url(#md-shadow-soft)" transform="translate(320, 135) scale(0.8)"
+            d="M12 3v10.55A4 4 0 0 0 10 13a4 4 0 0 0-4 4a4 4 0 0 0 4 4a4 4 0 0 0 4-4V3h2z" />
+    </g>
+  </g>
+
+  <!-- MUSIC NOTES (RED) -->
+  <g id="music-notes-red">
+    <g class="wiggle">
+      <path fill="#FF1744" stroke="none" filter="url(#md-shadow-deep)" transform="translate(220, 120) scale(1.35)"
+            d="M9 3v10.55A4 4 0 0 0 7 13a4 4 0 0 0-4 4a4 4 0 0 0 4 4a4 4 0 0 0 4-4V7h8v6.55A4 4 0 0 0 17 13a4 4 0 0 0-4 4a4 4 0 0 0 4 4a4 4 0 0 0 4-4V3H9z" />
+      <path fill="#FF8A80" stroke="none" filter="url(#md-shadow-deep)" transform="translate(285, 100) scale(1.3)"
+            d="M12 3v10.55A4 4 0 0 0 10 13a4 4 0 0 0-4 4a4 4 0 0 0 4 4a4 4 0 0 0 4-4V3h2z" />
+      <path fill="#FF5252" stroke="none" filter="url(#md-shadow-deep)" transform="translate(325, 115) scale(1.15)"
+            d="M12 3v10.55A4 4 0 0 0 10 13a4 4 0 0 0-4 4a4 4 0 0 0 4 4a4 4 0 0 0 4-4V7h4V3h-6z" />
+    </g>
+  </g>
+
+  <!-- FIRST PERSON PERSPECTIVE: HAND &amp; CENTERED SLIM TWO-BUTTON REMOTE -->
+  <g id="first-person-arm" transform="translate(190, 260)">
+    
+    <!-- Arm / Wrist coming up from bottom center -->
+    <path d="M 32,220 L 25,120 L 75,120 L 82,220 Z" fill="#FF8A65" />
+    <path d="M 27,130 L 29,90 L 71,90 L 73,130 Z" fill="#FFCCBC" />
+
+    <!-- SLIM Remote Control Body -->
+    <g id="remote-control" filter="url(#md-shadow-deep)">
+      <rect x="24" y="0" width="52" height="130" rx="12" fill="#37474F" />
+      <rect x="32" y="12" width="36" height="6" rx="2" fill="#263238" />
+
+      <!-- BUTTON 1 (Top) -->
+      <g id="button-1-group">
+        <rect x="32" y="28" width="36" height="36" rx="18" fill="#263238" />
+        <circle id="btn-1-indicator" cx="50" cy="46" r="14" fill="#00E676" />
+        <circle cx="50" cy="46" r="3.5" fill="#FFFFFF" opacity="0.9" />
+      </g>
+
+      <!-- BUTTON 2 (Bottom) -->
+      <g id="button-2-group">
+        <rect x="32" y="72" width="36" height="36" rx="18" fill="#263238" />
+        <circle id="btn-2-indicator" cx="50" cy="90" r="14" fill="#37474F" />
+        <rect x="45" y="88.5" width="10" height="3" rx="1" fill="#FFFFFF" opacity="0.9" />
+      </g>
+    </g>
+
+    <!-- Hand / Fingers Wrapping Side -->
+    <g id="hand-grip" filter="url(#md-shadow-soft)">
+      <rect x="74" y="20" width="10" height="16" rx="4" fill="#FFCCBC" />
+      <rect x="74" y="42" width="10" height="16" rx="4" fill="#FFCCBC" />
+      <rect x="74" y="64" width="10" height="16" rx="4" fill="#FFCCBC" />
+      <rect x="72" y="86" width="10" height="14" rx="4" fill="#FFCCBC" />
+
+      <!-- ANIMATED THUMB -->
+      <g id="animated-thumb">
+        <path d="M 12,50 C 4,50 0,60 5,72 C 10,80 28,78 28,64 Z" fill="#FFCCBC" />
+        <path d="M 18,52 C 22,52 28,58 26,66 Z" fill="#FFE0B2" opacity="0.6" />
+      </g>
+    </g>
+  </g>
+</svg>
+
+
