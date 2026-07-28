@@ -19,6 +19,32 @@ function renderShadowAnimation(host: HTMLDivElement, markup?: string) {
   shadow.replaceChildren(style, template.content.cloneNode(true));
 }
 
+function setupDeclarativeToggle(host: HTMLDivElement) {
+  const root = host.shadowRoot?.querySelector<SVGElement>("[data-auto-toggle]");
+  if (!root) return;
+
+  const states = root.getAttribute("data-auto-toggle")?.trim().split(/\s+/) || [];
+  if (states.length < 2) return;
+
+  const toggle = () => {
+    const currentIndex = states.indexOf(root.getAttribute("data-state") || "");
+    root.setAttribute("data-state", states[(currentIndex + 1) % states.length]);
+  };
+  const control = root.querySelector("[data-auto-toggle-control]");
+  control?.addEventListener("click", toggle);
+
+  const requestedInterval = Number(root.getAttribute("data-auto-toggle-interval"));
+  const interval = window.setInterval(
+    toggle,
+    Number.isFinite(requestedInterval) && requestedInterval >= 1000 ? requestedInterval : 7000,
+  );
+
+  return () => {
+    window.clearInterval(interval);
+    control?.removeEventListener("click", toggle);
+  };
+}
+
 export function ViewportSvgAnimation({ src, label }: { src: string; label: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -57,6 +83,7 @@ export function ViewportSvgAnimation({ src, label }: { src: string; label: strin
     const host = containerRef.current;
     if (!host) return;
     renderShadowAnimation(host, isVisible ? markup : undefined);
+    if (isVisible && markup) return setupDeclarativeToggle(host);
   }, [isVisible, markup]);
 
   return (

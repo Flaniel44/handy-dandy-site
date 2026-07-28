@@ -1,0 +1,250 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 620" width="100%" height="100%" id="ui-root" data-state="day" data-auto-toggle="day night" data-auto-toggle-interval="4000">
+  
+  <defs>
+    <!-- MDI Elevation 2 Drop Shadow -->
+    <filter id="mdi-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feOffset dx="0" dy="2" result="offset" />
+      <feComponentTransfer><feFuncA type="linear" slope="0.28"/></feComponentTransfer>
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Radial Ambient Light Glows for Overhead Lamp -->
+    <radialGradient id="lamp-glow-day" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFF9C4" stop-opacity="0.9" />
+      <stop offset="40%" stop-color="#FFF59D" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#FFF59D" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="lamp-glow-night" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FF7043" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#FF7043" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#FF7043" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Rear TV Ambient Back Glow -->
+    <radialGradient id="tv-back-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#29B6F6" stop-opacity="0.75" />
+      <stop offset="100%" stop-color="#0288D1" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Window Clip Def -->
+    <clipPath id="window-clip">
+      <rect x="0" y="0" width="180" height="110" rx="8" />
+    </clipPath>
+  </defs>
+
+  <style>
+    /* Smooth MDI Motion Transitions */
+    * { transition: all 0.5s cubic-bezier(0.4, 0.0, 0.2, 1); }
+
+    /* Canvas Background */
+    #background { fill: #ECEFF1; }
+
+    /* Switch Component Tokens */
+    #toggle-container { cursor: pointer; }
+    #toggle-track { fill: #FFE082; } /* Day: Warm Yellow Track */
+    #toggle-thumb { transform: translateX(0px); filter: url(#mdi-shadow); cursor: pointer; fill: #FFFFFF; }
+    .icon-static { fill: #5D4037; opacity: 0.4; }
+    #icon-active-sun { fill: #F57F17; opacity: 1; }
+    #icon-active-moon { fill: #3F51B5; opacity: 0; }
+
+    /* Overhead Lamp Tokens */
+    #lamp-fixture { fill: #455A64; }
+    #lamp-bulb { fill: #FFF59D; }
+    #lamp-glow-layer { fill: url(#lamp-glow-day); opacity: 1; }
+
+    /* Window Tokens */
+    #window-sky { fill: #81D4FA; }
+    #window-sun-moon { fill: #FBC02D; transform: translateY(0px); }
+    #window-frame { fill: none; stroke: #FFFFFF; stroke-width: 5; }
+
+    /* Furniture &amp; Cat Tokens */
+    #couch-body { fill: #37474F; }
+    #couch-cushion { fill: #455A64; }
+    #cat { fill: #FFB74D; }
+    
+    /* Cat Eyes State Toggle */
+    #cat-eyes-sleeping { opacity: 1; }
+    #cat-eyes-awake { opacity: 0; }
+
+    /* TV Tokens */
+    #tv-shell { fill: #263238; }
+    #tv-stand { fill: #37474F; }
+    #tv-glow { opacity: 0; fill: url(#tv-back-glow); }
+    #music-notes { opacity: 0; transform-origin: 250px 445px; }
+
+    /* ==========================================================
+       STATE: NIGHT (Switch Right / Moon Active)
+       ========================================================== */
+    [data-state="night"] #background { fill: #121212; }
+
+    /* Switch State */
+    [data-state="night"] #toggle-track { fill: #311B92; } /* Night: Dark Indigo Track */
+    [data-state="night"] #toggle-thumb { transform: translateX(64px); }
+    [data-state="night"] #icon-active-sun { opacity: 0; }
+    [data-state="night"] #icon-active-moon { opacity: 1; }
+
+    /* Overhead Light State: Dim &amp; Warm Orange Glow */
+    [data-state="night"] #lamp-bulb { fill: #FF7043; }
+    [data-state="night"] #lamp-glow-layer { fill: url(#lamp-glow-night); }
+
+    /* Window State: Deep Night Sky */
+    [data-state="night"] #window-sky { fill: #1A237E; }
+    [data-state="night"] #window-sun-moon { fill: #E0E0E0; transform: translateY(40px); }
+    [data-state="night"] #window-frame { stroke: #455A64; }
+
+    /* Furniture &amp; Awake Cat State */
+    [data-state="night"] #couch-body { fill: #212121; }
+    [data-state="night"] #couch-cushion { fill: #263238; }
+    [data-state="night"] #cat { fill: #E65100; } 
+    [data-state="night"] #cat-eyes-sleeping { opacity: 0; }
+    [data-state="night"] #cat-eyes-awake { opacity: 1; }
+
+    /* TV State: On with Ambient Glow &amp; Floating Music Notes */
+    [data-state="night"] #tv-glow { opacity: 1; }
+    [data-state="night"] #music-notes { 
+      opacity: 1; 
+      animation: float-notes 2s ease-out infinite; 
+    }
+
+    /* Floating Music Notes Animation */
+    @keyframes float-notes {
+      0% { opacity: 0; transform: translate(0px, 0px) scale(0.8); }
+      50% { opacity: 1; }
+      100% { opacity: 0; transform: translate(20px, -35px) scale(1.1); }
+    }
+  </style>
+
+  <!-- Background App Canvas -->
+  <rect id="background" width="100%" height="100%" rx="16"/>
+
+  <!-- ==========================================================
+       1. SWITCH TOGGLE (Top)
+       ========================================================== -->
+  <g transform="translate(190, 25)" id="toggle-container" data-auto-toggle-control="true">
+    <rect id="toggle-track" x="0" y="0" width="120" height="56" rx="28" />
+
+    <!-- Left Target: Sun Icon -->
+    <path class="icon-static" transform="translate(16, 16)"
+          d="M12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,2A1,1 0 0,1 13,3V5A1,1 0 0,1 12,6A1,1 0 0,1 11,5V3A1,1 0 0,1 12,2M12,18A1,1 0 0,1 13,19V21A1,1 0 0,1 12,22A1,1 0 0,1 11,21V19A1,1 0 0,1 12,18M5.64,3.64A1,1 0 0,1 7.05,3.64L8.46,5.05A1,1 0 0,1 8.46,6.46A1,1 0 0,1 7.05,6.46L5.64,5.05A1,1 0 0,1 5.64,3.64M15.54,13.54A1,1 0 0,1 16.95,13.54L18.36,14.95A1,1 0 0,1 18.36,16.36A1,1 0 0,1 16.95,16.36L15.54,14.95A1,1 0 0,1 15.54,13.54M2,12A1,1 0 0,1 3,11H5A1,1 0 0,1 6,12A1,1 0 0,1 5,13H3A1,1 0 0,1 2,12M18,12A1,1 0 0,1 19,11H21A1,1 0 0,1 22,12A1,1 0 0,1 21,13H19A1,1 0 0,1 18,12M8.46,15.54A1,1 0 0,1 8.46,16.95L7.05,18.36A1,1 0 0,1 5.64,18.36A1,1 0 0,1 5.64,16.95L7.05,15.54A1,1 0 0,1 8.46,15.54M18.36,5.64A1,1 0 0,1 18.36,7.05L16.95,8.46A1,1 0 0,1 15.54,8.46A1,1 0 0,1 15.54,7.05L16.95,5.64A1,1 0 0,1 18.36,5.64Z" />
+
+    <!-- Right Target: Moon Icon -->
+    <path class="icon-static" transform="translate(80, 16)"
+          d="M17.75,4.09L15.22,6.03L16.13,9.09L13.5,7.28L10.87,9.09L11.78,6.03L9.25,4.09L12.44,4L13.5,1L14.56,4L17.75,4.09M21.25,11L19.61,12.25L20.2,14.23L18.5,13.06L16.8,14.23L17.39,12.25L15.75,11L17.81,10.95L18.5,9L19.19,10.95L21.25,11M18.97,15.95C17.61,16.86 16,17.39 14.28,17.39C9.7,17.39 6,13.69 6,9.11C6,7.39 6.53,5.78 7.44,4.42C4.21,5.79 2,9 2,12.72C2,17.84 6.16,22 11.28,22 C15,22 18.21,19.79 19.58,16.56C19.38,16.36 19.17,16.15 18.97,15.95Z" />
+
+    <!-- Sliding Thumb -->
+    <g id="toggle-thumb">
+      <circle cx="28" cy="28" r="24" />
+      <path id="icon-active-sun" transform="translate(16, 16)"
+            d="M12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,2A1,1 0 0,1 13,3V5A1,1 0 0,1 12,6A1,1 0 0,1 11,5V3A1,1 0 0,1 12,2M12,18A1,1 0 0,1 13,19V21A1,1 0 0,1 12,22A1,1 0 0,1 11,21V19A1,1 0 0,1 12,18M5.64,3.64A1,1 0 0,1 7.05,3.64L8.46,5.05A1,1 0 0,1 8.46,6.46A1,1 0 0,1 7.05,6.46L5.64,5.05A1,1 0 0,1 5.64,3.64M15.54,13.54A1,1 0 0,1 16.95,13.54L18.36,14.95A1,1 0 0,1 18.36,16.36A1,1 0 0,1 16.95,16.36L15.54,14.95A1,1 0 0,1 15.54,13.54M2,12A1,1 0 0,1 3,11H5A1,1 0 0,1 6,12A1,1 0 0,1 5,13H3A1,1 0 0,1 2,12M18,12A1,1 0 0,1 19,11H21A1,1 0 0,1 22,12A1,1 0 0,1 21,13H19A1,1 0 0,1 18,12M8.46,15.54A1,1 0 0,1 8.46,16.95L7.05,18.36A1,1 0 0,1 5.64,18.36A1,1 0 0,1 5.64,16.95L7.05,15.54A1,1 0 0,1 8.46,15.54M18.36,5.64A1,1 0 0,1 18.36,7.05L16.95,8.46A1,1 0 0,1 15.54,8.46A1,1 0 0,1 15.54,7.05L16.95,5.64A1,1 0 0,1 18.36,5.64Z" />
+      <path id="icon-active-moon" transform="translate(16, 16)"
+            d="M17.75,4.09L15.22,6.03L16.13,9.09L13.5,7.28L10.87,9.09L11.78,6.03L9.25,4.09L12.44,4L13.5,1L14.56,4L17.75,4.09M21.25,11L19.61,12.25L20.2,14.23L18.5,13.06L16.8,14.23L17.39,12.25L15.75,11L17.81,10.95L18.5,9L19.19,10.95L21.25,11M18.97,15.95C17.61,16.86 16,17.39 14.28,17.39C9.7,17.39 6,13.69 6,9.11C6,7.39 6.53,5.78 7.44,4.42C4.21,5.79 2,9 2,12.72C2,17.84 6.16,22 11.28,22 C15,22 18.21,19.79 19.58,16.56C19.38,16.36 19.17,16.15 18.97,15.95Z" />
+    </g>
+  </g>
+
+  <!-- ==========================================================
+       2. OVERHEAD LIGHT
+       ========================================================== -->
+  <g transform="translate(250, 85)">
+    <!-- Ambient Light Glow -->
+    <circle id="lamp-glow-layer" cx="0" cy="45" r="150" pointer-events="none" />
+
+    <!-- Hanging Cord &amp; Lamp Fixture -->
+    <line x1="0" y1="0" x2="0" y2="25" stroke="#455A64" stroke-width="3" />
+    <path id="lamp-fixture" d="M-24,42 L24,42 L16,25 L-16,25 Z" />
+    <circle id="lamp-bulb" cx="0" cy="46" r="11" />
+  </g>
+
+  <!-- ==========================================================
+       3. WINDOW
+       ========================================================== -->
+  <g transform="translate(160, 185)">
+    <g clip-path="url(#window-clip)">
+      <rect id="window-sky" x="0" y="0" width="180" height="110" rx="8" />
+      <circle id="window-sun-moon" cx="90" cy="55" r="22" />
+    </g>
+    <!-- Window Frame -->
+    <rect id="window-frame" x="0" y="0" width="180" height="110" rx="8" />
+    <line x1="90" y1="0" x2="90" y2="110" stroke="#FFFFFF" stroke-width="4" />
+    <line x1="0" y1="55" x2="180" y2="55" stroke="#FFFFFF" stroke-width="4" />
+  </g>
+
+  <!-- ==========================================================
+       4. COUCH WITH CUTE CAT
+       ========================================================== -->
+  <g transform="translate(100, 310)">
+    <!-- Backrest -->
+    <rect id="couch-body" x="0" y="0" width="300" height="120" rx="14" />
+    <!-- Seat Cushion -->
+    <rect id="couch-cushion" x="12" y="50" width="276" height="65" rx="10" />
+    <!-- Armrests -->
+    <rect fill="#263238" x="-8" y="35" width="25" height="80" rx="6" />
+    <rect fill="#263238" x="283" y="35" width="25" height="80" rx="6" />
+
+    <!-- Cute Cat Laying on Cushion -->
+    <g id="cat" transform="translate(135, 63)">
+      <ellipse cx="25" cy="17" rx="28" ry="16" />
+      <!-- Head -->
+      <circle cx="5" cy="11" r="12" />
+      <!-- Ears -->
+      <polygon points="1,2 -3,-6 5,0" />
+      <polygon points="8,0 12,-6 14,3" />
+      <!-- Tail -->
+      <path d="M50,17 C62,10 62,28 50,24" stroke="#FFB74D" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+      <!-- Blush Cheeks -->
+      <ellipse cx="-2" cy="16" rx="2.5" ry="1.5" fill="#FF8A80" opacity="0.6" />
+      <ellipse cx="12" cy="16" rx="2.5" ry="1.5" fill="#FF8A80" opacity="0.6" />
+      
+      <!-- DAY STATE: Cute Sleeping Arc Eyes (^ ^) -->
+      <g id="cat-eyes-sleeping">
+        <path d="M-3,10 Q1,6 5,10" stroke="#5D4037" stroke-width="2" fill="none" stroke-linecap="round" />
+        <path d="M6,10 Q10,6 14,10" stroke="#5D4037" stroke-width="2" fill="none" stroke-linecap="round" />
+      </g>
+
+      <!-- NIGHT STATE: Super Cute Big Glossy Anime Eyes -->
+      <g id="cat-eyes-awake">
+        <!-- Left Eye -->
+        <circle cx="1" cy="10" r="4.5" fill="#212121" />
+        <circle cx="0" cy="8.5" r="1.8" fill="#FFFFFF" /> <!-- Main Highlight -->
+        <circle cx="2.2" cy="11.5" r="0.8" fill="#FFFFFF" /> <!-- Secondary Sparkle -->
+
+        <!-- Right Eye -->
+        <circle cx="10" cy="10" r="4.5" fill="#212121" />
+        <circle cx="9" cy="8.5" r="1.8" fill="#FFFFFF" /> <!-- Main Highlight -->
+        <circle cx="11.2" cy="11.5" r="0.8" fill="#FFFFFF" /> <!-- Secondary Sparkle -->
+      </g>
+    </g>
+  </g>
+
+  <!-- ==========================================================
+       5. BACK VIEW OF TV (Moved up closer to couch)
+       ========================================================== -->
+  <g transform="translate(110, 430)">
+    <!-- Rear Ambient Blue Glow -->
+    <ellipse id="tv-glow" cx="140" cy="70" rx="160" ry="80" />
+
+    <!-- Music Notes Rising -->
+    <g id="music-notes">
+      <path fill="#29B6F6" transform="translate(175, -5) scale(1.1)"
+            d="M12 3v10.55A4 4 0 0 0 10 13a4 4 0 0 0-4 4a4 4 0 0 0 4 4a4 4 0 0 0 4-4V7h4V3h-6z" />
+      <path fill="#81D4FA" transform="translate(200, 12) scale(0.85)"
+            d="M12 3v10.55A4 4 0 0 0 10 13a4 4 0 0 0-4 4a4 4 0 0 0 4 4a4 4 0 0 0 4-4V7h4V3h-6z" />
+    </g>
+
+    <!-- TV Stand Base &amp; Neck -->
+    <rect id="tv-stand" x="105" y="120" width="70" height="8" rx="2" />
+    <rect id="tv-stand" x="132" y="95" width="16" height="28" rx="2" />
+
+    <!-- Back Shell -->
+    <rect id="tv-shell" x="20" y="10" width="240" height="95" rx="8" />
+    <rect fill="#1C2526" x="100" y="30" width="80" height="42" rx="4" />
+    <line x1="40" y1="22" x2="240" y2="22" stroke="#1C2526" stroke-width="2.5" stroke-dasharray="6 3" />
+    <line x1="40" y1="82" x2="240" y2="82" stroke="#1C2526" stroke-width="2.5" stroke-dasharray="6 3" />
+    <circle cx="140" cy="51" r="5" fill="#37474F" />
+  </g>
+</svg>
