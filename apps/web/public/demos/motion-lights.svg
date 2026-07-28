@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="100%" height="100%">
+  <defs>
+    <clipPath id="room-clip">
+      <rect x="40" y="40" width="400" height="400" rx="28" />
+    </clipPath>
+    <radialGradient id="light-beam" cx="50%" cy="15%" r="85%">
+      <stop offset="0%" stop-color="#FFF9C4" stop-opacity="1" />
+      <stop offset="50%" stop-color="#FFE082" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#FFB300" stop-opacity="0.05" />
+    </radialGradient>
+  </defs>
+
+  <style>
+    .room-bg { animation: ambientLightStatic 7s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+    @keyframes ambientLightStatic {
+      0%, 39% { fill: #1A1F26; }
+      52%, 86% { fill: #FFF8E1; }
+      98%, 100% { fill: #1A1F26; }
+    }
+
+    .couch { animation: couchColorStatic 7s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+    @keyframes couchColorStatic {
+      0%, 39% { fill: #263238; }
+      52%, 86% { fill: #FFB74D; }
+      98%, 100% { fill: #263238; }
+    }
+
+    .light-cone {
+      opacity: 0;
+      transform-origin: 240px 80px;
+      animation: lightConeOnStatic 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes lightConeOnStatic {
+      0%, 44% { opacity: 0; transform: scale(0.95); }
+      50%, 86% { opacity: 1; transform: scale(1); }
+      98%, 100% { opacity: 0; transform: scale(0.95); }
+    }
+
+    .sensor-wave {
+      stroke: #29B6F6;
+      stroke-width: 3;
+      stroke-linecap: round;
+      fill: none;
+      opacity: 0;
+      animation: scanWaves 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    .wave-2 { animation-delay: 0.15s; }
+    @keyframes scanWaves {
+      0%, 15% { opacity: 0; stroke-dasharray: 0 50; }
+      22% { opacity: 1; stroke: #29B6F6; }
+      28% { opacity: 1; stroke: #FF5252; }
+      33%, 100% { opacity: 0; }
+    }
+
+    .sensor-led {
+      fill: #455A64;
+      animation: sensorLedFlashStatic 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes sensorLedFlashStatic {
+      0%, 20% { fill: #455A64; }
+      22%, 27% { fill: #FF5252; }
+      30%, 86% { fill: #00E676; }
+      98%, 100% { fill: #455A64; }
+    }
+
+    .bulb { animation: bulbStateStatic 7s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+    @keyframes bulbStateStatic {
+      0%, 42% { fill: #607D8B; }
+      48%, 86% { fill: #FFFFFF; }
+      98%, 100% { fill: #607D8B; }
+    }
+
+    .person-walker { animation: personWalk 7s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+    .person-shape { animation: personColorStatic 7s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+    .person-shadow {
+      fill: #000000;
+      opacity: 0.25;
+      animation: shadowIntensityStatic 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes personWalk {
+      0% { transform: translateX(-100px); }
+      18% { transform: translateX(-20px); }
+      24% { transform: translateX(-20px); }
+      36% { transform: translateX(45px); }
+      43% { transform: translateX(45px); }
+      65% { transform: translateX(220px); }
+      72% { transform: translateX(220px); }
+      90%, 100% { transform: translateX(470px); }
+    }
+    @keyframes personColorStatic {
+      0%, 39% { fill: #546E7A; }
+      52%, 86% { fill: #1E88E5; }
+      98%, 100% { fill: #546E7A; }
+    }
+    @keyframes shadowIntensityStatic {
+      0%, 39% { opacity: 0.15; }
+      52%, 86% { opacity: 0.35; }
+      98%, 100% { opacity: 0.15; }
+    }
+
+  </style>
+
+  <g clip-path="url(#room-clip)">
+    <rect class="room-bg" x="40" y="40" width="400" height="400" />
+    <line x1="40" y1="380" x2="440" y2="380" stroke="#37474F" stroke-width="4" stroke-linecap="round" />
+    <polygon class="light-cone" points="240,75 30,380 450,380" fill="url(#light-beam)" />
+    <path class="couch" d="M280,320 H370 A10,10 0 0,0 380,310 V280 A10,10 0 0,0 370,270 H280 A10,10 0 0,0 270,280 V310 A10,10 0 0,0 280,320 Z M260,320 V360 H270 V380 H290 V360 H360 V380 H380 V360 H390 V320 Z" />
+
+    <g transform="translate(40, 180)">
+      <path d="M0,0 H12 A8,8 0 0,1 20,8 V32 A8,8 0 0,1 12,40 H0 Z" fill="#37474F" />
+      <path d="M12,8 A12,12 0 0,1 12,32 Z" fill="#78909C" />
+      <circle class="sensor-led" cx="6" cy="10" r="3" />
+      <path class="sensor-wave" d="M24,4 A24,24 0 0,1 24,36" />
+      <path class="sensor-wave wave-2" d="M32,-4 A36,36 0 0,1 32,44" />
+    </g>
+
+    <g transform="translate(240, 40)">
+      <line x1="0" y1="0" x2="0" y2="35" stroke="#78909C" stroke-width="4" />
+      <path d="M-18,35 L18,35 L26,55 L-26,55 Z" fill="#455A64" />
+      <circle class="bulb" cx="0" cy="63" r="14" />
+    </g>
+
+    <g transform="translate(0, 240)">
+      <g class="person-walker">
+        <ellipse class="person-shadow" cx="30" cy="140" rx="20" ry="3" />
+        <circle class="person-shape" cx="30" cy="18" r="11" />
+        <path class="person-shape" d="M22,34 C17.6,34 14,37.6 14,42 V136 A4,4 0 0,0 18,140 H22 A4,4 0 0,0 26,136 V110 H34 V136 A4,4 0 0,0 38,140 H42 A4,4 0 0,0 46,136 V42 C46,37.6 42.4,34 38,34 H22 Z" />
+        <path class="person-shape" d="M11,44 C9.3,44 8,45.3 8,47 L5,84 C4.6,86.2 6.1,88.2 8.3,88.6 C10.5,89 12.5,87.5 12.9,85.3 L16,49 C16.3,46.8 14.8,44.8 12.6,44.4 C12.1,44.1 11.5,44 11,44 Z" />
+      </g>
+    </g>
+  </g>
+
+  <rect x="40" y="40" width="400" height="400" rx="28" fill="none" stroke="#37474F" stroke-width="8" />
+</svg>
