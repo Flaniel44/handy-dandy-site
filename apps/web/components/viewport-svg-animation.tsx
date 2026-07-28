@@ -2,6 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 
+function renderShadowAnimation(host: HTMLDivElement, markup?: string) {
+  const shadow = host.shadowRoot || host.attachShadow({ mode: "open" });
+  if (!markup) {
+    shadow.replaceChildren();
+    return;
+  }
+
+  const style = document.createElement("style");
+  style.textContent = `
+    :host { display: block; width: 100%; height: 100%; }
+    svg { display: block; width: 100%; height: 100%; }
+  `;
+  const template = document.createElement("template");
+  template.innerHTML = markup;
+  shadow.replaceChildren(style, template.content.cloneNode(true));
+}
+
 export function ViewportSvgAnimation({ src, label }: { src: string; label: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -36,19 +53,18 @@ export function ViewportSvgAnimation({ src, label }: { src: string; label: strin
     return () => controller.abort();
   }, [isVisible, markup, src]);
 
+  useEffect(() => {
+    const host = containerRef.current;
+    if (!host) return;
+    renderShadowAnimation(host, isVisible ? markup : undefined);
+  }, [isVisible, markup]);
+
   return (
     <div
       ref={containerRef}
       className="possibility-demo-animation"
       role="img"
       aria-label={label}
-    >
-      {isVisible && markup ? (
-        <div
-          className="possibility-demo-animation-svg"
-          dangerouslySetInnerHTML={{ __html: markup }}
-        />
-      ) : null}
-    </div>
+    />
   );
 }

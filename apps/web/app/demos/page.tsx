@@ -1,6 +1,11 @@
 import Link from "next/link";
 
 import { ViewportSvgAnimation } from "../../components/viewport-svg-animation";
+
+const demoAnimationSources: Record<string, string> = {
+  "01": "/demos/motion-lights.svg",
+  "02": "/demos/grow-lights.svg",
+};
 const possibilitySections = [
   {
     id: "lighting-and-routines",
@@ -188,11 +193,11 @@ export default function DemosPage() {
             <div className="possibility-section-grid">
               {section.items.map((item) => (
                 <article className="possibility-card" key={item.number}>
-                  <div className={`possibility-media ${item.number === "01" ? "has-demo-animation" : ""}`}>
+                  <div className={`possibility-media ${demoAnimationSources[item.number] ? "has-demo-animation" : ""}`}>
                     <span>{item.number}</span>
-                    {item.number === "01" ? (
+                    {demoAnimationSources[item.number] ? (
                       <ViewportSvgAnimation
-                        src="/demos/motion-lights.svg"
+                        src={demoAnimationSources[item.number]}
                         label={item.mediaLabel}
                       />
                     ) : (

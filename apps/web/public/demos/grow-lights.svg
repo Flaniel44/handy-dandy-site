@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="100%" height="100%">
+  <defs>
+    <clipPath id="room-clip">
+      <rect x="40" y="40" width="400" height="400" rx="28" />
+    </clipPath>
+    <clipPath id="window-clip">
+      <rect x="70" y="100" width="130" height="180" rx="12" />
+    </clipPath>
+    <radialGradient id="indoor-beam" cx="50%" cy="10%" r="85%">
+      <stop id="beam-top" offset="0%" stop-color="#FFF9C4" stop-opacity="0.9" />
+      <stop id="beam-mid" offset="50%" stop-color="#FFE082" stop-opacity="0.6" />
+      <stop id="beam-bot" offset="100%" stop-color="#FFB300" stop-opacity="0.05" />
+    </radialGradient>
+  </defs>
+
+  <style>
+    .sky-bg {
+      animation: skyCycle 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes skyCycle {
+      0%, 100% { fill: #0D1B2A; }
+      15% { fill: #FF7B54; }
+      35%, 65% { fill: #87CEEB; }
+      80% { fill: #E2583E; }
+    }
+
+    .sun-path {
+      animation: sunArc 10s linear infinite;
+    }
+    @keyframes sunArc {
+      0%, 10% { transform: translate(62px, 235px); fill: #FF8A65; opacity: 0; }
+      15% { transform: translate(78px, 220px); fill: #FFB74D; opacity: 1; }
+      30% { transform: translate(108px, 148px); fill: #FFF176; opacity: 1; }
+      45% { transform: translate(135px, 124px); fill: #FFF59D; opacity: 1; }
+      60% { transform: translate(166px, 148px); fill: #FFF176; opacity: 1; }
+      76% { transform: translate(195px, 220px); fill: #FF7043; opacity: 1; }
+      84%, 100% { transform: translate(210px, 240px); fill: #FF8A65; opacity: 0; }
+    }
+
+    .moon-path {
+      animation: moonArc 10s linear infinite;
+    }
+    @keyframes moonArc {
+      0% { transform: translate(173px, 169px); opacity: 1; }
+      5% { transform: translate(184px, 195px); opacity: 1; }
+      10% { transform: translate(192px, 220px); opacity: 1; }
+      15% { transform: translate(202px, 238px); opacity: 0; }
+      65% { transform: translate(68px, 238px); opacity: 0; }
+      70% { transform: translate(78px, 220px); opacity: 0.3; }
+      75% { transform: translate(87px, 195px); opacity: 1; }
+      80% { transform: translate(97px, 169px); opacity: 1; }
+      85% { transform: translate(113px, 143px); opacity: 1; }
+      90% { transform: translate(135px, 130px); opacity: 1; }
+      95% { transform: translate(157px, 143px); opacity: 1; }
+      100% { transform: translate(173px, 169px); opacity: 1; }
+    }
+
+    .indoor-bg {
+      animation: indoorAmbient 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes indoorAmbient {
+      0%, 100% { fill: #12161A; }
+      15% { fill: #2C2220; }
+      35%, 65% { fill: #FFF8E1; }
+      80% { fill: #2A1D1A; }
+    }
+
+    .smart-bulb {
+      animation: bulbTone 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes bulbTone {
+      0%, 100% { fill: #455A64; }
+      15% { fill: #FFB74D; }
+      35%, 65% { fill: #FFFFFF; }
+      80% { fill: #FF8A65; }
+    }
+
+    .light-cone {
+      transform-origin: 340px 80px;
+      animation: coneIntensity 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes coneIntensity {
+      0%, 100% { opacity: 0.1; }
+      15% { opacity: 0.75; }
+      35%, 65% { opacity: 1; }
+      80% { opacity: 0.7; }
+    }
+
+    .leaf-bright {
+      animation: leafGlow 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes leafGlow {
+      0%, 100% { fill: #1B5E20; }
+      15% { fill: #4CAF50; }
+      35%, 65% { fill: #76FF03; }
+      80% { fill: #43A047; }
+    }
+
+    .pot {
+      animation: potLighting 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes potLighting {
+      0%, 100% { fill: #37474F; }
+      15% { fill: #8D6E63; }
+      35%, 65% { fill: #FF7043; }
+      80% { fill: #A1887F; }
+    }
+  </style>
+
+  <g clip-path="url(#room-clip)">
+    <rect class="indoor-bg" x="40" y="40" width="400" height="400" />
+
+    <g>
+      <g clip-path="url(#window-clip)">
+        <rect class="sky-bg" x="70" y="100" width="130" height="180" />
+        <circle class="sun-path" cx="0" cy="0" r="16" />
+        <g class="moon-path">
+          <circle cx="0" cy="0" r="15" fill="#E8EEF8" />
+          <circle cx="-5" cy="-4" r="3" fill="#C8D2E3" opacity="0.7" />
+          <circle cx="6" cy="5" r="4" fill="#C8D2E3" opacity="0.55" />
+          <circle cx="6" cy="-7" r="2" fill="#C8D2E3" opacity="0.6" />
+        </g>
+        <path d="M60,260 Q130,220 210,260 V290 H60 Z" fill="#1C2833" opacity="0.8" />
+      </g>
+      <rect x="70" y="100" width="130" height="180" rx="12" fill="none" stroke="#455A64" stroke-width="6" />
+      <line x1="135" y1="100" x2="135" y2="280" stroke="#455A64" stroke-width="4" />
+      <line x1="70" y1="190" x2="200" y2="190" stroke="#455A64" stroke-width="4" />
+    </g>
+
+    <line x1="40" y1="380" x2="440" y2="380" stroke="#37474F" stroke-width="4" stroke-linecap="round" />
+    <polygon class="light-cone" points="340,80 200,380 440,380" fill="url(#indoor-beam)" />
+
+    <g transform="translate(340, 40)">
+      <line x1="0" y1="0" x2="0" y2="30" stroke="#78909C" stroke-width="4" />
+      <path d="M-22,30 L22,30 L30,52 L-30,52 Z" fill="#37474F" />
+      <circle class="smart-bulb" cx="0" cy="58" r="12" />
+    </g>
+
+    <g transform="translate(340, 380)">
+      <ellipse cx="0" cy="-2" rx="55" ry="5" fill="#000" opacity="0.2" />
+      <path d="M-50,-80 H50 V-70 H-50 Z" fill="#5D4037" />
+      <line x1="-40" y1="-70" x2="-45" y2="0" stroke="#4E342E" stroke-width="6" stroke-linecap="round" />
+      <line x1="40" y1="-70" x2="45" y2="0" stroke="#4E342E" stroke-width="6" stroke-linecap="round" />
+      <path class="pot" d="M-22,-80 L-16,-120 H16 L22,-80 Z" />
+
+      <g transform="translate(0, -120)">
+        <path d="M0,0 Q-5,-25 0,-45" stroke="#2E7D32" stroke-width="4" fill="none" />
+        <path class="leaf-bright" d="M0,-45 C-18,-60 -12,-85 0,-90 C12,-85 18,-60 0,-45 Z" />
+        <path d="M-5,0 Q-20,-15 -30,-25" stroke="#2E7D32" stroke-width="4" fill="none" />
+        <path class="leaf-bright" d="M-30,-25 C-50,-35 -55,-10 -35,-5 C-20,-5 -20,-20 -30,-25 Z" />
+        <path d="M5,0 Q20,-15 30,-28" stroke="#2E7D32" stroke-width="4" fill="none" />
+        <path class="leaf-bright" d="M30,-28 C50,-38 58,-12 38,-8 C22,-5 22,-22 30,-28 Z" />
+      </g>
+    </g>
+  </g>
+
+  <rect x="40" y="40" width="400" height="400" rx="28" fill="none" stroke="#37474F" stroke-width="8" />
+</svg>
