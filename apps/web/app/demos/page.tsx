@@ -8,6 +8,7 @@ const demoAnimationSources: Record<string, string> = {
   "03": "/demos/day-night-modes.svg",
   "04": "/demos/arrival-automation.svg",
   "05": "/demos/physical-controls.svg",
+  "06": "/demos/phone-tap-routine.svg",
 };
 const possibilitySections = [
   {
