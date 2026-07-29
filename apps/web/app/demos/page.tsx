@@ -13,6 +13,7 @@ const demoAnimationSources: Record<string, string> = {
   "08": "/demos/automation-builder.svg",
   "09": "/demos/infrared-devices.svg",
   "10": "/demos/scheduled-coffee.svg",
+  "11": "/demos/smart-display-dashboard.svg",
 };
 const possibilitySections = [
   {
@@ -121,8 +122,8 @@ const possibilitySections = [
       {
         number: "11",
         title: "Can one simple screen control my home and show useful information?",
-        emphasis: "control my home and show useful information",
-        description: "Yes. A Home Assistant dashboard can bring your devices and automations together, while smart or e-ink displays can show calendars, weather, reminders, and device status without becoming another distraction.",
+        emphasis: "one simple screen",
+        description: "Yes. A custom dashboard can be built for you to control your devices, show calendars, weather, reminders, and device status without becoming another distraction.",
         mediaLabel: "Home Assistant dashboard and smart display examples",
       },
     ],

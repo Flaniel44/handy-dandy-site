@@ -1,0 +1,320 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 500" width="100%" height="100%" id="smart-display-dashboard-root">
+  <title>Wall-mounted smart home dashboard</title>
+  <desc>A smart display shows weather, indoor temperature, lock status, music controls, lights, and energy use.</desc>
+
+  <defs>
+    <clipPath id="dashboard-scene-clip">
+      <rect width="600" height="500" />
+    </clipPath>
+    <clipPath id="dashboard-screen-clip">
+      <rect x="80" y="65" width="440" height="280" rx="12" />
+    </clipPath>
+    <linearGradient id="dashboard-wall" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#33444C" />
+      <stop offset="100%" stop-color="#26343B" />
+    </linearGradient>
+    <linearGradient id="dashboard-screen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#121C2B" />
+      <stop offset="55%" stop-color="#0D1624" />
+      <stop offset="100%" stop-color="#101523" />
+    </linearGradient>
+    <radialGradient id="dashboard-screen-glow" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#00B8D4" stop-opacity=".18" />
+      <stop offset="65%" stop-color="#536DFE" stop-opacity=".06" />
+      <stop offset="100%" stop-color="#536DFE" stop-opacity="0" />
+    </radialGradient>
+    <filter id="dashboard-shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000000" flood-opacity=".5" />
+    </filter>
+    <filter id="dashboard-soft-shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity=".34" />
+    </filter>
+    <filter id="dashboard-blue-glow" x="-200%" y="-200%" width="500%" height="500%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <style>
+    #dashboard-power-glow {
+      animation: dashboard-breathe 5s ease-in-out infinite alternate;
+    }
+    @keyframes dashboard-breathe {
+      from { opacity: .55; }
+      to { opacity: 1; }
+    }
+
+    .rain-drop {
+      animation: dashboard-rain 1.25s linear infinite;
+    }
+    .rain-drop:nth-child(2) { animation-delay: -.35s; }
+    .rain-drop:nth-child(3) { animation-delay: -.7s; }
+    .rain-drop:nth-child(4) { animation-delay: -1.05s; }
+    @keyframes dashboard-rain {
+      0% { opacity: 0; transform: translateY(-5px); }
+      18% { opacity: .9; }
+      82% { opacity: .9; }
+      100% { opacity: 0; transform: translateY(16px); }
+    }
+
+    #indoor-temperature-ring {
+      animation: temperature-ring 12s ease-in-out infinite;
+      transform-origin: 307px 178px;
+    }
+    @keyframes temperature-ring {
+      0%, 8%, 90%, 100% { stroke-dashoffset: 45; filter: none; }
+      20%, 82% { stroke-dashoffset: 19; filter: url(#dashboard-blue-glow); }
+    }
+
+    #lock-shackle {
+      animation: lock-secure 12s cubic-bezier(.2, .8, .2, 1) infinite;
+      transform-origin: 438px 164px;
+    }
+    @keyframes lock-secure {
+      0%, 9% { transform: translateY(-6px); }
+      14%, 91% { transform: translateY(0); }
+      98%, 100% { transform: translateY(-6px); }
+    }
+
+    #security-card {
+      animation: security-confirm 12s ease-in-out infinite;
+    }
+    @keyframes security-confirm {
+      0%, 9%, 25%, 100% { stroke: #2C3A4D; }
+      14%, 21% { stroke: #00E676; }
+    }
+
+    #security-check {
+      animation: security-check 12s cubic-bezier(.2, .8, .2, 1) infinite;
+      transform-origin: 484px 204px;
+    }
+    @keyframes security-check {
+      0%, 10% { opacity: 0; transform: scale(.45); }
+      15%, 24% { opacity: 1; transform: scale(1); }
+      30%, 100% { opacity: 0; transform: scale(.45); }
+    }
+
+    #all-secure-banner {
+      animation: secure-banner 12s cubic-bezier(.2, .8, .2, 1) infinite;
+      transform-origin: 300px 103px;
+    }
+    @keyframes secure-banner {
+      0%, 10% { opacity: 0; transform: translateY(-12px); }
+      15%, 25% { opacity: 1; transform: translateY(0); }
+      31%, 100% { opacity: 0; transform: translateY(-12px); }
+    }
+
+    #music-progress {
+      animation: music-progress 12s linear infinite;
+      transform-box: fill-box;
+      transform-origin: left center;
+    }
+    @keyframes music-progress {
+      0%, 29% { transform: scaleX(.08); }
+      34% { transform: scaleX(.12); }
+      82% { transform: scaleX(1); }
+      90%, 100% { transform: scaleX(.08); }
+    }
+
+    #music-play {
+      animation: music-play-state 12s linear infinite;
+    }
+    @keyframes music-play-state {
+      0%, 29%, 87%, 100% { opacity: 1; }
+      34%, 82% { opacity: 0; }
+    }
+
+    #music-pause {
+      animation: music-pause-state 12s linear infinite;
+    }
+    @keyframes music-pause-state {
+      0%, 29%, 87%, 100% { opacity: 0; }
+      34%, 82% { opacity: 1; }
+    }
+
+    .equalizer-bar {
+      animation: equalizer 1s ease-in-out infinite alternate;
+      transform-box: fill-box;
+      transform-origin: center bottom;
+    }
+    .equalizer-bar:nth-child(2) { animation-delay: -.25s; }
+    .equalizer-bar:nth-child(3) { animation-delay: -.55s; }
+    .equalizer-bar:nth-child(4) { animation-delay: -.8s; }
+    @keyframes equalizer {
+      0%, 15% { transform: scaleY(.25); }
+      100% { transform: scaleY(1); }
+    }
+
+    #music-notes {
+      animation: music-notes 12s ease-in-out infinite;
+      transform-origin: 183px 244px;
+    }
+    @keyframes music-notes {
+      0%, 29% { opacity: 0; transform: translateY(10px) scale(.8); }
+      35%, 75% { opacity: 1; transform: translateY(-8px) scale(1); }
+      84%, 100% { opacity: 0; transform: translateY(-22px) scale(.85); }
+    }
+
+    #lights-card {
+      animation: lights-on 12s ease-in-out infinite;
+    }
+    @keyframes lights-on {
+      0%, 53%, 97%, 100% { opacity: 0; }
+      59%, 91% { opacity: 1; }
+    }
+
+    #lights-card-off {
+      animation: lights-off 12s ease-in-out infinite;
+    }
+    @keyframes lights-off {
+      0%, 53%, 97%, 100% { opacity: 1; }
+      59%, 91% { opacity: 0; }
+    }
+
+    #energy-wave {
+      stroke-dasharray: 5 7;
+      animation: energy-flow 1.4s linear infinite;
+    }
+    @keyframes energy-flow {
+      to { stroke-dashoffset: -24; }
+    }
+
+    #dashboard-cursor {
+      animation: dashboard-cursor 12s cubic-bezier(.25, .8, .25, 1) infinite;
+      transform-origin: 487px 296px;
+    }
+    @keyframes dashboard-cursor {
+      0%, 45% { opacity: 0; transform: translate(0, 16px); }
+      51% { opacity: 1; transform: translate(0, 0); }
+      55% { opacity: 1; transform: translate(-19px, -10px) scale(.88); }
+      60%, 66% { opacity: 1; transform: translate(0, 0); }
+      72%, 100% { opacity: 0; transform: translate(0, 16px); }
+    }
+  </style>
+
+  <g clip-path="url(#dashboard-scene-clip)">
+    <rect width="600" height="500" fill="url(#dashboard-wall)" />
+
+    <g id="smart-display" transform="translate(300 250) scale(1.08) translate(-300 -205)" filter="url(#dashboard-shadow)">
+      <rect x="65" y="50" width="470" height="310" rx="21" fill="#111619" />
+      <rect x="73" y="58" width="454" height="294" rx="16" fill="#263238" />
+      <rect x="80" y="65" width="440" height="280" rx="12" fill="url(#dashboard-screen)" />
+      <rect id="dashboard-power-glow" x="80" y="65" width="440" height="280" rx="12" fill="url(#dashboard-screen-glow)" />
+
+      <g clip-path="url(#dashboard-screen-clip)">
+        <g id="dashboard-header">
+          <text x="101" y="96" fill="#ECEFF1" font-family="sans-serif" font-size="18" font-weight="700">7:30</text>
+          <text x="101" y="111" fill="#78909C" font-family="sans-serif" font-size="8" font-weight="700" letter-spacing="1.2">TUESDAY</text>
+        </g>
+
+        <g id="weather-card" filter="url(#dashboard-soft-shadow)">
+          <rect x="98" y="124" width="140" height="100" rx="12" fill="#172437" stroke="#2C3A4D" stroke-width="2" />
+          <text x="112" y="144" fill="#90A4AE" font-family="sans-serif" font-size="8" font-weight="700" letter-spacing="1">OUTSIDE</text>
+          <text x="111" y="184" fill="#ECEFF1" font-family="sans-serif" font-size="30" font-weight="300">8&#176;</text>
+          <text x="112" y="204" fill="#64B5F6" font-family="sans-serif" font-size="9" font-weight="700">RAIN · 90%</text>
+          <g transform="translate(181 148)">
+            <path d="M4 20 C-4 8 8 -2 19 5 C23 -7 43 -4 43 10 C55 11 57 28 44 30 H7 C-2 30 -4 22 4 20 Z" fill="#78909C" />
+            <g stroke="#40C4FF" stroke-width="3" stroke-linecap="round">
+              <line class="rain-drop" x1="8" y1="35" x2="4" y2="43" />
+              <line class="rain-drop" x1="21" y1="35" x2="17" y2="43" />
+              <line class="rain-drop" x1="34" y1="35" x2="30" y2="43" />
+              <line class="rain-drop" x1="47" y1="35" x2="43" y2="43" />
+            </g>
+          </g>
+        </g>
+
+        <g id="climate-card" filter="url(#dashboard-soft-shadow)">
+          <rect x="250" y="124" width="116" height="100" rx="12" fill="#172437" stroke="#2C3A4D" stroke-width="2" />
+          <text x="264" y="144" fill="#90A4AE" font-family="sans-serif" font-size="8" font-weight="700" letter-spacing="1">INDOORS</text>
+          <circle cx="308" cy="178" r="27" fill="none" stroke="#26384A" stroke-width="5" />
+          <circle id="indoor-temperature-ring" cx="308" cy="178" r="27" fill="none" stroke="#00E5FF" stroke-width="5" stroke-linecap="round" stroke-dasharray="125 45" stroke-dashoffset="45" transform="rotate(-90 308 178)" />
+          <text x="308" y="183" fill="#ECEFF1" font-family="sans-serif" font-size="16" font-weight="700" text-anchor="middle">21.5&#176;</text>
+          <text x="308" y="211" fill="#78909C" font-family="sans-serif" font-size="8" text-anchor="middle">45% humidity</text>
+        </g>
+
+        <g filter="url(#dashboard-soft-shadow)">
+          <rect id="security-card" x="378" y="124" width="124" height="100" rx="12" fill="#172437" stroke="#2C3A4D" stroke-width="2" />
+          <text x="392" y="144" fill="#90A4AE" font-family="sans-serif" font-size="8" font-weight="700" letter-spacing="1">SECURITY</text>
+          <g transform="translate(417 153)">
+            <path id="lock-shackle" d="M9 18 V11 C9 -2 29 -2 29 11 V18" fill="none" stroke="#00E676" stroke-width="5" stroke-linecap="round" />
+            <rect x="4" y="17" width="30" height="27" rx="6" fill="#00C853" />
+            <circle cx="19" cy="29" r="4" fill="#10251C" />
+            <rect x="17.5" y="30" width="3" height="7" rx="1.5" fill="#10251C" />
+          </g>
+          <text x="459" y="175" fill="#ECEFF1" font-family="sans-serif" font-size="9" font-weight="700">LOCKED</text>
+          <text x="459" y="191" fill="#78909C" font-family="sans-serif" font-size="8">2 doors</text>
+          <g id="security-check" opacity="0">
+            <circle cx="484" cy="206" r="10" fill="#0D2C20" stroke="#00E676" stroke-width="2" />
+            <path d="M479 206 L483 210 L490 202" fill="none" stroke="#00E676" stroke-width="2.5" stroke-linecap="round" />
+          </g>
+        </g>
+
+        <g id="music-card" filter="url(#dashboard-soft-shadow)">
+          <rect x="98" y="236" width="268" height="90" rx="12" fill="#172437" stroke="#2C3A4D" stroke-width="2" />
+          <rect x="111" y="249" width="62" height="62" rx="10" fill="#4A376B" />
+          <circle cx="142" cy="280" r="19" fill="#F25D9C" />
+          <circle cx="142" cy="280" r="6" fill="#4A376B" />
+          <g fill="#FF80AB" opacity=".9">
+            <rect class="equalizer-bar" x="118" y="270" width="4" height="22" rx="2" />
+            <rect class="equalizer-bar" x="126" y="262" width="4" height="30" rx="2" />
+            <rect class="equalizer-bar" x="154" y="265" width="4" height="27" rx="2" />
+            <rect class="equalizer-bar" x="162" y="272" width="4" height="20" rx="2" />
+          </g>
+          <text x="187" y="257" fill="#90A4AE" font-family="sans-serif" font-size="8" font-weight="700" letter-spacing="1">NOW PLAYING</text>
+          <text x="187" y="277" fill="#ECEFF1" font-family="sans-serif" font-size="12" font-weight="700">Morning Mix</text>
+          <text x="187" y="291" fill="#78909C" font-family="sans-serif" font-size="8">Kitchen + Living room</text>
+          <rect x="187" y="302" width="124" height="4" rx="2" fill="#26384A" />
+          <rect id="music-progress" x="187" y="302" width="124" height="4" rx="2" fill="#F25D9C" />
+          <circle cx="337" cy="280" r="17" fill="#29394C" />
+          <path id="music-play" d="M333 272 L344 280 L333 288 Z" fill="#ECEFF1" />
+          <g id="music-pause" opacity="0" fill="#ECEFF1">
+            <rect x="332" y="272" width="4" height="16" rx="1" />
+            <rect x="339" y="272" width="4" height="16" rx="1" />
+          </g>
+          <g id="music-notes" fill="#F25D9C" opacity="0">
+            <path d="M177 242 V226 L190 223 V238 A6 6 0 1 1 186 232 V228 L181 229 V242 A6 6 0 1 1 177 236 Z" />
+            <path d="M206 234 V218 L216 216 V230 A5 5 0 1 1 212 226 V221 L210 222 V234 A5 5 0 1 1 206 230 Z" opacity=".7" />
+          </g>
+        </g>
+
+        <g id="status-card" filter="url(#dashboard-soft-shadow)">
+          <rect x="378" y="236" width="124" height="90" rx="12" fill="#172437" stroke="#2C3A4D" stroke-width="2" />
+          <g id="lights-card-off">
+            <circle cx="402" cy="261" r="10" fill="#26384A" />
+            <path d="M402 253 C395 253 394 261 398 265 V269 H406 V265 C410 261 409 253 402 253 Z" fill="#78909C" />
+            <text x="420" y="258" fill="#ECEFF1" font-family="sans-serif" font-size="9" font-weight="700">LIGHTS</text>
+            <text x="420" y="271" fill="#78909C" font-family="sans-serif" font-size="8">4 off</text>
+          </g>
+          <g id="lights-card" opacity="0">
+            <circle cx="402" cy="261" r="10" fill="#4B3A1D" />
+            <path d="M402 253 C395 253 394 261 398 265 V269 H406 V265 C410 261 409 253 402 253 Z" fill="#FFD180" />
+            <text x="420" y="258" fill="#ECEFF1" font-family="sans-serif" font-size="9" font-weight="700">LIGHTS</text>
+            <text x="420" y="271" fill="#FFB74D" font-family="sans-serif" font-size="8">4 on</text>
+          </g>
+          <line x1="392" y1="282" x2="488" y2="282" stroke="#26384A" />
+          <path id="energy-wave" d="M392 303 C402 285 411 319 421 301 S441 285 451 303 S471 319 488 296" fill="none" stroke="#00E5FF" stroke-width="2" stroke-linecap="round" />
+          <text x="392" y="318" fill="#78909C" font-family="sans-serif" font-size="7">ENERGY</text>
+          <text x="488" y="318" fill="#ECEFF1" font-family="sans-serif" font-size="8" font-weight="700" text-anchor="end">0.8 kW</text>
+        </g>
+
+        <g id="all-secure-banner" opacity="0" filter="url(#dashboard-soft-shadow)">
+          <rect x="214" y="84" width="172" height="38" rx="19" fill="#123526" stroke="#00E676" stroke-width="2" />
+          <circle cx="237" cy="103" r="10" fill="#00C853" />
+          <path d="M232 103 L236 107 L243 99" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" />
+          <text x="253" y="107" fill="#E8FFF1" font-family="sans-serif" font-size="10" font-weight="700">All doors secure</text>
+        </g>
+
+        <g id="dashboard-cursor" opacity="0">
+          <circle cx="487" cy="296" r="13" fill="#00E5FF" opacity=".2" />
+          <circle cx="487" cy="296" r="5" fill="#FFFFFF" stroke="#00E5FF" stroke-width="2" />
+        </g>
+      </g>
+
+      <circle cx="300" cy="353" r="2.5" fill="#455A64" />
+    </g>
+
+  </g>
+</svg>
