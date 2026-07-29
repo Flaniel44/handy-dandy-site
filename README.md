@@ -71,7 +71,7 @@ npm run reminders:worker --workspace=@handy-dani/web
 The worker checks every 15 minutes by default; configure `REMINDER_WORKER_INTERVAL_MINUTES` to change this.
 Successful recipients are recorded separately, so a later cycle retries only the reminder that failed.
 
-Incoming addresses such as `handydan@whatisthis.place` can be forwarded to a personal Gmail account with
+Incoming addresses such as `dan@digitalhandydan.ca` can be forwarded to a personal Gmail account with
 Cloudflare Email Routing. Configure the same address under Gmail's **Send mail as** setting using Resend's
 SMTP host so manual replies retain the business address.
 

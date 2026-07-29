@@ -21,8 +21,8 @@ beforeEach(() => {
   vi.unstubAllEnvs();
   vi.stubEnv("NODE_ENV", "test");
   process.env.RESEND_API_KEY = "re_test_key";
-  process.env.EMAIL_FROM = "Digital Handyman <handydan@whatisthis.place>";
-  process.env.EMAIL_REPLY_TO = "handydan@whatisthis.place";
+  process.env.EMAIL_FROM = "Digital Handyman <dan@digitalhandydan.ca>";
+  process.env.EMAIL_REPLY_TO = "dan@digitalhandydan.ca";
   process.env.EMAIL_FAILURE_ALERT_TO = "owner@whatisthis.place";
   process.env.APP_URL = "https://whatisthis.place/";
   process.env.BUSINESS_TIMEZONE = "America/Toronto";
@@ -53,7 +53,7 @@ describe("transactional email delivery", () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(log).toHaveBeenCalledWith("Development email", expect.objectContaining({
-      to: "client@example.com", from: "Digital Handyman <handydan@whatisthis.place>", replyTo: "handydan@whatisthis.place",
+      to: "client@example.com", from: "Digital Handyman <dan@digitalhandydan.ca>", replyTo: "dan@digitalhandydan.ca",
     }));
     log.mockRestore();
   });
@@ -113,8 +113,8 @@ describe("transactional email delivery", () => {
     const body = JSON.parse(String(init?.body)) as Record<string, string>;
     expect(body).toMatchObject({
       to: "ada@example.com",
-      from: "Digital Handyman <handydan@whatisthis.place>",
-      reply_to: "handydan@whatisthis.place",
+      from: "Digital Handyman <dan@digitalhandydan.ca>",
+      reply_to: "dan@digitalhandydan.ca",
       subject: "Your Digital Handyman appointment is confirmed",
     });
     expect(body.text).toContain("Ada <Admin>");

@@ -5,8 +5,8 @@ const MAX_DELIVERY_ATTEMPTS = 3;
 
 export async function sendTransactionalEmail(message: EmailMessage) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM ?? "Digital Handyman <handydan@whatisthis.place>";
-  const replyTo = process.env.EMAIL_REPLY_TO ?? "handydan@whatisthis.place";
+  const from = process.env.EMAIL_FROM ?? "Digital Handyman <dan@digitalhandydan.ca>";
+  const replyTo = process.env.EMAIL_REPLY_TO ?? "dan@digitalhandydan.ca";
 
   if (!apiKey) {
     if (process.env.NODE_ENV === "production") throw new Error("RESEND_API_KEY is required in production.");

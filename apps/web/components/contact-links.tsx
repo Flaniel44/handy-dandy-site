@@ -1,4 +1,4 @@
-const DEFAULT_EMAIL = "handydan@whatisthis.place";
+const DEFAULT_EMAIL = "dan@digitalhandydan.ca";
 const DEFAULT_PHONE_NUMBER = "+13435961813";
 const DEFAULT_WHATSAPP_URL = "https://wa.me/13435961813";
 const DEFAULT_FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61592466245543";
