@@ -7,7 +7,7 @@ RUN npm ci
 
 FROM dependencies AS builder
 COPY . .
-ARG NEXT_PUBLIC_BUSINESS_EMAIL=handydan@whatisthis.place
+ARG NEXT_PUBLIC_BUSINESS_EMAIL=handydan@digitalhandydan.ca
 ARG NEXT_PUBLIC_WHATSAPP_URL=https://wa.me/13435961813
 ARG NEXT_PUBLIC_FACEBOOK_URL=https://www.facebook.com/profile.php?id=61592466245543
 ARG NEXT_PUBLIC_INSTAGRAM_URL=https://www.instagram.com/digitalhandydan/
