@@ -54,18 +54,18 @@ generated.set("HANDY_DANDY_PORT", "3010");
 generated.set("HANDY_DANDY_ENV_FILE", "apps/web/.env.production");
 generated.set("APP_ENCRYPTION_KEY", secret(32));
 generated.set("ADMIN_SESSION_SECRET", secret(48));
-generated.set("APP_URL", "https://whatisthis.place");
+generated.set("APP_URL", "https://digitalhandydan.ca");
 generated.set("BUSINESS_TIMEZONE", source.get("BUSINESS_TIMEZONE") || "America/Toronto");
 generated.set("REMINDER_CRON_SECRET", secret(32));
 generated.set("REMINDER_WORKER_INTERVAL_MINUTES", "15");
 generated.set(
   "GOOGLE_OAUTH_REDIRECT_URI",
-  "https://whatisthis.place/api/admin/google-calendar/callback",
+  "https://digitalhandydan.ca/api/admin/google-calendar/callback",
 );
 generated.set("GOOGLE_TOKEN_ENCRYPTION_KEY", randomBytes(32).toString("base64"));
 generated.set(
   "GOOGLE_LOGIN_REDIRECT_URI",
-  "https://whatisthis.place/api/auth/google/callback",
+  "https://digitalhandydan.ca/api/auth/google/callback",
 );
 
 const output = templateContents
