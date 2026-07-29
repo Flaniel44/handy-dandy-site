@@ -35,7 +35,7 @@ services:
       context: .
       target: runner
       args:
-        NEXT_PUBLIC_BUSINESS_EMAIL: ${NEXT_PUBLIC_BUSINESS_EMAIL:-handydan@digitalhandydan.ca}
+        NEXT_PUBLIC_BUSINESS_EMAIL: ${NEXT_PUBLIC_BUSINESS_EMAIL:-dan@digitalhandydan.ca}
         NEXT_PUBLIC_WHATSAPP_URL: ${NEXT_PUBLIC_WHATSAPP_URL:-https://wa.me/13435961813}
         NEXT_PUBLIC_FACEBOOK_URL: ${NEXT_PUBLIC_FACEBOOK_URL:-https://www.facebook.com/profile.php?id=61592466245543}
         NEXT_PUBLIC_INSTAGRAM_URL: ${NEXT_PUBLIC_INSTAGRAM_URL:-https://www.instagram.com/digitalhandydan/}

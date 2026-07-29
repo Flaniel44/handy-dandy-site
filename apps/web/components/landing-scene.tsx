@@ -348,7 +348,7 @@ export function LandingScene() {
       if (action === "book") router.push(bookingPathRef.current);
       if (action === "demos") router.push("/demos");
       if (action === "admin") router.push("/admin");
-      if (action === "contact") window.location.href = "mailto:handydan@digitalhandydan.ca";
+      if (action === "contact") window.location.href = "mailto:dan@digitalhandydan.ca";
     };
 
     const toggleDeviceFrom = (target: EventTarget | null) => {
