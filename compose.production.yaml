@@ -44,8 +44,8 @@ services:
     env_file: ${HANDY_DANDY_ENV_FILE:-apps/web/.env.production}
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-handy_dandy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-handy_dandy}
-      APP_URL: https://whatisthis.place
-      GOOGLE_OAUTH_REDIRECT_URI: https://whatisthis.place/api/admin/google-calendar/callback
+      APP_URL: https://digitalhandydan.ca
+      GOOGLE_OAUTH_REDIRECT_URI: https://digitalhandydan.ca/api/admin/google-calendar/callback
     ports:
       - "${HANDY_DANDY_BIND_IP:-0.0.0.0}:${HANDY_DANDY_PORT:-3010}:3000"
     depends_on:
