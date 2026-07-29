@@ -12,6 +12,7 @@ const demoAnimationSources: Record<string, string> = {
   "07": "/demos/qr-code-guest-wifi.svg",
   "08": "/demos/automation-builder.svg",
   "09": "/demos/infrared-devices.svg",
+  "10": "/demos/scheduled-coffee.svg",
 };
 const possibilitySections = [
   {
@@ -174,7 +175,7 @@ export default function DemosPage() {
             <div className="possibility-section-grid">
               {section.items.map((item) => (
                 <article
-                  className={`possibility-card ${item.number === "08" ? "has-wide-demo" : ""}`}
+                  className={`possibility-card ${item.number === "08" ? "has-wide-demo" : ""} ${item.number === "10" ? "demo-right" : ""}`}
                   key={item.number}
                 >
                   <div className={`possibility-media ${demoAnimationSources[item.number] ? "has-demo-animation" : ""}`}>

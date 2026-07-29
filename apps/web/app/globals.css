@@ -186,7 +186,9 @@ a { color: inherit; }
 .possibility-section-grid { display: grid; gap: clamp(70px, 10vw, 130px); }
 .possibility-card { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: clamp(30px, 6vw, 80px); align-items: center; }
 .possibility-card.has-wide-demo { grid-template-columns: minmax(280px, .55fr) minmax(0, 1.55fr); gap: clamp(28px, 4vw, 52px); }
+.possibility-card.demo-right { grid-template-columns: minmax(280px, .85fr) minmax(0, 1.15fr); gap: clamp(28px, 4vw, 52px); }
 .possibility-section-grid .possibility-card:nth-child(even) .possibility-media { order: 2; }
+.possibility-card.demo-right .possibility-media { order: 2; }
 .possibility-section-grid .possibility-card.has-wide-demo .possibility-media { order: 2; width: 100%; min-height: 0; }
 .possibility-media { position: relative; min-height: clamp(270px, 42vw, 500px); display: grid; align-content: center; justify-items: center; padding: 30px; overflow: hidden; border: 1px solid #343c5b; border-radius: 14px; background: linear-gradient(135deg, #171d31, #10131f); color: var(--muted); text-align: center; }
 .possibility-media::before { content: ""; position: absolute; width: 55%; aspect-ratio: 1; border: 1px solid #8279e555; border-radius: 50%; box-shadow: 0 0 80px #6259c333; }
@@ -214,6 +216,7 @@ a { color: inherit; }
   .possibility-section-grid { gap: 105px; }
   .possibility-card { grid-template-columns: 1fr; }
   .possibility-card.has-wide-demo { grid-template-columns: 1fr; }
+  .possibility-card.demo-right { grid-template-columns: 1fr; }
   .possibility-section-grid .possibility-card:nth-child(n) .possibility-media { order: 0; }
   .possibility-media { min-height: 280px; }
   .possibilities-cta { padding-inline: 24px; }
