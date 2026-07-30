@@ -1,0 +1,254 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 500" width="100%" height="100%" id="energy-monitoring-root">
+  <title>Home energy monitoring dashboard</title>
+  <desc>Energy flows from household devices into a dashboard that identifies unusually high heating usage and suggests a more efficient schedule.</desc>
+
+  <defs>
+    <clipPath id="energy-scene-clip">
+      <rect width="600" height="500" rx="24" />
+    </clipPath>
+    <linearGradient id="energy-background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#172130" />
+      <stop offset="1" stop-color="#0C111C" />
+    </linearGradient>
+    <linearGradient id="energy-house-fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#263842" />
+      <stop offset="1" stop-color="#18252C" />
+    </linearGradient>
+    <linearGradient id="energy-panel-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#202C42" />
+      <stop offset="1" stop-color="#121927" />
+    </linearGradient>
+    <radialGradient id="heater-alert-glow">
+      <stop offset="0" stop-color="#FF8A65" stop-opacity=".55" />
+      <stop offset=".55" stop-color="#FF7043" stop-opacity=".18" />
+      <stop offset="1" stop-color="#FF7043" stop-opacity="0" />
+    </radialGradient>
+    <filter id="energy-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="13" flood-color="#000000" flood-opacity=".36" />
+    </filter>
+    <filter id="energy-blue-glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="energy-orange-glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <pattern id="energy-grid" width="26" height="26" patternUnits="userSpaceOnUse">
+      <path d="M26 0 H0 V26" fill="none" stroke="#7693A5" stroke-width="1" opacity=".08" />
+    </pattern>
+  </defs>
+
+  <style>
+    .energy-flow {
+      stroke-dasharray: 12 170;
+      animation: energy-flow 3s linear infinite;
+    }
+    .energy-flow.flow-two { animation-delay: -1s; }
+    .energy-flow.flow-three { animation-delay: -2s; }
+    @keyframes energy-flow {
+      to { stroke-dashoffset: -182; }
+    }
+
+    #energy-heater-alert {
+      animation: heater-alert 12s ease-in-out infinite;
+    }
+    #energy-suggestion {
+      animation: suggestion 12s cubic-bezier(.2, .8, .2, 1) infinite;
+    }
+    @keyframes heater-alert {
+      0%, 26%, 84%, 100% { opacity: 0; transform: translateY(8px); }
+      35%, 76% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes suggestion {
+      0%, 42%, 88%, 100% { opacity: 0; transform: translateY(10px); }
+      51%, 80% { opacity: 1; transform: translateY(0); }
+    }
+
+    #energy-meter-ring {
+      stroke-dasharray: 140 42;
+      transform-origin: 131px 454px;
+      animation: meter-ring 4s linear infinite;
+    }
+    @keyframes meter-ring {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
+    }
+  </style>
+
+  <g clip-path="url(#energy-scene-clip)">
+    <rect width="600" height="500" fill="url(#energy-background)" />
+    <rect width="600" height="500" fill="url(#energy-grid)" />
+    <circle cx="103" cy="100" r="180" fill="#283A6B" opacity=".13" />
+    <circle cx="551" cy="435" r="185" fill="#1D6B69" opacity=".1" />
+
+    <g id="energy-house" filter="url(#energy-shadow)">
+      <path d="M32 185 L150 105 L268 185 V420 H32 Z" fill="url(#energy-house-fill)" stroke="#607D8B" stroke-width="5" stroke-linejoin="round" />
+      <path d="M20 192 L150 93 L280 192" fill="none" stroke="#37474F" stroke-width="17" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M32 292 H268 M151 185 V420" fill="none" stroke="#455A64" stroke-width="5" />
+
+      <g id="energy-heating-device" transform="translate(53 211)">
+        <circle id="energy-heater-glow" cx="36" cy="35" r="68" fill="url(#heater-alert-glow)" opacity=".18">
+          <animate attributeName="opacity" values=".18;.9;.3;.72;.18" keyTimes="0;.35;.58;.8;1" dur="3.6s" repeatCount="indefinite" />
+        </circle>
+        <rect width="72" height="70" rx="12" fill="#303F46" stroke="#78909C" stroke-width="3" />
+        <path id="energy-heater-coils" d="M15 18 V52 M28 18 V52 M41 18 V52 M54 18 V52" stroke="#FF8A65" stroke-width="5" stroke-linecap="round" filter="url(#energy-orange-glow)">
+          <animate attributeName="opacity" values=".48;1;.62;.92;.48" keyTimes="0;.35;.58;.8;1" dur="3.6s" repeatCount="indefinite" />
+        </path>
+        <text x="36" y="88" fill="#CFD8DC" font-family="sans-serif" font-size="8" font-weight="700" text-anchor="middle">HEATING</text>
+      </g>
+
+      <g id="energy-fridge" transform="translate(181 204)">
+        <rect width="55" height="76" rx="7" fill="#CFD8DC" stroke="#78909C" stroke-width="3" />
+        <path d="M0 31 H55" stroke="#78909C" stroke-width="3" />
+        <path d="M44 13 V23 M44 42 V57" stroke="#546E7A" stroke-width="4" stroke-linecap="round" />
+        <text x="28" y="94" fill="#CFD8DC" font-family="sans-serif" font-size="8" font-weight="700" text-anchor="middle">KITCHEN</text>
+      </g>
+
+      <g id="energy-washer" transform="translate(62 320)">
+        <rect width="66" height="70" rx="9" fill="#B0BEC5" stroke="#607D8B" stroke-width="3" />
+        <g id="energy-washer-drum">
+          <circle cx="33" cy="39" r="21" fill="#263842" stroke="#40C4FF" stroke-width="4" />
+          <path d="M20 37 C25 27 37 26 45 33 C40 33 35 37 33 43 C29 39 25 37 20 37 Z" fill="#78909C" />
+          <circle cx="43" cy="45" r="4" fill="#B3E5FC" opacity=".75" />
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            values="0 33 39;300 33 39;300 33 39;70 33 39;70 33 39;0 33 39"
+            keyTimes="0;.35;.45;.78;.9;1"
+            dur="4.8s"
+            repeatCount="indefinite"
+          />
+        </g>
+        <circle cx="15" cy="12" r="3" fill="#00E676" />
+        <text x="33" y="88" fill="#CFD8DC" font-family="sans-serif" font-size="8" font-weight="700" text-anchor="middle">LAUNDRY</text>
+      </g>
+
+      <g id="energy-plug" transform="translate(185 332)">
+        <rect width="52" height="49" rx="10" fill="#ECEFF1" stroke="#78909C" stroke-width="3" />
+        <circle cx="26" cy="24" r="13" fill="#263842" />
+        <path d="M22 18 V25 M30 18 V25 M26 25 V32" fill="none" stroke="#40C4FF" stroke-width="3" stroke-linecap="round" />
+        <text x="26" y="68" fill="#CFD8DC" font-family="sans-serif" font-size="8" font-weight="700" text-anchor="middle">PLUGS</text>
+      </g>
+    </g>
+
+    <path d="M89 246 H131 M209 242 H131 M95 355 H131 M211 356 H131" fill="none" stroke="#344A55" stroke-width="7" stroke-linecap="round" />
+    <path d="M131 210 V416" fill="none" stroke="#344A55" stroke-width="7" stroke-linecap="round" />
+    <path d="M89 246 H131" class="energy-flow" fill="none" stroke="#FF8A65" stroke-width="3" stroke-linecap="round" />
+    <path d="M209 242 H131" class="energy-flow flow-two" fill="none" stroke="#FFD180" stroke-width="3" stroke-linecap="round" />
+    <path d="M95 355 H131" class="energy-flow flow-three" fill="none" stroke="#40C4FF" stroke-width="3" stroke-linecap="round" />
+    <path d="M211 356 H131" class="energy-flow flow-two" fill="none" stroke="#B388FF" stroke-width="3" stroke-linecap="round" />
+    <path d="M131 210 V416" class="energy-flow flow-three" fill="none" stroke="#00E5FF" stroke-width="3" stroke-linecap="round" />
+
+    <g id="energy-meter" filter="url(#energy-shadow)">
+      <circle cx="131" cy="454" r="38" fill="#14232B" stroke="#455A64" stroke-width="5" />
+      <circle id="energy-meter-ring" cx="131" cy="454" r="29" fill="none" stroke="#00E5FF" stroke-width="4" filter="url(#energy-blue-glow)">
+        <animate attributeName="stroke-dasharray" values="105 77;150 32;122 60;142 40;105 77" keyTimes="0;.28;.52;.76;1" dur="2.6s" repeatCount="indefinite" />
+        <animate attributeName="stroke-width" values="3.4;4.8;3.8;4.4;3.4" keyTimes="0;.28;.52;.76;1" dur="2.6s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values=".6;1;.72;.94;.6" keyTimes="0;.28;.52;.76;1" dur="2.6s" repeatCount="indefinite" />
+      </circle>
+      <path id="energy-meter-bolt" d="M136 430 L119 456 H131 L126 479 L145 451 H133 Z" fill="#FFF59D" filter="url(#energy-orange-glow)">
+        <animate attributeName="opacity" values=".58;1;.74;.96;.58" keyTimes="0;.28;.52;.76;1" dur="2.6s" repeatCount="indefinite" />
+      </path>
+    </g>
+
+    <path d="M169 454 H270 Q290 454 290 434 V418 H304" fill="none" stroke="#344A55" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M169 454 H270 Q290 454 290 434 V418 H304" class="energy-flow" fill="none" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" filter="url(#energy-blue-glow)" />
+
+    <g id="energy-dashboard" filter="url(#energy-shadow)">
+      <rect x="300" y="55" width="267" height="390" rx="20" fill="url(#energy-panel-fill)" stroke="#53647E" stroke-width="4" />
+      <text x="326" y="88" fill="#90A4AE" font-family="sans-serif" font-size="9" font-weight="700" letter-spacing="1.5">ENERGY TODAY</text>
+      <text x="326" y="126" fill="#ECEFF1" font-family="sans-serif" font-size="29" font-weight="700">12.4</text>
+      <text x="396" y="125" fill="#90A4AE" font-family="sans-serif" font-size="11" font-weight="700">kWh</text>
+      <rect x="480" y="91" width="62" height="30" rx="15" fill="#123F37" />
+      <circle cx="497" cy="106" r="5" fill="#00E676" />
+      <text x="508" y="110" fill="#B9F6CA" font-family="sans-serif" font-size="8" font-weight="700">LIVE</text>
+
+      <g id="energy-chart">
+        <path d="M326 218 H543 M326 188 H543 M326 158 H543" stroke="#617088" stroke-width="1" opacity=".24" />
+        <g fill="#40536A">
+          <rect class="energy-bar" x="334" y="179" width="20" height="39" rx="4">
+            <animate attributeName="y" values="204;179;184;176;204" keyTimes="0;.25;.52;.78;1" dur="5.4s" repeatCount="indefinite" />
+            <animate attributeName="height" values="14;39;34;42;14" keyTimes="0;.25;.52;.78;1" dur="5.4s" repeatCount="indefinite" />
+          </rect>
+          <rect class="energy-bar bar-two" x="369" y="163" width="20" height="55" rx="4">
+            <animate attributeName="y" values="202;163;174;157;202" keyTimes="0;.25;.52;.78;1" dur="5.4s" begin="-.18s" repeatCount="indefinite" />
+            <animate attributeName="height" values="16;55;44;61;16" keyTimes="0;.25;.52;.78;1" dur="5.4s" begin="-.18s" repeatCount="indefinite" />
+          </rect>
+          <rect class="energy-bar bar-three" x="404" y="185" width="20" height="33" rx="4">
+            <animate attributeName="y" values="205;185;179;188;205" keyTimes="0;.25;.52;.78;1" dur="5.4s" begin="-.36s" repeatCount="indefinite" />
+            <animate attributeName="height" values="13;33;39;30;13" keyTimes="0;.25;.52;.78;1" dur="5.4s" begin="-.36s" repeatCount="indefinite" />
+          </rect>
+          <rect class="energy-bar bar-four" x="439" y="145" width="20" height="73" rx="4">
+            <animate attributeName="y" values="200;145;154;139;200" keyTimes="0;.25;.52;.78;1" dur="5.4s" begin="-.54s" repeatCount="indefinite" />
+            <animate attributeName="height" values="18;73;64;79;18" keyTimes="0;.25;.52;.78;1" dur="5.4s" begin="-.54s" repeatCount="indefinite" />
+          </rect>
+          <rect class="energy-bar bar-five" x="474" y="171" width="20" height="47" rx="4">
+            <animate attributeName="y" values="203;171;164;177;203" keyTimes="0;.25;.52;.78;1" dur="5.4s" begin="-.72s" repeatCount="indefinite" />
+            <animate attributeName="height" values="15;47;54;41;15" keyTimes="0;.25;.52;.78;1" dur="5.4s" begin="-.72s" repeatCount="indefinite" />
+          </rect>
+          <rect class="energy-bar bar-six" x="509" y="132" width="20" height="86" rx="4">
+            <animate attributeName="y" values="198;132;141;125;198" keyTimes="0;.25;.52;.78;1" dur="5.4s" begin="-.9s" repeatCount="indefinite" />
+            <animate attributeName="height" values="20;86;77;93;20" keyTimes="0;.25;.52;.78;1" dur="5.4s" begin="-.9s" repeatCount="indefinite" />
+          </rect>
+        </g>
+        <path id="energy-chart-line" d="M344 183 L379 168 L414 191 L449 151 L484 176 L519 137" fill="none" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="310" filter="url(#energy-blue-glow)">
+          <animate attributeName="stroke-dashoffset" values="310;0;0;-310" keyTimes="0;.3;.82;1" dur="5.4s" repeatCount="indefinite" />
+        </path>
+        <circle r="5" fill="#E0F7FA" stroke="#00E5FF" stroke-width="2" filter="url(#energy-blue-glow)">
+          <animateMotion path="M344 183 L379 168 L414 191 L449 151 L484 176 L519 137" dur="5.4s" keyTimes="0;.3;.82;1" keyPoints="0;1;1;1" calcMode="linear" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.08;.82;1" dur="5.4s" repeatCount="indefinite" />
+        </circle>
+      </g>
+
+      <g id="energy-device-breakdown">
+        <rect id="energy-heating-card" x="326" y="264" width="216" height="45" rx="10" fill="#3B292B" stroke="#FF7043" stroke-width="2" filter="url(#energy-orange-glow)">
+          <animate attributeName="fill" values="#3B292B;#50302E;#3B292B" dur="2.8s" repeatCount="indefinite" />
+          <animate attributeName="stroke" values="#FF7043;#FFAB91;#FF7043" dur="2.8s" repeatCount="indefinite" />
+          <animate attributeName="stroke-width" values="2;3.2;2" dur="2.8s" repeatCount="indefinite" />
+        </rect>
+        <circle cx="347" cy="286" r="11" fill="#5B3430" />
+        <path d="M342 278 V294 M347 278 V294 M352 278 V294" stroke="#FF8A65" stroke-width="2.8" stroke-linecap="round" />
+        <text x="367" y="283" fill="#FFCCBC" font-family="sans-serif" font-size="9" font-weight="700">HEATING</text>
+        <text x="367" y="297" fill="#AFA1A1" font-family="sans-serif" font-size="7">Higher than usual</text>
+        <text x="522" y="290" fill="#FF8A65" font-family="sans-serif" font-size="12" font-weight="700" text-anchor="end">48%</text>
+
+        <rect x="326" y="318" width="216" height="38" rx="9" fill="#1B283A" />
+        <circle cx="347" cy="337" r="9" fill="#263D55" />
+        <circle cx="347" cy="337" r="5" fill="none" stroke="#40C4FF" stroke-width="2.5" />
+        <text x="367" y="341" fill="#CFD8DC" font-family="sans-serif" font-size="9" font-weight="700">LAUNDRY</text>
+        <text x="522" y="341" fill="#90CAF9" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">27%</text>
+
+        <rect x="326" y="365" width="216" height="38" rx="9" fill="#1B283A" />
+        <circle cx="347" cy="384" r="9" fill="#4A4030" />
+        <path d="M347 377 V391 M341 384 H353" stroke="#FFD180" stroke-width="2.5" stroke-linecap="round" />
+        <text x="367" y="388" fill="#CFD8DC" font-family="sans-serif" font-size="9" font-weight="700">KITCHEN</text>
+        <text x="522" y="388" fill="#FFE0B2" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">15%</text>
+      </g>
+    </g>
+
+    <g id="energy-heater-alert" opacity="0" filter="url(#energy-shadow)">
+      <rect x="42" y="145" width="137" height="34" rx="17" fill="#4A2929" stroke="#FF7043" stroke-width="2" />
+      <circle cx="60" cy="162" r="8" fill="#FF7043" filter="url(#energy-orange-glow)" />
+      <text x="60" y="166" fill="#FFFFFF" font-family="sans-serif" font-size="11" font-weight="800" text-anchor="middle">!</text>
+      <text x="76" y="166" fill="#FFCCBC" font-family="sans-serif" font-size="8" font-weight="700">HIGH USE FOUND</text>
+    </g>
+
+    <g id="energy-suggestion" opacity="0" filter="url(#energy-shadow)">
+      <rect x="309" y="414" width="249" height="47" rx="13" fill="#133B38" stroke="#00C9B7" stroke-width="2" />
+      <circle cx="333" cy="438" r="12" fill="#00A896" />
+      <path d="M333 430 V446 M325 438 H341" stroke="#E0F2F1" stroke-width="3" stroke-linecap="round" />
+      <text x="354" y="434" fill="#B2DFDB" font-family="sans-serif" font-size="8" font-weight="700">SAVING OPPORTUNITY</text>
+      <text x="354" y="447" fill="#E0F2F1" font-family="sans-serif" font-size="8">Run laundry after 7 PM</text>
+    </g>
+  </g>
+</svg>

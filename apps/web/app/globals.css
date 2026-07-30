@@ -171,7 +171,7 @@ a { color: inherit; }
 .text-link { display: block; margin-top: 35px; color: var(--muted); }
 
 .possibilities-page { min-height: 100vh; padding: 150px clamp(20px, 6vw, 90px) 100px; background: radial-gradient(circle at 85% 5%, #342d7055, transparent 30%), var(--night); }
-.possibilities-hero, .possibilities-grid, .possibilities-cta { width: min(100%, 1180px); margin-inline: auto; }
+.possibilities-hero, .possibilities-grid, .possibility-services, .working-together, .possibilities-cta { width: min(100%, 1180px); margin-inline: auto; }
 .possibilities-hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: clamp(50px, 8vw, 120px); align-items: end; padding: 4vh 0 14vh; }
 .possibilities-hero-copy h1 { max-width: 900px; margin: 18px 0 30px; font-size: clamp(3.25rem, 7vw, 6.5rem); line-height: .88; letter-spacing: -.058em; }
 .possibilities-hero-copy > p:not(.eyebrow) { max-width: 650px; color: var(--muted); font-size: clamp(1rem, 2vw, 1.2rem); line-height: 1.75; }
@@ -182,7 +182,7 @@ a { color: inherit; }
 .possibilities-topics a span { color: #f4a04f; font-size: .65rem; font-weight: 800; letter-spacing: .12em; }
 .possibilities-topics a:hover, .possibilities-topics a:focus-visible { padding-left: 6px; color: var(--ink); }
 .possibilities-grid { display: grid; gap: clamp(100px, 15vw, 190px); }
-.possibility-section { scroll-margin-top: 50px; }
+.possibility-section, .possibility-services, .working-together { scroll-margin-top: 50px; }
 .possibility-section-grid { display: grid; gap: clamp(70px, 10vw, 130px); }
 .possibility-card { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: clamp(30px, 6vw, 80px); align-items: center; }
 .possibility-card.has-wide-demo { grid-template-columns: minmax(280px, .55fr) minmax(0, 1.55fr); gap: clamp(28px, 4vw, 52px); }
@@ -207,6 +207,22 @@ a { color: inherit; }
 .possibility-copy h3 strong { color: var(--ink); font-weight: 700; }
 .possibility-copy p { margin: 0; color: var(--muted); line-height: 1.75; }
 .possibility-copy p strong { color: #f4a04f; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; }
+.possibility-services, .working-together { margin-top: clamp(120px, 18vw, 220px); }
+.possibility-section-heading { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(260px, .9fr); gap: clamp(24px, 6vw, 80px); align-items: end; margin-bottom: clamp(40px, 7vw, 75px); }
+.possibility-section-heading .eyebrow { grid-column: 1 / -1; margin-bottom: -12px; }
+.possibility-section-heading h2 { max-width: 760px; margin: 0; font-size: clamp(2.75rem, 6vw, 5.5rem); line-height: .92; letter-spacing: -.052em; }
+.possibility-section-heading > p:not(.eyebrow) { max-width: 480px; margin: 0; color: var(--muted); line-height: 1.7; }
+.possibility-service-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.possibility-service-card { position: relative; min-height: 290px; padding: clamp(30px, 5vw, 58px); overflow: hidden; border: 1px solid #343c5b; border-radius: 14px; background: linear-gradient(145deg, #171d31, #10131f); }
+.possibility-service-card::after { content: ""; position: absolute; right: -90px; bottom: -110px; width: 240px; aspect-ratio: 1; border: 1px solid #8279e544; border-radius: 50%; box-shadow: 0 0 80px #6259c322; }
+.possibility-service-card > span { color: #f4a04f; font-size: .7rem; font-weight: 800; letter-spacing: .15em; }
+.possibility-service-card h3 { position: relative; z-index: 1; max-width: 480px; margin: 55px 0 18px; color: var(--ink); font-size: clamp(1.8rem, 3.2vw, 3rem); line-height: 1; letter-spacing: -.035em; }
+.possibility-service-card p { position: relative; z-index: 1; max-width: 540px; margin: 0; color: var(--muted); line-height: 1.7; }
+.working-together-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 60px; margin: 0; padding: 0; border-top: 1px solid #343c5b; list-style: none; }
+.working-together-grid li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 18px; padding: 34px 0; border-bottom: 1px solid #343c5b; }
+.working-together-grid li > span { padding-top: 4px; color: #f25d9c; font-size: .7rem; font-weight: 800; letter-spacing: .14em; }
+.working-together-grid h3 { margin: 0 0 10px; color: var(--ink); font-size: clamp(1.25rem, 2vw, 1.7rem); letter-spacing: -.02em; }
+.working-together-grid p { max-width: 470px; margin: 0; color: var(--muted); line-height: 1.65; }
 .possibilities-cta { margin-top: clamp(100px, 18vw, 220px); padding: clamp(45px, 8vw, 90px); border: 1px solid #343c5b; border-radius: 14px; background: #111522; text-align: center; }
 .possibilities-cta h2 { max-width: 800px; margin: 18px auto 8px; font-size: clamp(2.4rem, 6vw, 5rem); line-height: .98; letter-spacing: -.05em; }
 
@@ -220,6 +236,10 @@ a { color: inherit; }
   .possibility-card.demo-right { grid-template-columns: 1fr; }
   .possibility-section-grid .possibility-card:nth-child(n) .possibility-media { order: 0; }
   .possibility-media { min-height: 280px; }
+  .possibility-section-heading, .possibility-service-grid, .working-together-grid { grid-template-columns: 1fr; }
+  .possibility-section-heading .eyebrow { margin-bottom: 0; }
+  .possibility-service-card { min-height: 260px; }
+  .working-together-grid { gap: 0; }
   .possibilities-cta { padding-inline: 24px; }
 }
 

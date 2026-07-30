@@ -16,6 +16,7 @@ const demoAnimationSources: Record<string, string> = {
   "11": "/demos/smart-display-dashboard.svg",
   "12": "/demos/local-private-network.svg",
   "13": "/demos/vacation-security.svg",
+  "14": "/demos/energy-monitoring.svg",
 };
 const possibilitySections = [
   {
@@ -151,6 +152,58 @@ const possibilitySections = [
       },
     ],
   },
+  {
+    id: "energy-and-efficiency",
+    number: "07",
+    title: "Energy and efficiency",
+    items: [
+      {
+        number: "14",
+        title: "Can my home show me where energy is being wasted?",
+        emphasis: "where energy is being wasted",
+        description: "Yes. Energy monitoring can show which devices consume the most power, reveal unusual usage, and help schedule appliances for more efficient times, all from one clear dashboard.",
+        mediaLabel: "Household energy monitoring and high-usage detection demonstration",
+      },
+    ],
+  },
+];
+
+const serviceQuestions = [
+  {
+    title: "Can I start small and expand later?",
+    description: "Absolutely. We can begin with one room or one everyday frustration, then create a practical plan that grows with your needs and budget.",
+  },
+  {
+    title: "Can you fix or simplify the smart home I already have?",
+    description: "Yes. I can troubleshoot unreliable devices, clean up confusing automations, reduce unnecessary apps, and bring your existing equipment into one easier system.",
+  },
+];
+
+const workingTogetherSteps = [
+  {
+    title: "We talk about your needs",
+    description: "You tell me what feels inconvenient, confusing, or unreliable.",
+  },
+  {
+    title: "I review what you already own",
+    description: "We may be able to reuse more of your existing technology than you expect.",
+  },
+  {
+    title: "You receive a practical plan",
+    description: "I recommend improvements based on your priorities and budget.",
+  },
+  {
+    title: "Everything is configured and tested",
+    description: "Devices and automations are tested under real everyday conditions.",
+  },
+  {
+    title: "You learn how it works",
+    description: "You receive straightforward guidance and documentation, not a system only its installer understands.",
+  },
+  {
+    title: "Your system stays maintainable",
+    description: "Low-battery warnings, device-health monitoring, backups, and optional ongoing support help prevent small problems from becoming frustrating ones.",
+  },
 ];
 
 function QuestionTitle({ title, emphasis }: { title: string; emphasis: string }) {
@@ -189,6 +242,18 @@ export default function DemosPage() {
                 </a>
               </li>
             ))}
+            <li>
+              <a href="#help-at-any-stage">
+                <span>08</span>
+                Help at any stage
+              </a>
+            </li>
+            <li>
+              <a href="#working-with-me">
+                <span>09</span>
+                What working with me looks like
+              </a>
+            </li>
           </ol>
         </nav>
       </header>
@@ -199,7 +264,7 @@ export default function DemosPage() {
             <div className="possibility-section-grid">
               {section.items.map((item) => (
                 <article
-                  className={`possibility-card ${item.number === "08" ? "has-wide-demo" : ""} ${item.number === "10" || item.number === "12" ? "demo-right" : ""} ${item.number === "13" ? "media-left" : ""}`}
+                  className={`possibility-card ${item.number === "08" ? "has-wide-demo" : ""} ${item.number === "10" || item.number === "12" || item.number === "14" ? "demo-right" : ""} ${item.number === "13" ? "media-left" : ""}`}
                   key={item.number}
                 >
                   <div className={`possibility-media ${demoAnimationSources[item.number] ? "has-demo-animation" : ""}`}>
@@ -227,6 +292,41 @@ export default function DemosPage() {
           </section>
         ))}
       </div>
+
+      <section className="possibility-services" id="help-at-any-stage" aria-labelledby="possibility-services-title">
+        <div className="possibility-section-heading">
+          <p className="eyebrow">Help at any stage</p>
+          <h2 id="possibility-services-title">Start with what you have.</h2>
+          <p>You do not need to replace everything or automate your entire home at once.</p>
+        </div>
+        <div className="possibility-service-grid">
+          {serviceQuestions.map((service, index) => (
+            <article className="possibility-service-card" key={service.title}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <h3>{service.title}</h3>
+              <p>{service.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="working-together" id="working-with-me" aria-labelledby="working-together-title">
+        <div className="possibility-section-heading">
+          <p className="eyebrow">A clear, personal process</p>
+          <h2 id="working-together-title">What working with me looks like.</h2>
+        </div>
+        <ol className="working-together-grid">
+          {workingTogetherSteps.map((step, index) => (
+            <li key={step.title}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <div>
+                <h3>{step.title}</h3>
+                <p>{step.description}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
 
       <section className="possibilities-cta">
         <p className="eyebrow">Have a question of your own?</p>
