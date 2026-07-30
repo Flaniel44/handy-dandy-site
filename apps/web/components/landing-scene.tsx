@@ -87,6 +87,13 @@ export function LandingScene() {
           transform-box: fill-box;
           transform-origin: center;
         }
+        .robot-vacuum-runner {
+          cursor: pointer;
+          outline: none;
+        }
+        .robot-vacuum-runner:focus-visible .robot-vacuum-body {
+          filter: drop-shadow(0 0 5px #40c4ff);
+        }
         .vacuum-wifi-wave {
           animation: vacuumWifi 2.4s ease-out infinite;
           animation-play-state: paused;
@@ -149,7 +156,8 @@ export function LandingScene() {
       houseScene.insertAdjacentHTML(
         "beforeend",
         `<g transform="translate(317 385)">
-          <g class="robot-vacuum-runner">
+          <g class="robot-vacuum-runner" role="button" tabindex="0" aria-label="Speed up robot vacuum">
+            <rect x="-10" y="-18" width="50" height="35" rx="10" fill="transparent" pointer-events="all" aria-hidden="true" />
             <g class="robot-vacuum-body">
               <rect x="0" y="4" width="30" height="10" rx="2.5" fill="#151a2c" stroke="#7f77dd" stroke-width="2.2" />
               <path d="M2 5 Q15 1 28 5" fill="none" stroke="#7f77dd" stroke-width="1.6" />
@@ -282,6 +290,32 @@ export function LandingScene() {
       else disabledDevices.add(roomClass);
       persistDeviceState();
     };
+
+    const television = houseScene?.querySelector<SVGGElement>(
+      'g[transform="translate(403,342) scale(1.7)"]',
+    );
+    if (television && !television.querySelector(".tv-movie-content")) {
+      television.insertAdjacentHTML(
+        "afterbegin",
+        `<g class="tv-movie-content" pointer-events="none" aria-hidden="true">
+          <rect x="3.2" y="5.1" width="17.6" height="11.8" rx="1" fill="#11182b" />
+          <rect class="tv-movie-sky" x="3.6" y="5.5" width="16.8" height="7.2" rx=".65" fill="#40558d" />
+          <circle class="tv-movie-sun" cx="17.5" cy="8.1" r="1.15" fill="#ffd180" />
+          <path d="M3.6 12.6 L7.4 9.7 L10.3 12 L13.2 8.9 L17.1 12.6 H20.4 V16.5 H3.6 Z" fill="#273253" />
+          <g class="tv-movie-car">
+            <rect x="4.8" y="13.3" width="4.4" height="1.55" rx=".45" fill="#ff8a65" />
+            <path d="M5.8 13.3 L6.55 12.45 H8.05 L8.65 13.3" fill="#ffccbc" />
+            <circle cx="5.9" cy="15" r=".45" fill="#0b0d16" />
+            <circle cx="8.25" cy="15" r=".45" fill="#0b0d16" />
+          </g>
+        </g>
+        <g class="tv-device-wifi" pointer-events="none" aria-hidden="true">
+          <path d="M8 1 Q12 -3 16 1" />
+          <path d="M5.5 -1 Q12 -7.5 18.5 -1" />
+          <circle cx="12" cy="2.2" r=".8" />
+        </g>`,
+      );
+    }
 
     DEVICE_CONFIG.forEach(({ roomClass, label, sourceSelector, hitArea, wireIndexes, nodeIndex }) => {
       const source = houseScene?.querySelector<SVGGElement>(sourceSelector);
@@ -436,6 +470,30 @@ export function LandingScene() {
           : nextLevel === 0
             ? "Grow Wi-Fi signal"
             : `Wi-Fi signal size ${nextLevel} of 3. Activate to grow`,
+      );
+      return true;
+    };
+
+    const speedUpVacuumFrom = (target: EventTarget | null) => {
+      if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
+      const vacuum = target.closest<SVGGElement>(".robot-vacuum-runner");
+      if (!vacuum) return false;
+
+      const currentLevel = Number.parseInt(vacuum.dataset.vacuumSpeedLevel || "0", 10);
+      const nextLevel = currentLevel >= 3 ? 0 : currentLevel + 1;
+      const playbackRates = [1, 2, 3.5, 5];
+      vacuum.dataset.vacuumSpeedLevel = String(nextLevel);
+      const vacuumBody = vacuum.querySelector<SVGGElement>(".robot-vacuum-body");
+      [...vacuum.getAnimations(), ...(vacuumBody?.getAnimations() || [])].forEach((animation) => {
+        animation.updatePlaybackRate(playbackRates[nextLevel]);
+      });
+      vacuum.setAttribute(
+        "aria-label",
+        nextLevel === 3
+          ? "Robot vacuum at maximum speed. Activate to reset"
+          : nextLevel === 0
+            ? "Robot vacuum at normal speed. Activate to speed up"
+            : `Robot vacuum speed level ${nextLevel} of 3. Activate to speed up`,
       );
       return true;
     };
@@ -648,6 +706,7 @@ export function LandingScene() {
     };
 
     const onClick = (event: MouseEvent) => {
+      if (speedUpVacuumFrom(event.target)) return;
       if (growWifiFrom(event.target)) return;
       if (toggleDeviceFrom(event.target)) return;
       const action = actionFrom(event.target);
@@ -659,6 +718,11 @@ export function LandingScene() {
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest(".robot-vacuum-runner")) {
+        event.preventDefault();
+        speedUpVacuumFrom(event.target);
+        return;
+      }
       if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest(".interactive-wifi")) {
         event.preventDefault();
         growWifiFrom(event.target);
@@ -773,6 +837,153 @@ export function LandingScene() {
         <p>© {new Date().getFullYear()} Digital Handyman</p>
       </footer>
       <style>{`
+        /* Demo-inspired material illustration treatment for the interactive house. */
+        .scene-root .stage {
+          border: 1px solid #303752;
+          background:
+            radial-gradient(circle at 50% 72%, #5c55aa24 0, transparent 42%),
+            linear-gradient(145deg, #111526 0%, #0b0d16 72%) !important;
+        }
+        .scene-root.lit .stage {
+          background:
+            radial-gradient(circle at 50% 68%, #6f67c83d 0, transparent 46%),
+            linear-gradient(145deg, #1a2037 0%, #101426 72%) !important;
+        }
+        .scene-root .house-scene {
+          filter: drop-shadow(0 12px 12px #0007);
+        }
+        .scene-root .house-scene > polygon[points="195,205 340,120 485,205"] {
+          fill: #3c3489;
+          stroke: #8279e5;
+          stroke-width: 7px;
+          stroke-linejoin: round;
+        }
+        .scene-root .house-scene > rect[mask="url(#wallWindowGaps)"] {
+          rx: 14px;
+          fill: #1b2139;
+          stroke: #5a6080;
+          stroke-width: 8px;
+        }
+        .scene-root .house-scene > rect[fill="#28304c"] {
+          fill: #303752;
+        }
+        .scene-root .house-scene > rect.lamp {
+          rx: 6px;
+          stroke: #454c70;
+          stroke-width: 2px;
+        }
+        .scene-root .house-scene [fill="#7f77dd"] {
+          fill: #6861b8;
+        }
+        .scene-root .house-scene [stroke="#7f77dd"] {
+          stroke: #8279e5;
+        }
+        .scene-root .house-scene [fill="#5c55aa"] {
+          fill: #3c3489;
+        }
+        .scene-root .house-scene g[transform="translate(203,261) scale(1.8)"] path {
+          fill: #5c55aa;
+        }
+        .scene-root .house-scene g[transform="translate(415,262) scale(1.6)"] path,
+        .scene-root .house-scene g[transform="translate(380,273) scale(1)"] :is(path, polygon, rect) {
+          fill: #8b85df;
+        }
+        .scene-root .house-scene g[transform="translate(210,359) scale(1.7)"] path {
+          fill: #b8b7dc;
+          stroke: #6c70a0;
+          stroke-width: .8px;
+        }
+        .scene-root .house-scene g[transform="translate(255,361) scale(1.6) translate(24 0) scale(-1 1)"] path {
+          fill: #716ac5;
+        }
+        .scene-root .house-scene g[transform="translate(348,364) scale(2,1.5)"] path {
+          fill: #3a4468;
+          stroke: #686f9c;
+          stroke-width: .75px;
+        }
+        .scene-root .house-scene > rect.keep-width {
+          fill: #5a6080;
+        }
+        .scene-root .data-wire-base {
+          stroke: #454c70;
+          stroke-width: 3px;
+          opacity: .9;
+        }
+        .scene-root .antenna-stem {
+          stroke: #a9adb8;
+          stroke-width: 4px;
+        }
+        .scene-root .antenna-tip {
+          fill: #c7cad5;
+        }
+        .scene-root .wifi-wave,
+        .scene-root .vacuum-wifi-wave,
+        .scene-root .camera-wifi-wave {
+          stroke: #40c4ff;
+        }
+        .scene-root .robot-vacuum-body rect:first-child {
+          fill: #232b47;
+          stroke: #8279e5;
+        }
+        .scene-root .tracking-camera .camera-aim > path {
+          fill: #6861b8;
+        }
+        .scene-root .tracking-camera .camera-aim > rect {
+          fill: #232b47;
+          stroke: #8279e5;
+        }
+        .scene-root .tv-movie-content {
+          opacity: 1;
+          transition: opacity .2s ease;
+        }
+        .scene-root .tv-movie-sky {
+          animation: tvMovieSky 8s steps(1, end) infinite;
+        }
+        .scene-root .tv-movie-sun {
+          animation: tvMovieSun 8s ease-in-out infinite;
+          transform-box: fill-box;
+          transform-origin: center;
+        }
+        .scene-root .tv-movie-car {
+          animation: tvMovieCar 4.8s linear infinite;
+        }
+        .scene-root .tv-device-wifi {
+          animation: tvWifiPulse 3.6s ease-in-out infinite;
+          fill: none;
+          opacity: .48;
+          stroke: #8ed8ff;
+          stroke-linecap: round;
+          stroke-width: 1.05px;
+        }
+        .scene-root .tv-device-wifi circle {
+          fill: #8ed8ff;
+          stroke: none;
+        }
+        .scene-root.device-off-lamp4 .tv-movie-content,
+        .scene-root.device-off-lamp4 .tv-device-wifi {
+          opacity: 0 !important;
+        }
+        .scene-root.device-off-lamp4 .tv-movie-content *,
+        .scene-root.device-off-lamp4 .tv-device-wifi {
+          animation-play-state: paused !important;
+        }
+        @keyframes tvMovieCar {
+          0% { opacity: 0; transform: translateX(-2px); }
+          10%, 82% { opacity: 1; }
+          100% { opacity: 0; transform: translateX(10px); }
+        }
+        @keyframes tvMovieSky {
+          0%, 48% { fill: #40558d; }
+          50%, 98% { fill: #643f78; }
+        }
+        @keyframes tvMovieSun {
+          0%, 100% { opacity: .9; transform: scale(1); }
+          50% { opacity: .55; transform: scale(.72); }
+        }
+        @keyframes tvWifiPulse {
+          0%, 100% { opacity: .28; }
+          50% { opacity: .62; }
+        }
         .scene-root.lit .lamp { animation: lampFlicker 1s steps(1, end) forwards !important; }
         .scene-root.lit .lamp1 { animation-delay: .2s !important; }
         .scene-root.lit .lamp2 { animation-delay: .4s !important; }
