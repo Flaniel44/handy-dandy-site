@@ -310,8 +310,8 @@
       <text x="342" y="136" fill="#EDE7F6" font-family="sans-serif" font-size="9" font-weight="700">VACATION MODE</text>
     </g>
 
-    <path d="M280 367 V384 H137 V351" fill="none" stroke="#31434D" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
-    <path id="leak-signal-active" d="M280 367 V384 H137 V351" fill="none" stroke="#FF5252" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0" />
+    <path d="M252 362 H244 V399 H137 V367" fill="none" stroke="#31434D" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+    <path id="leak-signal-active" d="M252 362 H244 V399 H137 V367" fill="none" stroke="#FF5252" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0" />
 
     <g id="phone" transform="translate(29 201)" filter="url(#security-shadow)">
       <rect width="108" height="194" rx="17" fill="#111619" stroke="#455A64" stroke-width="4" />

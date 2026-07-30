@@ -180,7 +180,7 @@
       <text x="42" y="72" fill="#B3E5FC" font-family="sans-serif" font-size="7" font-weight="700" text-anchor="middle">CAMERA</text>
     </g>
 
-    <g id="static-security-shield" transform="translate(405 213)" opacity="1" filter="url(#local-soft-shadow)">
+    <g id="static-security-shield" transform="translate(447 213)" opacity="1" filter="url(#local-soft-shadow)">
       <path d="M29 0 C41 9 51 11 58 12 V38 C58 59 44 70 29 78 C14 70 0 59 0 38 V12 C7 11 17 9 29 0 Z" fill="#174C3A" stroke="#00E676" stroke-width="4" />
       <path d="M18 37 V29 C18 14 40 14 40 29 V37" fill="none" stroke="#E8FFF1" stroke-width="5" stroke-linecap="round" />
       <rect x="13" y="34" width="32" height="26" rx="6" fill="#00C853" />
