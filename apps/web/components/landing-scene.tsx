@@ -261,6 +261,10 @@ export function LandingScene() {
     }
 
     const sceneSvg = root.querySelector<SVGSVGElement>(".stage > svg");
+    // The SVG title creates a native browser tooltip that follows the mouse
+    // around the interactive scene. The surrounding page already provides
+    // accessible context, so keep the description but suppress that tooltip.
+    sceneSvg?.querySelector(":scope > title")?.remove();
     const wireFlows = Array.from(root.querySelectorAll<SVGPathElement>(".data-wire-flow"));
     const dataNodes = Array.from(root.querySelectorAll<SVGCircleElement>(".data-node > circle"));
     let disabledDevices = new Set<string>();
@@ -317,6 +321,61 @@ export function LandingScene() {
       );
     }
 
+    const bathtub = houseScene?.querySelector<SVGGElement>(
+      'g[transform="translate(415,262) scale(1.6)"]',
+    );
+    if (bathtub && !bathtub.querySelector(".shower-effects")) {
+      bathtub.classList.add("interactive-shower");
+      bathtub.setAttribute("role", "button");
+      bathtub.setAttribute("tabindex", "0");
+      bathtub.setAttribute("aria-pressed", "true");
+      bathtub.setAttribute("aria-label", "Stop shower water and steam");
+      bathtub.insertAdjacentHTML(
+        "afterbegin",
+        `<rect class="shower-click-target" x="-4" y="-7" width="32" height="33" rx="5" fill="transparent" pointer-events="all" aria-hidden="true" />
+        <g class="shower-effects" pointer-events="none" aria-hidden="true">
+          <g class="shower-steam">
+            <path class="steam-one" d="M5.5 12 C3.5 9.5 7.5 8.2 5.8 5.2" />
+            <path class="steam-two" d="M10.5 12 C8.2 9.2 12.3 7.8 10.4 4.3" />
+            <path class="steam-three" d="M18.2 12.2 C16 9.8 19.7 8.2 18.1 5.4" />
+          </g>
+          <g class="shower-water">
+            <path d="M14 7 L10.5 10.9" />
+            <path d="M14.4 7.2 L11.7 11.5" />
+            <path d="M14.8 7.5 L12.9 12" />
+          </g>
+          <g class="shower-splashes">
+            <circle cx="10.4" cy="11.3" r=".55" />
+            <circle cx="11.7" cy="11.9" r=".48" />
+            <circle cx="13" cy="12.4" r=".42" />
+          </g>
+        </g>`,
+      );
+    }
+
+    const sleeper = houseScene?.querySelector<SVGGElement>(
+      'g[transform="translate(203,261) scale(1.8)"]',
+    );
+    if (sleeper && !sleeper.querySelector(".sleep-effects")) {
+      sleeper.classList.add("interactive-sleeper");
+      sleeper.setAttribute("role", "button");
+      sleeper.setAttribute("tabindex", "0");
+      sleeper.setAttribute("aria-label", "Wake sleeping person");
+      sleeper.insertAdjacentHTML(
+        "beforeend",
+        `<g class="sleep-effects" pointer-events="none" aria-hidden="true">
+          <g class="sleep-zs">
+            <text class="sleep-z sleep-z-one" x="8.5" y="5.5">z</text>
+            <text class="sleep-z sleep-z-two" x="11.8" y="1.7">z</text>
+            <text class="sleep-z sleep-z-three" x="15.7" y="-2.6">Z</text>
+          </g>
+          <text class="sleep-exclamation" x="7.2" y="4.3">!</text>
+        </g>
+        <rect class="sleep-click-target" x="0" y="3" width="24" height="20" rx="5" fill="transparent" pointer-events="all" aria-hidden="true" />`,
+      );
+    }
+    let sleeperWakeTimer: number | undefined;
+
     DEVICE_CONFIG.forEach(({ roomClass, label, sourceSelector, hitArea, wireIndexes, nodeIndex }) => {
       const source = houseScene?.querySelector<SVGGElement>(sourceSelector);
       if (!source) return;
@@ -365,12 +424,38 @@ export function LandingScene() {
       `;
       sceneSvg.append(chainHint);
     }
-    const cameraTrackers = Array.from(root.querySelectorAll<SVGGElement>(".tracking-camera")).map((camera, index) => ({
+    const trackingCameras = Array.from(root.querySelectorAll<SVGGElement>(".tracking-camera"));
+    trackingCameras.forEach((camera) => {
+      const aim = camera.querySelector<SVGGElement>(".camera-aim");
+      if (aim && !aim.querySelector(".camera-vision-cone")) {
+        aim.insertAdjacentHTML(
+          "afterbegin",
+          `<path class="camera-vision-cone" d="M31 10 L150 -44 L150 70 L31 16 Z" pointer-events="none" aria-hidden="true" />`,
+        );
+      }
+      if (!camera.querySelector(".camera-snapshot-reticle")) {
+        camera.insertAdjacentHTML(
+          "beforeend",
+          `<g class="camera-snapshot-reticle" pointer-events="none" aria-hidden="true">
+            <rect x="-13" y="-13" width="26" height="26" rx="2" />
+            <path d="M-6.5 -13 H-13 V-6.5 M6.5 -13 H13 V-6.5 M13 6.5 V13 H6.5 M-6.5 13 H-13 V6.5" />
+          </g>`,
+        );
+      }
+    });
+    const cameraTrackers = trackingCameras.map((camera, index) => ({
       camera,
       aim: camera.querySelector<SVGGElement>(".camera-aim"),
+      cone: camera.querySelector<SVGPathElement>(".camera-vision-cone"),
+      reticle: camera.querySelector<SVGGElement>(".camera-snapshot-reticle"),
       currentAngle: 0,
       targetAngle: 0,
-      trackingUntil: 0,
+      pointerX: 0,
+      pointerY: 0,
+      isTracking: false,
+      trackingStartedAt: 0,
+      snapshotTaken: false,
+      flashUntil: 0,
       phase: index * Math.PI * .75,
     }));
     const mobileScene = window.matchMedia("(max-width: 620px)");
@@ -456,6 +541,37 @@ export function LandingScene() {
       return true;
     };
 
+    const toggleShowerFrom = (target: EventTarget | null) => {
+      if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
+      const shower = target.closest<SVGGElement>(".interactive-shower");
+      if (!shower) return false;
+
+      const isRunning = !shower.classList.toggle("shower-stopped");
+      shower.setAttribute("aria-pressed", String(isRunning));
+      shower.setAttribute(
+        "aria-label",
+        isRunning ? "Stop shower water and steam" : "Start shower water and steam",
+      );
+      return true;
+    };
+
+    const wakeSleeperFrom = (target: EventTarget | null) => {
+      if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
+      const sleepingPerson = target.closest<SVGGElement>(".interactive-sleeper");
+      if (!sleepingPerson) return false;
+
+      window.clearTimeout(sleeperWakeTimer);
+      sleepingPerson.classList.remove("sleeper-awake");
+      sleepingPerson.getBBox();
+      sleepingPerson.classList.add("sleeper-awake");
+      sleepingPerson.setAttribute("aria-label", "Sleeping person is awake");
+      sleeperWakeTimer = window.setTimeout(() => {
+        sleepingPerson.classList.remove("sleeper-awake");
+        sleepingPerson.setAttribute("aria-label", "Wake sleeping person");
+      }, 1350);
+      return true;
+    };
+
     const growWifiFrom = (target: EventTarget | null) => {
       if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
       const wifi = target.closest<SVGGElement>(".interactive-wifi");
@@ -531,9 +647,52 @@ export function LandingScene() {
     const animateCameras = (time: number) => {
       cameraTrackers.forEach((tracker) => {
         if (!tracker.aim) return;
-        const desiredAngle = time < tracker.trackingUntil ? tracker.targetAngle : Math.sin(time / 1500 + tracker.phase) * 12;
+        const desiredAngle = tracker.isTracking
+          ? tracker.targetAngle
+          : Math.sin(time / 1500 + tracker.phase) * 12;
         tracker.currentAngle += (desiredAngle - tracker.currentAngle) * .075;
         tracker.aim.setAttribute("transform", `rotate(${tracker.currentAngle.toFixed(2)} 12 13)`);
+
+        if (tracker.isTracking && tracker.cone) {
+          // The cone lives inside the rotating camera head. Counter-rotate the
+          // pointer first so its far edge remains centred on the cursor even
+          // while the camera is smoothly catching up with it.
+          const inverseAngle = -tracker.currentAngle * Math.PI / 180;
+          const pointerDx = tracker.pointerX - 12;
+          const pointerDy = tracker.pointerY - 13;
+          const targetX = 12 + pointerDx * Math.cos(inverseAngle) - pointerDy * Math.sin(inverseAngle);
+          const targetY = 13 + pointerDx * Math.sin(inverseAngle) + pointerDy * Math.cos(inverseAngle);
+          const originX = 31.5;
+          const originY = 13;
+          const dx = targetX - originX;
+          const dy = targetY - originY;
+          const distance = Math.max(1, Math.hypot(dx, dy));
+          const unitX = dx / distance;
+          const unitY = dy / distance;
+          const perpendicularX = -unitY;
+          const perpendicularY = unitX;
+          const nearHalfWidth = 2.5;
+          const farHalfWidth = Math.max(9, Math.min(34, distance * .25));
+          const farX = targetX + unitX * 5;
+          const farY = targetY + unitY * 5;
+          tracker.cone.setAttribute(
+            "d",
+            `M${(originX + perpendicularX * nearHalfWidth).toFixed(2)} ${(originY + perpendicularY * nearHalfWidth).toFixed(2)} ` +
+            `L${(farX + perpendicularX * farHalfWidth).toFixed(2)} ${(farY + perpendicularY * farHalfWidth).toFixed(2)} ` +
+            `L${(farX - perpendicularX * farHalfWidth).toFixed(2)} ${(farY - perpendicularY * farHalfWidth).toFixed(2)} ` +
+            `L${(originX - perpendicularX * nearHalfWidth).toFixed(2)} ${(originY - perpendicularY * nearHalfWidth).toFixed(2)} Z`,
+          );
+        }
+
+        if (tracker.isTracking && !tracker.snapshotTaken && time - tracker.trackingStartedAt >= 3000) {
+          tracker.snapshotTaken = true;
+          tracker.flashUntil = time + 480;
+          tracker.reticle?.classList.add("snapshot-captured");
+        }
+        if (tracker.flashUntil > 0 && time >= tracker.flashUntil) {
+          tracker.flashUntil = 0;
+          tracker.reticle?.classList.remove("snapshot-captured");
+        }
       });
       cameraFrame = window.requestAnimationFrame(animateCameras);
     };
@@ -640,14 +799,33 @@ export function LandingScene() {
           const { camera } = tracker;
           const matrix = camera.getScreenCTM();
           if (!matrix || !tracker.aim) return;
-          const target = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+          // A pointer's hotspot is at the arrow tip, not its visual centre.
+          const target = new DOMPoint(event.clientX + 6, event.clientY + 8).matrixTransform(matrix.inverse());
           const targetAngle = Math.atan2(target.y - 13, target.x - 12) * 180 / Math.PI;
           const insideVisionCone = target.x > 12 && targetAngle >= -50 && targetAngle <= 50;
           if (insideVisionCone) {
+            if (!tracker.isTracking) {
+              tracker.isTracking = true;
+              tracker.trackingStartedAt = performance.now();
+              tracker.snapshotTaken = false;
+              tracker.flashUntil = 0;
+              tracker.camera.classList.add("camera-tracking");
+              tracker.reticle?.classList.remove("snapshot-captured");
+            }
             tracker.targetAngle = Math.max(-38, Math.min(42, targetAngle));
-            tracker.trackingUntil = performance.now() + 1400;
+            tracker.pointerX = target.x;
+            tracker.pointerY = target.y;
+            tracker.reticle?.setAttribute(
+              "transform",
+              `translate(${target.x.toFixed(2)} ${target.y.toFixed(2)})`,
+            );
           } else {
-            tracker.trackingUntil = 0;
+            tracker.isTracking = false;
+            tracker.trackingStartedAt = 0;
+            tracker.snapshotTaken = false;
+            tracker.flashUntil = 0;
+            tracker.camera.classList.remove("camera-tracking");
+            tracker.reticle?.classList.remove("snapshot-captured");
           }
         });
       }
@@ -675,7 +853,14 @@ export function LandingScene() {
     const onScenePointerDown = (event: PointerEvent) => { previousPointerX = event.clientX; };
     const onScenePointerEnd = () => { previousPointerX = undefined; };
 
-    const resetCameraAim = () => cameraTrackers.forEach((tracker) => { tracker.trackingUntil = 0; });
+    const resetCameraAim = () => cameraTrackers.forEach((tracker) => {
+      tracker.isTracking = false;
+      tracker.trackingStartedAt = 0;
+      tracker.snapshotTaken = false;
+      tracker.flashUntil = 0;
+      tracker.camera.classList.remove("camera-tracking");
+      tracker.reticle?.classList.remove("snapshot-captured");
+    });
 
     const onPointerDown = (event: PointerEvent) => {
       const end = points.at(-1)!;
@@ -708,6 +893,8 @@ export function LandingScene() {
     const onClick = (event: MouseEvent) => {
       if (speedUpVacuumFrom(event.target)) return;
       if (growWifiFrom(event.target)) return;
+      if (wakeSleeperFrom(event.target)) return;
+      if (toggleShowerFrom(event.target)) return;
       if (toggleDeviceFrom(event.target)) return;
       const action = actionFrom(event.target);
       if (action === "toggle-light" && suppressTouchClick) {
@@ -718,6 +905,16 @@ export function LandingScene() {
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest(".interactive-sleeper")) {
+        event.preventDefault();
+        wakeSleeperFrom(event.target);
+        return;
+      }
+      if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest(".interactive-shower")) {
+        event.preventDefault();
+        toggleShowerFrom(event.target);
+        return;
+      }
       if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest(".robot-vacuum-runner")) {
         event.preventDefault();
         speedUpVacuumFrom(event.target);
@@ -813,6 +1010,7 @@ export function LandingScene() {
       if (readyTimer) window.clearTimeout(readyTimer);
       if (hintTimer) window.clearTimeout(hintTimer);
       if (cameraFrame !== undefined) window.cancelAnimationFrame(cameraFrame);
+      if (sleeperWakeTimer !== undefined) window.clearTimeout(sleeperWakeTimer);
       chainHint?.remove();
       reviewJump?.remove();
     };
@@ -932,6 +1130,50 @@ export function LandingScene() {
           fill: #232b47;
           stroke: #8279e5;
         }
+        .scene-root .camera-vision-cone {
+          fill: #ff1744 !important;
+          filter: drop-shadow(0 0 5px #ff174455);
+          opacity: 0;
+          transition: opacity .18s ease;
+        }
+        .scene-root .tracking-camera.camera-tracking .camera-vision-cone {
+          opacity: .2;
+        }
+        .scene-root .camera-snapshot-reticle {
+          opacity: 0;
+          transition: opacity .14s ease;
+        }
+        .scene-root .tracking-camera.camera-tracking .camera-snapshot-reticle {
+          opacity: .9;
+        }
+        .scene-root .camera-snapshot-reticle rect {
+          fill: transparent;
+          stroke: none;
+        }
+        .scene-root .camera-snapshot-reticle path {
+          fill: none;
+          filter: drop-shadow(0 0 2px #000a);
+          stroke: #ffffff;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-width: 1.65px;
+        }
+        .scene-root .camera-snapshot-reticle.snapshot-captured rect {
+          animation: cameraSnapshotFlash .48s ease-out;
+        }
+        .scene-root .camera-snapshot-reticle.snapshot-captured path {
+          animation: cameraSnapshotMarksFlash .48s ease-out;
+        }
+        @keyframes cameraSnapshotFlash {
+          0% { fill: transparent; }
+          16%, 42% { fill: #ffffff; }
+          100% { fill: transparent; }
+        }
+        @keyframes cameraSnapshotMarksFlash {
+          0% { opacity: 1; }
+          16%, 42% { opacity: 0; }
+          100% { opacity: 1; }
+        }
         .scene-root .tv-movie-content {
           opacity: 1;
           transition: opacity .2s ease;
@@ -958,6 +1200,119 @@ export function LandingScene() {
         .scene-root .tv-device-wifi circle {
           fill: #8ed8ff;
           stroke: none;
+        }
+        .scene-root .interactive-shower {
+          cursor: pointer;
+          outline: none;
+        }
+        .scene-root .interactive-sleeper {
+          cursor: pointer;
+          outline: none;
+        }
+        .scene-root .interactive-sleeper:focus-visible {
+          filter: drop-shadow(0 0 4px #b388ff);
+        }
+        .scene-root .sleep-zs {
+          opacity: 1;
+          transition: opacity .1s linear;
+        }
+        .scene-root .sleep-z {
+          animation: sleepingZ 2.7s ease-in-out infinite;
+          fill: #b9b4ff;
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 4.6px;
+          font-weight: 800;
+          opacity: 0;
+        }
+        .scene-root .sleep-z-two {
+          animation-delay: -.9s;
+          font-size: 5.3px;
+        }
+        .scene-root .sleep-z-three {
+          animation-delay: -1.8s;
+          font-size: 6px;
+        }
+        .scene-root .sleep-exclamation {
+          fill: #ffd180;
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 8px;
+          font-weight: 900;
+          opacity: 0;
+          text-anchor: middle;
+          transform-box: fill-box;
+          transform-origin: center bottom;
+        }
+        .scene-root .interactive-sleeper.sleeper-awake .sleep-zs {
+          opacity: 0;
+        }
+        .scene-root .interactive-sleeper.sleeper-awake .sleep-z {
+          animation-play-state: paused;
+        }
+        .scene-root .interactive-sleeper.sleeper-awake .sleep-exclamation {
+          animation: sleeperWakePop 1.35s cubic-bezier(.2, .8, .2, 1);
+        }
+        @keyframes sleepingZ {
+          0% { opacity: 0; transform: translate(0, 1.5px) scale(.8); }
+          24%, 68% { opacity: .8; }
+          100% { opacity: 0; transform: translate(2px, -3.5px) scale(1.08); }
+        }
+        @keyframes sleeperWakePop {
+          0% { opacity: 0; transform: translateY(2px) scale(.45); }
+          16% { opacity: 1; transform: translateY(-1px) scale(1.25); }
+          42%, 72% { opacity: 1; transform: translateY(0) scale(1); }
+          100% { opacity: 0; transform: translateY(-2px) scale(.82); }
+        }
+        .scene-root .interactive-shower:focus-visible {
+          filter: drop-shadow(0 0 4px #8ed8ff);
+        }
+        .scene-root .shower-water path {
+          animation: showerWaterFlow .62s linear infinite;
+          fill: none !important;
+          stroke: #8ed8ff;
+          stroke-dasharray: 1.3 1.5;
+          stroke-linecap: round;
+          stroke-width: 1.15px;
+        }
+        .scene-root .shower-water path:nth-child(2) { animation-delay: -.2s; }
+        .scene-root .shower-water path:nth-child(3) { animation-delay: -.4s; }
+        .scene-root .shower-splashes circle {
+          animation: showerSplash 1.15s ease-out infinite;
+          fill: #b3e5fc;
+          transform-box: fill-box;
+          transform-origin: center;
+        }
+        .scene-root .shower-splashes circle:nth-child(2) { animation-delay: -.38s; }
+        .scene-root .shower-splashes circle:nth-child(3) { animation-delay: -.76s; }
+        .scene-root .shower-steam path {
+          animation: showerSteam 2.7s ease-in-out infinite;
+          fill: none !important;
+          opacity: 0;
+          stroke: #e4e5f4;
+          stroke-linecap: round;
+          stroke-width: 1.25px;
+          transform-box: fill-box;
+          transform-origin: center bottom;
+        }
+        .scene-root .shower-steam .steam-two { animation-delay: -.9s; }
+        .scene-root .shower-steam .steam-three { animation-delay: -1.8s; }
+        .scene-root .interactive-shower.shower-stopped .shower-effects {
+          opacity: 0;
+        }
+        .scene-root .interactive-shower.shower-stopped .shower-effects * {
+          animation-play-state: paused !important;
+        }
+        @keyframes showerWaterFlow {
+          to { stroke-dashoffset: -5.6; }
+        }
+        @keyframes showerSplash {
+          0% { opacity: 0; transform: translateY(0) scale(.55); }
+          28% { opacity: .95; }
+          100% { opacity: 0; transform: translateY(-2.2px) scale(1.2); }
+        }
+        @keyframes showerSteam {
+          0% { opacity: 0; transform: translateY(2px) scale(.85); }
+          30%, 68% { opacity: .52; }
+          100% { opacity: 0; transform: translateY(-4px) scale(1.08); }
         }
         .scene-root.device-off-lamp4 .tv-movie-content,
         .scene-root.device-off-lamp4 .tv-device-wifi {
