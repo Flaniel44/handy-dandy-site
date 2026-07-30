@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { RouteTransition } from "../components/route-transition";
 import { SiteSessionNav } from "../components/site-session-nav";
 import "./globals.css";
 
@@ -10,7 +11,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body><SiteSessionNav />{children}</body>
+      <body>
+        <RouteTransition>
+          <SiteSessionNav />
+          {children}
+        </RouteTransition>
+      </body>
     </html>
   );
 }

@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 import { ContactLinks } from "./contact-links";
 import { GoogleReviews } from "./google-reviews";
 import { landingSceneMarkup } from "./landing-scene-markup";
+import { prepareRouteTransition } from "./route-transition";
 
 const STORAGE_KEY = "handy-dandy-house-powered";
 const DEVICE_STORAGE_KEY = "handy-dandy-device-power";
@@ -109,6 +110,21 @@ export function LandingScene() {
         }
         .camera-wifi-wave.wave-outer { animation-delay: .32s; }
         .scene-root.lit .camera-wifi-wave { animation-play-state: running; }
+        .interactive-wifi {
+          cursor: pointer;
+          outline: none;
+          transform-box: fill-box;
+          transform-origin: center;
+          transition: transform .28s cubic-bezier(.2, .8, .2, 1);
+        }
+        .interactive-wifi[data-wifi-level="1"] { transform: scale(1.22); }
+        .interactive-wifi[data-wifi-level="2"] { transform: scale(1.46); }
+        .interactive-wifi[data-wifi-level="3"] { transform: scale(1.72); }
+        .interactive-wifi:focus-visible .wifi-wave,
+        .interactive-wifi:focus-visible .vacuum-wifi-wave,
+        .interactive-wifi:focus-visible .camera-wifi-wave {
+          stroke: #f4a04f;
+        }
         @keyframes vacuumPatrol {
           0%, 8% { transform: translateX(0); }
           44%, 56% { transform: translateX(132px); }
@@ -180,6 +196,42 @@ export function LandingScene() {
         </g>`,
       );
     }
+
+    const wifiWaveSelector = ".wifi-wave, .vacuum-wifi-wave, .camera-wifi-wave";
+    const unwrappedWifiParents = new Set<SVGElement>();
+    root.querySelectorAll<SVGElement>(wifiWaveSelector).forEach((wave) => {
+      if (!wave.closest(".interactive-wifi") && wave.parentElement instanceof SVGElement) {
+        unwrappedWifiParents.add(wave.parentElement);
+      }
+    });
+    unwrappedWifiParents.forEach((parent) => {
+      const waves = Array.from(parent.children).filter(
+        (child): child is SVGElement => child instanceof SVGElement && child.matches(wifiWaveSelector),
+      );
+      if (waves.length === 0) return;
+
+      const wrapper = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      wrapper.classList.add("interactive-wifi");
+      wrapper.dataset.wifiLevel = "0";
+      wrapper.setAttribute("role", "button");
+      wrapper.setAttribute("tabindex", "0");
+      wrapper.setAttribute("aria-label", "Grow Wi-Fi signal");
+      parent.insertBefore(wrapper, waves[0]);
+      waves.forEach((wave) => wrapper.append(wave));
+
+      const bounds = wrapper.getBBox();
+      const hitArea = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      hitArea.setAttribute("data-wifi-hit-area", "true");
+      hitArea.setAttribute("x", String(bounds.x - 9));
+      hitArea.setAttribute("y", String(bounds.y - 9));
+      hitArea.setAttribute("width", String(bounds.width + 18));
+      hitArea.setAttribute("height", String(bounds.height + 18));
+      hitArea.setAttribute("rx", "8");
+      hitArea.setAttribute("fill", "transparent");
+      hitArea.setAttribute("pointer-events", "all");
+      hitArea.setAttribute("aria-hidden", "true");
+      wrapper.prepend(hitArea);
+    });
 
     const demosButton = root.querySelector<HTMLButtonElement>("[data-action='demos']");
     if (demosButton) demosButton.textContent = "What's Possible?";
@@ -314,7 +366,7 @@ export function LandingScene() {
       // The scene remains usable when browser storage is unavailable.
     }
 
-    if (restored) root.classList.add("lit", "session-restored", "ambient-ready");
+    if (restored) root.classList.add("lit", "session-restored", "ambient-ready", "sign-powered");
     document.body.classList.toggle("landing-lights-off", !restored);
 
     let readyTimer: number | undefined;
@@ -331,9 +383,10 @@ export function LandingScene() {
       }
       if (powered && !root.classList.contains("session-restored")) {
         root.classList.remove("ambient-ready");
+        root.classList.add("sign-powered");
         readyTimer = window.setTimeout(() => root.classList.add("ambient-ready"), 1900);
       } else if (!powered) {
-        root.classList.remove("session-restored", "ambient-ready");
+        root.classList.remove("session-restored", "ambient-ready", "sign-powered");
       }
       try {
         if (powered) window.sessionStorage.setItem(STORAGE_KEY, "true");
@@ -345,9 +398,18 @@ export function LandingScene() {
 
     const activate = (action: string) => {
       if (action === "toggle-light") setPowered(!root.classList.contains("lit"));
-      if (action === "book") router.push(bookingPathRef.current);
-      if (action === "demos") router.push("/demos");
-      if (action === "admin") router.push("/admin");
+      if (action === "book") {
+        prepareRouteTransition("forward");
+        router.push(bookingPathRef.current);
+      }
+      if (action === "demos") {
+        prepareRouteTransition("forward");
+        router.push("/demos");
+      }
+      if (action === "admin") {
+        prepareRouteTransition("forward");
+        router.push("/admin");
+      }
       if (action === "contact") window.location.href = "mailto:dan@digitalhandydan.ca";
     };
 
@@ -357,6 +419,24 @@ export function LandingScene() {
       const roomClass = source?.dataset.deviceToggle;
       if (!source || !roomClass) return false;
       setDevicePowered(roomClass, disabledDevices.has(roomClass));
+      return true;
+    };
+
+    const growWifiFrom = (target: EventTarget | null) => {
+      if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
+      const wifi = target.closest<SVGGElement>(".interactive-wifi");
+      if (!wifi) return false;
+      const currentLevel = Number.parseInt(wifi.dataset.wifiLevel || "0", 10);
+      const nextLevel = currentLevel >= 3 ? 0 : currentLevel + 1;
+      wifi.dataset.wifiLevel = String(nextLevel);
+      wifi.setAttribute(
+        "aria-label",
+        nextLevel === 3
+          ? "Wi-Fi signal at maximum size. Activate to reset"
+          : nextLevel === 0
+            ? "Grow Wi-Fi signal"
+            : `Wi-Fi signal size ${nextLevel} of 3. Activate to grow`,
+      );
       return true;
     };
 
@@ -568,6 +648,7 @@ export function LandingScene() {
     };
 
     const onClick = (event: MouseEvent) => {
+      if (growWifiFrom(event.target)) return;
       if (toggleDeviceFrom(event.target)) return;
       const action = actionFrom(event.target);
       if (action === "toggle-light" && suppressTouchClick) {
@@ -578,6 +659,11 @@ export function LandingScene() {
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest(".interactive-wifi")) {
+        event.preventDefault();
+        growWifiFrom(event.target);
+        return;
+      }
       if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest("[data-device-toggle]")) {
         event.preventDefault();
         toggleDeviceFrom(event.target);
@@ -675,7 +761,9 @@ export function LandingScene() {
           ref={containerRef}
           className="landing-scene-shell"
           dangerouslySetInnerHTML={{
-            __html: landingSceneMarkup.replace(">Handy Dandy</p>", ">Digital Handyman</p>"),
+            __html: landingSceneMarkup
+              .replace(">Handy Dandy</p>", ">Digital Handyman</p>")
+              .replace('<div class="stage">', '<h1 class="landing-brand-sign" data-text="Digital Handyman">Digital Handyman</h1><div class="stage">'),
           }}
         />
       </section>

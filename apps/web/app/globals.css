@@ -15,8 +15,31 @@ body {
   background: var(--night);
   color: var(--ink);
   font-family: var(--font-sans);
+  overflow-x: hidden;
 }
 a { color: inherit; }
+
+.route-transition-frame { min-height: 100vh; }
+.route-transition-forward {
+  animation: route-slide-from-right .68s cubic-bezier(.22, 1, .36, 1);
+}
+.route-transition-back {
+  animation: route-slide-from-left .68s cubic-bezier(.22, 1, .36, 1);
+}
+@keyframes route-slide-from-right {
+  from { opacity: .5; transform: translateX(100vw); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes route-slide-from-left {
+  from { opacity: .5; transform: translateX(-100vw); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-transition-forward,
+  .route-transition-back {
+    animation-duration: .32s;
+  }
+}
 
 .landing-page {
   position: relative;
@@ -37,8 +60,79 @@ a { color: inherit; }
 .site-home-link { position: fixed; z-index: 100; top: 18px; left: clamp(16px, 3vw, 38px); padding: 9px 11px; border: 1px solid #303752aa; border-radius: 8px; background: #0b0d16dd; backdrop-filter: blur(10px); color: #f4a04f; font-size: .76rem; font-weight: 800; letter-spacing: .12em; text-decoration: none; text-transform: uppercase; }
 .site-home-link:hover { border-color: #8279e5; color: var(--ink); }
 .landing-scene-shell { width: min(100%, 760px); }
+.landing-brand-sign {
+  position: relative;
+  margin: 0 0 clamp(10px, 2vw, 18px);
+  color: transparent;
+  font-size: clamp(1.55rem, 4.5vw, 2.45rem);
+  font-weight: 800;
+  letter-spacing: .19em;
+  line-height: 1;
+  opacity: 1;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: none;
+  -webkit-text-stroke: 1px #8b755f88;
+}
+.landing-brand-sign::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  background: linear-gradient(90deg, #fff4d8 0%, #f4a04f 46%, transparent 52%, transparent 100%);
+  background-position: 100% 0;
+  background-size: 220% 100%;
+  opacity: 0;
+  text-align: center;
+  text-shadow:
+    0 0 4px #fff1cf,
+    0 0 11px #f4a04f,
+    0 0 28px #f59842cc,
+    0 0 55px #f5428d66;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: .35px #ffd7a366;
+}
+.scene-root.lit.sign-powered .landing-brand-sign::after {
+  animation:
+    landing-sign-power-on 1s steps(1, end) forwards,
+    landing-sign-flicker 6.4s steps(1, end) 1s infinite;
+}
+.scene-root.lit.session-restored.sign-powered .landing-brand-sign::after {
+  background-position: 0 0;
+  opacity: 1;
+  animation: landing-sign-flicker 6.4s steps(1, end) infinite;
+}
+.scene-root.lit.sign-powered:not(.session-restored) .stage > svg > rect[fill="url(#glow)"] {
+  animation:
+    flickerOn 1s steps(1, end) forwards,
+    landing-sign-flicker 6.4s steps(1, end) 1s infinite !important;
+}
+.scene-root.lit.session-restored.sign-powered .stage > svg > rect[fill="url(#glow)"] {
+  opacity: 1;
+  animation: landing-sign-flicker 6.4s steps(1, end) infinite !important;
+}
+@keyframes landing-sign-power-on {
+  0% { background-position: 0 0; opacity: 0; }
+  8% { opacity: 1; }
+  16% { opacity: .15; }
+  26% { opacity: 1; }
+  34% { opacity: .1; }
+  46% { opacity: 1; }
+  55% { opacity: .3; }
+  65%, 100% { background-position: 0 0; opacity: 1; }
+}
+@keyframes landing-sign-flicker {
+  0%, 6%, 8%, 10%, 42%, 44%, 72%, 74%, 100% { filter: brightness(1); }
+  7% { filter: brightness(.5); }
+  9% { filter: brightness(.72); }
+  43% { filter: brightness(.62); }
+  73% { filter: brightness(.82); }
+}
 .landing-scene-shell .stage { box-shadow: 0 32px 90px #0008; }
-.landing-scene-shell .name-ph { color: #f4a04f !important; font-size: .95rem !important; font-weight: 700 !important; letter-spacing: .19em; text-transform: uppercase; }
+.landing-scene-shell .name-ph { display: none; }
+.landing-scene-shell .tag-ph { font-size: clamp(1rem, 2.3vw, 1.15rem) !important; line-height: 1.5; }
 .landing-scene-shell .cta-row { padding-top: 18px; }
 .landing-scene-shell .cta-row [data-action="contact"] { display: none; }
 .landing-scene-shell .cta-row button {
