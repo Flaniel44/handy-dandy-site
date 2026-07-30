@@ -148,7 +148,7 @@
       <path d="M2 8 L7 1 H14 L9 8 M17 8 L22 1 H29 L24 8" fill="none" stroke="#512DA8" stroke-width="4" />
       <path d="M13 14 L23 19 L13 24 Z" fill="#FFFFFF" />
     </g>
-    <text x="65" y="69" font-family="sans-serif" font-weight="bold" font-size="10" fill="#37474F" text-anchor="middle">MOVIE NIGHT</text>
+    <text x="65" y="69" font-family="sans-serif" font-weight="bold" font-size="10" fill="#37474F" text-anchor="middle">PLAY FILM</text>
     <g transform="translate(29 82)">
       <use href="#mini-qr-pattern" />
       <rect id="movie-qr-highlight" class="qr-choice-highlight" x="-5" y="-5" width="82" height="82" rx="6" fill="none" stroke="#7E57C2" stroke-width="3" opacity=".18" />

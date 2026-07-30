@@ -37,19 +37,21 @@
     }
 
     .sensor-wave {
-      stroke: #29B6F6;
-      stroke-width: 3;
+      stroke: #FF5252;
+      stroke-width: 4;
       stroke-linecap: round;
       fill: none;
       opacity: 0;
+      stroke-dasharray: 80;
+      stroke-dashoffset: 80;
       animation: scanWaves 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     }
     .wave-2 { animation-delay: 0.15s; }
     @keyframes scanWaves {
-      0%, 33% { opacity: 0; stroke-dasharray: 0 50; }
-      36% { opacity: 1; stroke: #29B6F6; }
-      40% { opacity: 1; stroke: #FF5252; }
-      44%, 100% { opacity: 0; }
+      0%, 34% { opacity: 0; stroke-dashoffset: 80; }
+      37% { opacity: .45; stroke-dashoffset: 80; }
+      43% { opacity: 1; stroke-dashoffset: 0; }
+      48%, 100% { opacity: 0; stroke-dashoffset: 0; }
     }
 
     .sensor-led {
