@@ -886,7 +886,7 @@ export function LandingScene() {
         }
         .scene-root .house-scene g[transform="translate(415,262) scale(1.6)"] path,
         .scene-root .house-scene g[transform="translate(380,273) scale(1)"] :is(path, polygon, rect) {
-          fill: #8b85df;
+          fill: #b8b7dc;
         }
         .scene-root .house-scene g[transform="translate(210,359) scale(1.7)"] path {
           fill: #b8b7dc;
