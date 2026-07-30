@@ -189,6 +189,7 @@ a { color: inherit; }
 .possibility-card.demo-right { grid-template-columns: minmax(280px, .85fr) minmax(0, 1.15fr); gap: clamp(28px, 4vw, 52px); }
 .possibility-section-grid .possibility-card:nth-child(even) .possibility-media { order: 2; }
 .possibility-card.demo-right .possibility-media { order: 2; }
+.possibility-section-grid .possibility-card.media-left .possibility-media { order: 0; }
 .possibility-section-grid .possibility-card.has-wide-demo .possibility-media { order: 2; width: 100%; min-height: 0; }
 .possibility-media { position: relative; min-height: clamp(270px, 42vw, 500px); display: grid; align-content: center; justify-items: center; padding: 30px; overflow: hidden; border: 1px solid #343c5b; border-radius: 14px; background: linear-gradient(135deg, #171d31, #10131f); color: var(--muted); text-align: center; }
 .possibility-media::before { content: ""; position: absolute; width: 55%; aspect-ratio: 1; border: 1px solid #8279e555; border-radius: 50%; box-shadow: 0 0 80px #6259c333; }

@@ -1,0 +1,387 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 500" width="100%" height="100%" id="vacation-security-root">
+  <title>Leak detection and vacation security</title>
+  <desc>A leak sensor sends an alert, then vacation lighting, outdoor motion lights, and a security camera protect an empty home.</desc>
+
+  <defs>
+    <clipPath id="security-scene-clip">
+      <rect width="600" height="500" />
+    </clipPath>
+    <clipPath id="house-body-clip">
+      <path d="M168 178 L350 58 L548 178 V412 H168 Z" />
+    </clipPath>
+    <clipPath id="upstairs-window-clip">
+      <rect x="194" y="194" width="128" height="62" rx="3" />
+    </clipPath>
+    <linearGradient id="security-night-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#11182B" />
+      <stop offset="100%" stop-color="#263A4A" />
+    </linearGradient>
+    <linearGradient id="security-house-wall" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#455A64" />
+      <stop offset="100%" stop-color="#2D3D44" />
+    </linearGradient>
+    <radialGradient id="porch-light-glow" cx="50%" cy="0%" r="100%">
+      <stop offset="0%" stop-color="#FFF8B0" stop-opacity=".95" />
+      <stop offset="42%" stop-color="#FFB74D" stop-opacity=".38" />
+      <stop offset="100%" stop-color="#FFB74D" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="window-warm-glow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#FFF8B0" stop-opacity=".95" />
+      <stop offset="60%" stop-color="#FFB74D" stop-opacity=".42" />
+      <stop offset="100%" stop-color="#FFB74D" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="tv-vacation-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E5FF" />
+      <stop offset="55%" stop-color="#7C4DFF" />
+      <stop offset="100%" stop-color="#F25D9C" />
+    </linearGradient>
+    <filter id="security-shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#000000" flood-opacity=".45" />
+    </filter>
+    <filter id="security-soft-shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity=".32" />
+    </filter>
+    <filter id="security-blue-glow" x="-200%" y="-200%" width="500%" height="500%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="security-red-glow" x="-200%" y="-200%" width="500%" height="500%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#FF5252" flood-opacity=".9" />
+    </filter>
+  </defs>
+
+  <style>
+    #leak-water {
+      animation: leak-water 14s ease-in-out infinite;
+    }
+    @keyframes leak-water {
+      0%, 3%, 31%, 100% { opacity: 0; }
+      7%, 26% { opacity: 1; }
+    }
+
+    .leak-drop {
+      animation: falling-drop .9s linear infinite;
+    }
+    .leak-drop.drop-two { animation-delay: -.3s; }
+    .leak-drop.drop-three { animation-delay: -.6s; }
+    @keyframes falling-drop {
+      0% { opacity: 0; transform: translateY(-7px); }
+      20% { opacity: 1; }
+      85% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(23px); }
+    }
+
+    #leak-sensor-light {
+      animation: leak-sensor-alert 14s ease-in-out infinite;
+    }
+    @keyframes leak-sensor-alert {
+      0%, 8%, 31%, 100% { fill: #455A64; filter: none; }
+      12%, 27% { fill: #FF5252; filter: url(#security-red-glow); }
+    }
+
+    #leak-signal-active {
+      stroke-dasharray: 10 16;
+      animation: leak-signal 14s linear infinite;
+    }
+    @keyframes leak-signal {
+      0%, 9%, 30%, 100% { opacity: 0; stroke-dashoffset: 80; }
+      13%, 26% { opacity: 1; stroke-dashoffset: -80; }
+    }
+
+    #phone-leak-alert {
+      animation: phone-leak-alert 14s cubic-bezier(.2, .8, .2, 1) infinite;
+      transform-origin: 83px 293px;
+    }
+    @keyframes phone-leak-alert {
+      0%, 13% { opacity: 0; transform: translateY(10px) scale(.9); }
+      17%, 30% { opacity: 1; transform: translateY(0) scale(1); }
+      34%, 100% { opacity: 0; transform: translateY(-8px) scale(.92); }
+    }
+
+    #phone-vacation-status {
+      animation: phone-vacation-status 14s cubic-bezier(.2, .8, .2, 1) infinite;
+      transform-origin: 83px 293px;
+    }
+    @keyframes phone-vacation-status {
+      0%, 34% { opacity: 0; transform: translateY(10px) scale(.9); }
+      39%, 62% { opacity: 1; transform: translateY(0) scale(1); }
+      68%, 100% { opacity: 0; transform: translateY(-8px) scale(.92); }
+    }
+
+    #phone-motion-alert {
+      animation: phone-motion-alert 14s cubic-bezier(.2, .8, .2, 1) infinite;
+      transform-origin: 83px 293px;
+    }
+    @keyframes phone-motion-alert {
+      0%, 67% { opacity: 0; transform: translateY(10px) scale(.9); }
+      72%, 91% { opacity: 1; transform: translateY(0) scale(1); }
+      97%, 100% { opacity: 0; transform: translateY(-8px) scale(.92); }
+    }
+
+    #vacation-badge {
+      animation: vacation-badge 14s ease-in-out infinite;
+    }
+    @keyframes vacation-badge {
+      0%, 35%, 96%, 100% { opacity: 0; }
+      40%, 91% { opacity: 1; }
+    }
+
+    #window-glow-one {
+      animation: window-one 14s ease-in-out infinite;
+    }
+    @keyframes window-one {
+      0%, 37%, 61%, 84%, 100% { opacity: 0; }
+      42%, 56%, 88%, 94% { opacity: 1; }
+    }
+
+    #window-glow-two {
+      animation: window-two 14s ease-in-out infinite;
+    }
+    @keyframes window-two {
+      0%, 48%, 75%, 96%, 100% { opacity: 0; }
+      54%, 69%, 80%, 91% { opacity: 1; }
+    }
+
+    #vacation-tv {
+      animation: vacation-tv 14s ease-in-out infinite;
+    }
+    @keyframes vacation-tv {
+      0%, 43%, 82%, 100% { opacity: 0; }
+      49%, 76% { opacity: 1; }
+    }
+
+    #curtain-left {
+      animation: curtain-left 14s ease-in-out infinite;
+    }
+    #curtain-right {
+      animation: curtain-right 14s ease-in-out infinite;
+    }
+    @keyframes curtain-left {
+      0%, 37% { transform: translateX(0); }
+      42%, 56% { transform: translateX(-52px); }
+      61%, 84% { transform: translateX(0); }
+      88%, 94% { transform: translateX(-52px); }
+      99%, 100% { transform: translateX(0); }
+    }
+    @keyframes curtain-right {
+      0%, 37% { transform: translateX(0); }
+      42%, 56% { transform: translateX(52px); }
+      61%, 84% { transform: translateX(0); }
+      88%, 94% { transform: translateX(52px); }
+      99%, 100% { transform: translateX(0); }
+    }
+
+    #approaching-person {
+      animation: approaching-person 14s cubic-bezier(.35, 0, .2, 1) infinite;
+    }
+    @keyframes approaching-person {
+      0%, 47% { opacity: 0; transform: translateX(125px); }
+      51% { opacity: 1; transform: translateX(125px); }
+      68%, 83% { opacity: 1; transform: translateX(0); }
+      94%, 100% { opacity: 0; transform: translateX(145px); }
+    }
+
+    .motion-wave {
+      stroke-dasharray: 120;
+      stroke-dashoffset: 120;
+      animation: motion-wave 14s ease-out infinite;
+    }
+    .motion-wave.wave-two { animation-delay: .18s; }
+    @keyframes motion-wave {
+      0%, 60% { opacity: 0; stroke-dashoffset: 120; }
+      64% { opacity: .5; stroke-dashoffset: 120; }
+      69% { opacity: 1; stroke-dashoffset: 0; }
+      72%, 100% { opacity: 0; stroke-dashoffset: 0; }
+    }
+
+    #porch-light,
+    #porch-light-beam {
+      animation: porch-light-on 14s ease-in-out infinite;
+    }
+    @keyframes porch-light-on {
+      0%, 72%, 92%, 100% { opacity: 0; }
+      75%, 87% { opacity: 1; }
+    }
+
+    #security-camera-body {
+      animation: camera-track 14s cubic-bezier(.25, .8, .25, 1) infinite;
+      transform-origin: 0 0;
+    }
+    @keyframes camera-track {
+      0%, 57%, 94%, 100% { transform: rotate(0deg); }
+      67%, 85% { transform: rotate(17deg); }
+    }
+
+    #capture-frame {
+      animation: capture-frame 14s ease-in-out infinite;
+    }
+    @keyframes capture-frame {
+      0%, 69%, 84%, 100% { opacity: 0; }
+      73%, 80% { opacity: 1; }
+    }
+
+    #capture-flash {
+      animation: capture-flash 14s linear infinite;
+    }
+    @keyframes capture-flash {
+      0%, 74%, 77%, 100% { opacity: 0; }
+      75% { opacity: .75; }
+    }
+  </style>
+
+  <g clip-path="url(#security-scene-clip)">
+    <rect width="600" height="500" fill="url(#security-night-sky)" />
+    <circle cx="78" cy="74" r="31" fill="#E8EAF6" opacity=".82" />
+    <circle cx="91" cy="66" r="31" fill="#11182B" />
+    <g fill="#CFD8DC" opacity=".65">
+      <circle cx="147" cy="61" r="2" /><circle cx="212" cy="93" r="1.5" /><circle cx="467" cy="59" r="2" />
+      <circle cx="549" cy="98" r="1.5" /><circle cx="396" cy="87" r="1.4" /><circle cx="35" cy="143" r="1.5" />
+    </g>
+    <rect y="410" width="600" height="90" fill="#17231F" />
+    <path d="M0 427 Q95 395 188 426 T374 424 T600 421 V500 H0 Z" fill="#1E3127" />
+    <path d="M464 393 H600 V434 H453 Z" fill="#37474F" />
+
+    <g id="house" filter="url(#security-shadow)">
+      <path d="M168 178 L350 58 L548 178 V412 H168 Z" fill="url(#security-house-wall)" stroke="#607D8B" stroke-width="6" stroke-linejoin="round" />
+      <path d="M145 188 L350 45 L568 188" fill="none" stroke="#263238" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
+
+      <g id="upper-left-room">
+        <rect x="190" y="190" width="136" height="70" rx="5" fill="#1C2830" />
+        <rect id="window-glow-one" x="190" y="190" width="136" height="70" rx="5" fill="url(#window-warm-glow)" opacity="0" />
+        <rect x="194" y="194" width="128" height="62" rx="3" fill="none" stroke="#78909C" stroke-width="4" />
+        <line x1="258" y1="194" x2="258" y2="256" stroke="#78909C" stroke-width="3" />
+        <g clip-path="url(#upstairs-window-clip)">
+          <g id="curtain-left">
+            <rect x="195" y="195" width="63" height="60" fill="#5D4037" />
+            <path d="M207 195 V255 M224 195 V255 M242 195 V255" stroke="#795548" stroke-width="4" opacity=".55" />
+          </g>
+          <g id="curtain-right">
+            <rect x="258" y="195" width="63" height="60" fill="#5D4037" />
+            <path d="M272 195 V255 M289 195 V255 M307 195 V255" stroke="#795548" stroke-width="4" opacity=".55" />
+          </g>
+        </g>
+      </g>
+
+      <g id="upper-right-room">
+        <rect x="376" y="190" width="142" height="70" rx="5" fill="#1C2830" />
+        <rect id="window-glow-two" x="376" y="190" width="142" height="70" rx="5" fill="url(#window-warm-glow)" opacity="0" />
+        <rect x="380" y="194" width="134" height="62" rx="3" fill="none" stroke="#78909C" stroke-width="4" />
+        <line x1="447" y1="194" x2="447" y2="256" stroke="#78909C" stroke-width="3" />
+      </g>
+
+      <g id="utility-room">
+        <rect x="190" y="302" width="136" height="88" rx="5" fill="#202D33" />
+        <path d="M208 315 H275 V329 Q275 342 261 342 H222 Q208 342 208 329 Z" fill="#78909C" />
+        <path d="M241 315 V300 H260 Q270 300 270 310" fill="none" stroke="#B0BEC5" stroke-width="6" stroke-linecap="round" />
+        <path d="M241 342 V371 M267 342 V371" stroke="#546E7A" stroke-width="7" />
+        <g id="leak-water" opacity="0">
+          <g fill="#40C4FF">
+            <path class="leak-drop" d="M271 323 C264 333 265 339 271 342 C277 339 278 333 271 323 Z" />
+            <path class="leak-drop drop-two" d="M271 323 C264 333 265 339 271 342 C277 339 278 333 271 323 Z" />
+            <path class="leak-drop drop-three" d="M271 323 C264 333 265 339 271 342 C277 339 278 333 271 323 Z" />
+          </g>
+          <ellipse cx="271" cy="374" rx="29" ry="7" fill="#0288D1" opacity=".65" />
+        </g>
+        <g id="leak-sensor" transform="translate(280 355)">
+          <ellipse cx="0" cy="12" rx="24" ry="8" fill="#263238" />
+          <rect x="-24" y="0" width="48" height="13" rx="7" fill="#ECEFF1" stroke="#B0BEC5" stroke-width="2" />
+          <circle id="leak-sensor-light" cx="0" cy="6" r="4" fill="#455A64" />
+        </g>
+      </g>
+
+      <g id="living-room">
+        <rect x="376" y="302" width="142" height="88" rx="5" fill="#1B252C" />
+        <rect x="391" y="314" width="91" height="48" rx="5" fill="#111619" stroke="#37474F" stroke-width="4" />
+        <rect id="vacation-tv" x="396" y="319" width="81" height="38" rx="2" fill="url(#tv-vacation-glow)" opacity="0" />
+        <rect x="431" y="362" width="12" height="9" fill="#455A64" />
+        <rect x="407" y="371" width="60" height="5" rx="2.5" fill="#37474F" />
+      </g>
+
+      <rect x="329" y="309" width="54" height="103" rx="4" fill="#37474F" stroke="#263238" stroke-width="5" />
+      <circle cx="372" cy="362" r="4" fill="#FFB74D" />
+    </g>
+
+    <g id="vacation-badge" opacity="0" filter="url(#security-soft-shadow)">
+      <rect x="285" y="112" width="145" height="38" rx="19" fill="#25304A" stroke="#B388FF" stroke-width="2" />
+      <path d="M306 123 H325 Q331 123 331 129 V139 H300 V129 Q300 123 306 123 Z M309 123 V119 H322 V123" fill="none" stroke="#D1C4E9" stroke-width="3" stroke-linejoin="round" />
+      <text x="342" y="136" fill="#EDE7F6" font-family="sans-serif" font-size="9" font-weight="700">VACATION MODE</text>
+    </g>
+
+    <path d="M280 367 V384 H137 V351" fill="none" stroke="#31434D" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+    <path id="leak-signal-active" d="M280 367 V384 H137 V351" fill="none" stroke="#FF5252" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0" />
+
+    <g id="phone" transform="translate(29 201)" filter="url(#security-shadow)">
+      <rect width="108" height="194" rx="17" fill="#111619" stroke="#455A64" stroke-width="4" />
+      <rect x="7" y="10" width="94" height="169" rx="12" fill="#0D1722" />
+      <rect x="39" y="185" width="30" height="4" rx="2" fill="#607D8B" />
+      <text x="54" y="34" fill="#90A4AE" font-family="sans-serif" font-size="8" font-weight="700" text-anchor="middle">MY HOME</text>
+
+      <g id="phone-leak-alert" opacity="0">
+        <rect x="15" y="49" width="78" height="104" rx="12" fill="#361B20" stroke="#FF5252" stroke-width="2" />
+        <path d="M54 63 C39 83 40 94 54 100 C68 94 69 83 54 63 Z" fill="#40C4FF" />
+        <circle cx="54" cy="116" r="14" fill="#FF5252" />
+        <text x="54" y="121" fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" text-anchor="middle">!</text>
+        <text x="54" y="143" fill="#FFCDD2" font-family="sans-serif" font-size="8" font-weight="700" text-anchor="middle">LEAK DETECTED</text>
+      </g>
+
+      <g id="phone-vacation-status" opacity="0">
+        <rect x="15" y="49" width="78" height="104" rx="12" fill="#24203A" stroke="#B388FF" stroke-width="2" />
+        <path d="M35 72 H73 Q79 72 79 78 V106 H29 V78 Q29 72 35 72 Z M41 72 V64 H67 V72" fill="none" stroke="#B388FF" stroke-width="5" stroke-linejoin="round" />
+        <circle cx="54" cy="122" r="13" fill="#00C853" />
+        <path d="M47 122 L52 127 L62 116" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" />
+        <text x="54" y="145" fill="#EDE7F6" font-family="sans-serif" font-size="7.5" font-weight="700" text-anchor="middle">VACATION ACTIVE</text>
+      </g>
+
+      <g id="phone-motion-alert" opacity="0">
+        <rect x="15" y="49" width="78" height="104" rx="12" fill="#172B37" stroke="#40C4FF" stroke-width="2" />
+        <rect x="28" y="65" width="52" height="42" rx="7" fill="#263842" />
+        <circle cx="54" cy="86" r="13" fill="#10191E" stroke="#40C4FF" stroke-width="3" />
+        <circle cx="54" cy="86" r="5" fill="#00E5FF" />
+        <circle cx="54" cy="122" r="13" fill="#FF5252" />
+        <text x="54" y="127" fill="#FFFFFF" font-family="sans-serif" font-size="15" font-weight="700" text-anchor="middle">!</text>
+        <text x="54" y="145" fill="#B3E5FC" font-family="sans-serif" font-size="7.5" font-weight="700" text-anchor="middle">MOTION CAPTURED</text>
+      </g>
+    </g>
+
+    <g id="outdoor-motion-sensor" transform="translate(535 270)">
+      <rect x="-10" y="-14" width="14" height="28" rx="6" fill="#455A64" />
+      <circle cx="-4" cy="-5" r="3" fill="#FF5252" />
+      <path class="motion-wave" d="M-16 20 A12 12 0 0 0 8 20" fill="none" stroke="#FF5252" stroke-width="4" stroke-linecap="round" />
+      <path class="motion-wave wave-two" d="M-29 20 A25 25 0 0 0 21 20" fill="none" stroke="#FF5252" stroke-width="4" stroke-linecap="round" />
+    </g>
+
+    <path id="porch-light-beam" d="M356 301 L270 424 H552 Z" fill="url(#porch-light-glow)" opacity="0" />
+    <g id="porch-fixture" transform="translate(340 283)">
+      <path d="M0 0 H32 L26 18 H6 Z" fill="#455A64" />
+      <ellipse id="porch-light" cx="16" cy="18" rx="10" ry="4" fill="#FFF59D" opacity="0" />
+    </g>
+
+    <g id="camera-mount" transform="translate(524 190)" filter="url(#security-soft-shadow)">
+      <path d="M0 0 V20 H-12" fill="none" stroke="#78909C" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="0" cy="0" r="7" fill="#607D8B" />
+      <g id="security-camera-body">
+        <path d="M0 -10 H38 L49 0 L38 12 H0 Q-7 12 -7 5 V-3 Q-7 -10 0 -10 Z" fill="#78909C" />
+        <path d="M37 -7 L48 0 L37 9 Z" fill="#455A64" />
+        <circle cx="39" cy="1" r="7" fill="#111619" stroke="#40C4FF" stroke-width="3" />
+        <circle cx="39" cy="1" r="2.5" fill="#00E5FF" />
+        <circle cx="3" cy="-3" r="3" fill="#FFB74D" />
+      </g>
+    </g>
+
+    <g id="approaching-person" opacity="0">
+      <ellipse cx="509" cy="415" rx="20" ry="5" fill="#000000" opacity=".3" />
+      <circle cx="509" cy="327" r="13" fill="#1565C0" />
+      <path d="M493 349 Q493 340 502 340 H516 Q525 340 525 349 V393 H517 V416 H505 V393 H497 V416 H485 V370 H493 Z" fill="#1E88E5" />
+      <path d="M492 351 L474 379 M526 351 L542 379" stroke="#1E88E5" stroke-width="9" stroke-linecap="round" />
+    </g>
+
+    <g id="capture-frame" opacity="0" stroke="#40C4FF" stroke-width="4" fill="none" stroke-linecap="round" filter="url(#security-blue-glow)">
+      <path d="M470 315 H486 M470 315 V331 M548 315 H532 M548 315 V331 M470 425 H486 M470 425 V409 M548 425 H532 M548 425 V409" />
+      <circle cx="538" cy="327" r="4" fill="#FF5252" stroke="none" />
+    </g>
+    <rect id="capture-flash" width="600" height="500" fill="#FFFFFF" opacity="0" pointer-events="none" />
+  </g>
+</svg>

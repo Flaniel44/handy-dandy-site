@@ -14,6 +14,8 @@ const demoAnimationSources: Record<string, string> = {
   "09": "/demos/infrared-devices.svg",
   "10": "/demos/scheduled-coffee.svg",
   "11": "/demos/smart-display-dashboard.svg",
+  "12": "/demos/local-private-network.svg",
+  "13": "/demos/vacation-security.svg",
 };
 const possibilitySections = [
   {
@@ -128,6 +130,27 @@ const possibilitySections = [
       },
     ],
   },
+  {
+    id: "security-and-resilience",
+    number: "06",
+    title: "Security and resilience",
+    items: [
+      {
+        number: "12",
+        title: "Can my smart home stay private and keep working without the internet?",
+        emphasis: "private and keep working",
+        description: "Yes. A fully local setup can keep device traffic inside your home network, while core controls and automations continue working if the internet goes down. The network can also be secured so smart devices only access what they need.",
+        mediaLabel: "Private local-control and internet-outage demonstration",
+      },
+      {
+        number: "13",
+        title: "Can my home help protect itself while I am away?",
+        emphasis: "protect itself while I am away",
+        description: "Yes. Water-leak sensors can warn you early, outdoor motion can trigger lighting and intelligent camera capture, and vacation routines can vary lights and other devices to make your home appear occupied.",
+        mediaLabel: "Leak detection, outdoor security, and vacation-presence demonstration",
+      },
+    ],
+  },
 ];
 
 function QuestionTitle({ title, emphasis }: { title: string; emphasis: string }) {
@@ -176,7 +199,7 @@ export default function DemosPage() {
             <div className="possibility-section-grid">
               {section.items.map((item) => (
                 <article
-                  className={`possibility-card ${item.number === "08" ? "has-wide-demo" : ""} ${item.number === "10" ? "demo-right" : ""}`}
+                  className={`possibility-card ${item.number === "08" ? "has-wide-demo" : ""} ${item.number === "10" || item.number === "12" ? "demo-right" : ""} ${item.number === "13" ? "media-left" : ""}`}
                   key={item.number}
                 >
                   <div className={`possibility-media ${demoAnimationSources[item.number] ? "has-demo-animation" : ""}`}>

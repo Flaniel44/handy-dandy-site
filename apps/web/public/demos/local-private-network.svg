@@ -1,0 +1,191 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 500" width="100%" height="100%" id="local-private-network-root">
+  <title>Private local smart home network</title>
+  <desc>Smart devices continue communicating securely inside the home while the internet connection is unavailable.</desc>
+
+  <defs>
+    <clipPath id="local-scene-clip">
+      <rect width="600" height="500" />
+    </clipPath>
+    <linearGradient id="local-scene-wall" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#33444C" />
+      <stop offset="100%" stop-color="#202C33" />
+    </linearGradient>
+    <radialGradient id="local-hub-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00E5FF" stop-opacity=".5" />
+      <stop offset="55%" stop-color="#00B8D4" stop-opacity=".16" />
+      <stop offset="100%" stop-color="#00B8D4" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="local-light-glow" cx="50%" cy="20%" r="70%">
+      <stop offset="0%" stop-color="#FFF8B0" stop-opacity=".9" />
+      <stop offset="48%" stop-color="#FFB74D" stop-opacity=".3" />
+      <stop offset="100%" stop-color="#FFB74D" stop-opacity="0" />
+    </radialGradient>
+    <filter id="local-shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#000000" flood-opacity=".42" />
+    </filter>
+    <filter id="local-soft-shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity=".32" />
+    </filter>
+    <filter id="local-blue-glow" x="-200%" y="-200%" width="500%" height="500%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="local-green-glow" x="-200%" y="-200%" width="500%" height="500%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#00E676" flood-opacity=".9" />
+    </filter>
+  </defs>
+
+  <style>
+    .local-data-path {
+      stroke-dasharray: 10 17;
+      animation: local-data-flow 1.4s linear infinite;
+    }
+    .local-data-path.reverse {
+      animation-direction: reverse;
+    }
+    @keyframes local-data-flow {
+      to { stroke-dashoffset: -54; }
+    }
+
+    #local-hub-halo {
+      animation: local-hub-breathe 2.4s ease-in-out infinite alternate;
+      transform-origin: 290px 250px;
+    }
+    @keyframes local-hub-breathe {
+      from { opacity: .55; transform: scale(.9); }
+      to { opacity: 1; transform: scale(1.08); }
+    }
+
+    #phone-button {
+      animation: phone-button-state 12s ease-in-out infinite;
+    }
+    @keyframes phone-button-state {
+      0%, 14%, 23%, 46%, 55%, 100% { fill: #26384A; }
+      17%, 21%, 49%, 53% { fill: #00E5FF; }
+    }
+
+    #local-bulb,
+    #local-room-glow {
+      animation: local-bulb-state 12s ease-in-out infinite;
+    }
+    @keyframes local-bulb-state {
+      0%, 19%, 43%, 51%, 84%, 100% { opacity: 0; }
+      24%, 38%, 57%, 79% { opacity: 1; }
+    }
+
+    #local-bulb-off {
+      animation: local-bulb-off 12s ease-in-out infinite;
+    }
+    @keyframes local-bulb-off {
+      0%, 19%, 43%, 51%, 84%, 100% { opacity: 1; }
+      24%, 38%, 57%, 79% { opacity: 0; }
+    }
+
+    #lock-confirmation {
+      animation: lock-confirmation 12s ease-in-out infinite;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    @keyframes lock-confirmation {
+      0%, 47%, 100% { opacity: .65; transform: scale(.9); }
+      53%, 78% { opacity: 1; transform: scale(1.12); }
+      84% { opacity: .65; transform: scale(.9); }
+    }
+
+  </style>
+
+  <g clip-path="url(#local-scene-clip)">
+    <rect width="600" height="500" fill="url(#local-scene-wall)" />
+
+    <g id="private-network-boundary">
+      <rect x="32" y="38" width="444" height="424" rx="30" fill="#17242B" stroke="#607D8B" stroke-width="4" />
+      <rect x="43" y="49" width="422" height="402" rx="23" fill="#1D2A31" stroke="#00B8D4" stroke-width="2" stroke-dasharray="7 10" opacity=".7" />
+      <text x="76" y="76" fill="#90A4AE" font-family="sans-serif" font-size="9" font-weight="700" letter-spacing="1.5">PRIVATE LOCAL NETWORK</text>
+      <circle cx="445" cy="70" r="5" fill="#00E676" filter="url(#local-green-glow)" />
+    </g>
+
+    <path d="M145 250 H220" fill="none" stroke="#31434D" stroke-width="7" stroke-linecap="round" />
+    <path d="M290 200 V133 H174" fill="none" stroke="#31434D" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M326 221 L385 166" fill="none" stroke="#31434D" stroke-width="7" stroke-linecap="round" />
+    <path d="M324 280 L380 337" fill="none" stroke="#31434D" stroke-width="7" stroke-linecap="round" />
+    <path d="M257 289 L190 350" fill="none" stroke="#31434D" stroke-width="7" stroke-linecap="round" />
+
+    <path class="local-data-path" d="M145 250 H220" fill="none" stroke="#00E5FF" stroke-width="3" stroke-linecap="round" />
+    <path class="local-data-path reverse" d="M290 200 V133 H174" fill="none" stroke="#FFD180" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path class="local-data-path" d="M326 221 L385 166" fill="none" stroke="#40C4FF" stroke-width="3" stroke-linecap="round" />
+    <path class="local-data-path reverse" d="M324 280 L380 337" fill="none" stroke="#00E676" stroke-width="3" stroke-linecap="round" />
+    <path class="local-data-path" d="M257 289 L190 350" fill="none" stroke="#40C4FF" stroke-width="3" stroke-linecap="round" />
+
+    <g id="local-phone" transform="translate(72 181)" filter="url(#local-shadow)">
+      <rect width="76" height="140" rx="14" fill="#151A1D" stroke="#455A64" stroke-width="3" />
+      <rect x="6" y="9" width="64" height="119" rx="9" fill="#0E1722" />
+      <text x="38" y="30" fill="#90A4AE" font-family="sans-serif" font-size="7" font-weight="700" text-anchor="middle">MY HOME</text>
+      <path d="M20 62 L38 47 L56 62 V85 H43 V70 H33 V85 H20 Z" fill="#78909C" />
+      <circle id="phone-button" cx="38" cy="105" r="12" fill="#26384A" />
+      <path d="M33 105 L37 109 L44 101" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" />
+      <rect x="27" y="133" width="22" height="3" rx="1.5" fill="#607D8B" />
+    </g>
+
+    <g id="local-hub" filter="url(#local-shadow)">
+      <circle id="local-hub-halo" cx="290" cy="250" r="82" fill="url(#local-hub-glow)" />
+      <circle cx="290" cy="250" r="58" fill="#263842" stroke="#00B8D4" stroke-width="4" />
+      <circle cx="290" cy="250" r="45" fill="#14232B" />
+      <path d="M290 214 L323 235 V271 L290 290 L257 271 V235 Z" fill="#37474F" stroke="#00E5FF" stroke-width="3" />
+      <path d="M272 250 L290 234 L308 250 V272 H296 V258 H284 V272 H272 Z" fill="#00E5FF" />
+      <text x="290" y="326" fill="#B0BEC5" font-family="sans-serif" font-size="9" font-weight="700" text-anchor="middle" letter-spacing="1">LOCAL HUB</text>
+    </g>
+
+    <g id="local-light" transform="translate(132 87)" filter="url(#local-soft-shadow)">
+      <circle id="local-room-glow" cx="42" cy="47" r="68" fill="url(#local-light-glow)" opacity="0" />
+      <path d="M25 34 C25 12 59 12 59 34 C59 46 50 49 49 60 H35 C34 49 25 46 25 34 Z" fill="#455A64" />
+      <g id="local-bulb-off">
+        <path d="M31 34 C31 19 53 19 53 34 C53 42 47 45 46 51 H38 C37 45 31 42 31 34 Z" fill="#78909C" />
+      </g>
+      <g id="local-bulb" opacity="0">
+        <path d="M31 34 C31 19 53 19 53 34 C53 42 47 45 46 51 H38 C37 45 31 42 31 34 Z" fill="#FFF59D" filter="url(#local-blue-glow)" />
+      </g>
+      <rect x="35" y="60" width="14" height="8" rx="3" fill="#607D8B" />
+      <text x="42" y="88" fill="#B0BEC5" font-family="sans-serif" font-size="8" font-weight="700" text-anchor="middle">LIGHTS</text>
+    </g>
+
+    <g id="local-thermostat" transform="translate(365 110)" filter="url(#local-soft-shadow)">
+      <rect width="88" height="83" rx="16" fill="#263842" stroke="#546E7A" stroke-width="3" />
+      <circle cx="44" cy="36" r="23" fill="#14232B" stroke="#40C4FF" stroke-width="4" stroke-dasharray="110 35" transform="rotate(-90 44 36)" />
+      <text x="44" y="42" fill="#ECEFF1" font-family="sans-serif" font-size="17" font-weight="700" text-anchor="middle">21&#176;</text>
+      <text x="44" y="70" fill="#90A4AE" font-family="sans-serif" font-size="7" font-weight="700" text-anchor="middle">CLIMATE</text>
+    </g>
+
+    <g id="local-lock" transform="translate(367 318)" filter="url(#local-soft-shadow)">
+      <rect width="88" height="83" rx="16" fill="#263842" stroke="#546E7A" stroke-width="3" />
+      <g id="lock-confirmation">
+        <path d="M30 37 V27 C30 10 58 10 58 27 V37" fill="none" stroke="#00E676" stroke-width="6" stroke-linecap="round" />
+        <rect x="24" y="34" width="40" height="31" rx="7" fill="#00C853" />
+        <circle cx="44" cy="48" r="4" fill="#123321" />
+        <rect x="42" y="49" width="4" height="8" rx="2" fill="#123321" />
+      </g>
+      <text x="44" y="76" fill="#C8E6C9" font-family="sans-serif" font-size="7" font-weight="700" text-anchor="middle">SECURE</text>
+    </g>
+
+    <g id="local-camera" transform="translate(148 326)" filter="url(#local-soft-shadow)">
+      <rect width="84" height="82" rx="16" fill="#263842" stroke="#546E7A" stroke-width="3" />
+      <path d="M16 24 H56 L68 34 L56 46 H16 Q10 46 10 40 V30 Q10 24 16 24 Z" fill="#78909C" />
+      <path d="M56 27 L67 34 L56 43 Z" fill="#455A64" />
+      <circle cx="56" cy="35" r="7" fill="#14232B" stroke="#40C4FF" stroke-width="3" />
+      <circle cx="56" cy="35" r="2.5" fill="#00E5FF" />
+      <path d="M28 46 V56 H20 M28 56 H40" fill="none" stroke="#607D8B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="18" cy="31" r="3" fill="#00E676" filter="url(#local-green-glow)" />
+      <text x="42" y="72" fill="#B3E5FC" font-family="sans-serif" font-size="7" font-weight="700" text-anchor="middle">CAMERA</text>
+    </g>
+
+    <g id="static-security-shield" transform="translate(405 213)" opacity="1" filter="url(#local-soft-shadow)">
+      <path d="M29 0 C41 9 51 11 58 12 V38 C58 59 44 70 29 78 C14 70 0 59 0 38 V12 C7 11 17 9 29 0 Z" fill="#174C3A" stroke="#00E676" stroke-width="4" />
+      <path d="M18 37 V29 C18 14 40 14 40 29 V37" fill="none" stroke="#E8FFF1" stroke-width="5" stroke-linecap="round" />
+      <rect x="13" y="34" width="32" height="26" rx="6" fill="#00C853" />
+      <circle cx="29" cy="46" r="4" fill="#123321" />
+      <rect x="27" y="47" width="4" height="7" rx="2" fill="#123321" />
+    </g>
+  </g>
+</svg>
