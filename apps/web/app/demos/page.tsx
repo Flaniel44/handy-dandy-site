@@ -4,19 +4,19 @@ import { ViewportSvgAnimation } from "../../components/viewport-svg-animation";
 
 const demoAnimationSources: Record<string, string> = {
   "01": "/demos/motion-lights.svg",
-  "02": "/demos/grow-lights.svg",
+  "02": "/demos/arrival-automation.svg",
   "03": "/demos/day-night-modes.svg",
-  "04": "/demos/arrival-automation.svg",
-  "05": "/demos/physical-controls.svg",
-  "06": "/demos/phone-tap-routine.svg",
-  "07": "/demos/qr-code-guest-wifi.svg",
-  "08": "/demos/automation-builder.svg",
-  "09": "/demos/infrared-devices.svg",
-  "10": "/demos/scheduled-coffee.svg",
-  "11": "/demos/smart-display-dashboard.svg",
-  "12": "/demos/local-private-network.svg",
-  "13": "/demos/vacation-security.svg",
-  "14": "/demos/energy-monitoring.svg",
+  "04": "/demos/physical-controls.svg",
+  "05": "/demos/vacation-security.svg",
+  "06": "/demos/energy-monitoring.svg",
+  "07": "/demos/local-private-network.svg",
+  "08": "/demos/smart-display-dashboard.svg",
+  "09": "/demos/automation-builder.svg",
+  "10": "/demos/infrared-devices.svg",
+  "11": "/demos/phone-tap-routine.svg",
+  "12": "/demos/qr-code-guest-wifi.svg",
+  "13": "/demos/scheduled-coffee.svg",
+  "14": "/demos/grow-lights.svg",
 };
 const possibilitySections = [
   {
@@ -168,6 +168,65 @@ const possibilitySections = [
   },
 ];
 
+const possibilityItemCatalog = new Map(
+  possibilitySections.flatMap((section) =>
+    section.items.map((item) => [item.number, item] as const),
+  ),
+);
+
+function orderedItems(entries: Array<[sourceNumber: string, displayNumber: string]>) {
+  return entries.map(([sourceNumber, displayNumber]) => {
+    const item = possibilityItemCatalog.get(sourceNumber);
+    if (!item) throw new Error(`Unknown possibility item: ${sourceNumber}`);
+    return { ...item, number: displayNumber };
+  });
+}
+
+const orderedPossibilitySections = [
+  {
+    id: "everyday-comfort",
+    number: "01",
+    title: "Everyday comfort",
+    items: orderedItems([
+      ["01", "01"],
+      ["04", "02"],
+      ["03", "03"],
+      ["05", "04"],
+    ]),
+  },
+  {
+    id: "security-and-monitoring",
+    number: "02",
+    title: "Security and Monitoring",
+    items: orderedItems([
+      ["13", "05"],
+      ["14", "06"],
+      ["12", "07"],
+    ]),
+  },
+  {
+    id: "one-simple-system",
+    number: "03",
+    title: "One simple, flexible system",
+    items: orderedItems([
+      ["11", "08"],
+      ["08", "09"],
+      ["09", "10"],
+    ]),
+  },
+  {
+    id: "creative-possibilities",
+    number: "04",
+    title: "Creative possibilities",
+    items: orderedItems([
+      ["06", "11"],
+      ["07", "12"],
+      ["10", "13"],
+      ["02", "14"],
+    ]),
+  },
+];
+
 const serviceQuestions = [
   {
     title: "Can I start small and expand later?",
@@ -234,7 +293,7 @@ export default function DemosPage() {
         <nav className="possibilities-topics" aria-label="Smart home topics">
           <p>Explore a topic</p>
           <ol>
-            {possibilitySections.map((section) => (
+            {orderedPossibilitySections.map((section) => (
               <li key={section.id}>
                 <a href={`#${section.id}`}>
                   <span>{section.number}</span>
@@ -244,13 +303,13 @@ export default function DemosPage() {
             ))}
             <li>
               <a href="#help-at-any-stage">
-                <span>08</span>
+                <span>05</span>
                 Help at any stage
               </a>
             </li>
             <li>
               <a href="#working-with-me">
-                <span>09</span>
+                <span>06</span>
                 What working with me looks like
               </a>
             </li>
@@ -259,12 +318,12 @@ export default function DemosPage() {
       </header>
 
       <div className="possibilities-grid" id="ideas">
-        {possibilitySections.map((section) => (
+        {orderedPossibilitySections.map((section) => (
           <section className="possibility-section" id={section.id} key={section.id} aria-label={section.title}>
             <div className="possibility-section-grid">
               {section.items.map((item) => (
                 <article
-                  className={`possibility-card ${item.number === "08" ? "has-wide-demo" : ""} ${item.number === "10" || item.number === "12" || item.number === "14" ? "demo-right" : ""} ${item.number === "13" ? "media-left" : ""}`}
+                  className={`possibility-card ${item.number === "09" ? "has-wide-demo" : ""} ${Number(item.number) % 2 === 0 ? "media-right" : "media-left"}`}
                   key={item.number}
                 >
                   <div className={`possibility-media ${demoAnimationSources[item.number] ? "has-demo-animation" : ""}`}>
