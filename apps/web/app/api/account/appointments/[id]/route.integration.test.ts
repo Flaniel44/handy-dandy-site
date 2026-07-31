@@ -183,9 +183,13 @@ async function seedAppointment(
   return { id: appointment.id, slotId: bookingSlot.id };
 }
 
-function futureSlot(daysAhead: number, hour: number) {
-  let day = DateTime.now().setZone("America/Toronto").plus({ days: daysAhead }).startOf("day");
-  while (day.weekday > 5) day = day.plus({ days: 1 });
+function futureSlot(businessDaysAhead: number, hour: number) {
+  let day = DateTime.now().setZone("America/Toronto").startOf("day");
+  let remainingBusinessDays = businessDaysAhead;
+  while (remainingBusinessDays > 0) {
+    day = day.plus({ days: 1 });
+    if (day.weekday <= 5) remainingBusinessDays -= 1;
+  }
   const start = day.set({ hour });
   return { date: start.toISODate()!, startsAt: start.toISO()!, endsAt: start.plus({ hours: 1 }).toISO()! };
 }
