@@ -29,6 +29,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  vi.unstubAllEnvs();
   await resetTestData(testSql);
   auth.isAdmin = false;
 });
@@ -67,6 +68,20 @@ describe("admin service management", () => {
 
     const publicBody = await (await listPublicServices()).json() as { services: Array<{ id: string }> };
     expect(publicBody.services.some((item) => item.id === service.id)).toBe(true);
+  });
+
+  it("publishes free launch pricing without overwriting the admin prices", async () => {
+    vi.stubEnv("LAUNCH_OFFER_ENABLED", "true");
+    const publicBody = await (await listPublicServices()).json() as {
+      launchOfferEnabled: boolean;
+      services: Array<{ priceCents: number }>;
+    };
+    expect(publicBody.launchOfferEnabled).toBe(true);
+    expect(publicBody.services.every((service) => service.priceCents === 0)).toBe(true);
+
+    auth.isAdmin = true;
+    const adminBody = await (await listAdminServices()).json() as { services: Array<{ priceCents: number }> };
+    expect(adminBody.services.some((service) => service.priceCents > 0)).toBe(true);
   });
 
   it("persists admin ordering and uses it in the public booking catalog", async () => {

@@ -5,6 +5,10 @@ export function areNewBookingsEnabled() {
   return process.env.BOOKINGS_ENABLED === "true";
 }
 
+export function isLaunchOfferEnabled() {
+  return process.env.LAUNCH_OFFER_ENABLED === "true";
+}
+
 export function bookingsClosedResponse() {
   return Response.json(
     { error: BOOKINGS_CLOSED_MESSAGE, code: "BOOKINGS_CLOSED" },

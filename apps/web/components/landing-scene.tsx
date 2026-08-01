@@ -46,7 +46,7 @@ const DEVICE_CONFIG = [
   },
 ] as const;
 
-export function LandingScene() {
+export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnabled?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bookingPathRef = useRef("/book");
   const router = useRouter();
@@ -1025,7 +1025,10 @@ export function LandingScene() {
           dangerouslySetInnerHTML={{
             __html: landingSceneMarkup
               .replace(">Handy Dandy</p>", ">Digital Handyman</p>")
-              .replace('<div class="stage">', '<h1 class="landing-brand-sign" data-text="Digital Handyman">Digital Handyman</h1><div class="stage">'),
+              .replace(
+                '<div class="stage">',
+                `${launchOfferEnabled ? '<div class="landing-launch-badge">Launch offer · Services are free</div>' : ''}<h1 class="landing-brand-sign" data-text="Digital Handyman">Digital Handyman</h1><div class="stage">`,
+              ),
           }}
         />
       </section>

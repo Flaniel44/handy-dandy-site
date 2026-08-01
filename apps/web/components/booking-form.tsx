@@ -5,7 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 type Service = { id: string; name: string; description: string; durationMinutes: number; priceCents: number };
 type Slot = { startsAt: string; endsAt: string; label: string };
 
-export function BookingForm({ bookingsEnabled }: { bookingsEnabled: boolean }) {
+export function BookingForm({ bookingsEnabled, launchOfferEnabled = false }: { bookingsEnabled: boolean; launchOfferEnabled?: boolean }) {
   const [services, setServices] = useState<Service[]>([]); const [serviceId, setServiceId] = useState("");
   const [currentWeek] = useState(startOfWeek); const [week, setWeek] = useState(startOfWeek);
   const [availability, setAvailability] = useState<Record<string, Slot[]>>({});
@@ -53,9 +53,10 @@ export function BookingForm({ bookingsEnabled }: { bookingsEnabled: boolean }) {
   if (confirmation) return <section className="booking-card booking-success"><p className="eyebrow">Check your email</p><h2>Confirm your appointment.</h2><p>We sent a confirmation link to <strong>{confirmation.email}</strong>. Your selected time is held for 15 minutes and will only be added to the calendar after you confirm it.</p><p>If you do not see the message, check your spam folder.</p></section>;
   const service = services.find((item) => item.id === serviceId);
   return <form className="booking-card" onSubmit={submit}>
+    {launchOfferEnabled && <aside className="launch-offer-note"><strong>Launch offer: your service is free.</strong><span>If I help you, honest feedback is always appreciated—but a review is never required.</span></aside>}
     <div className="booking-step"><span>01</span><div><h2>Consultation</h2><p>Select the service you need.</p></div></div>
     <label>Service<select value={serviceId} onChange={(event) => { setServiceId(event.target.value); setSelected(undefined); setLoading(true); }}>{services.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-    {service && <p className="service-summary">{service.description} · {service.durationMinutes} minutes · ${(service.priceCents / 100).toFixed(2)}</p>}
+    {service && <p className="service-summary">{service.description} · {service.durationMinutes} minutes · {service.priceCents === 0 ? "Free" : `$${(service.priceCents / 100).toFixed(2)}`}</p>}
 
     <div className="booking-step"><span>02</span><div><h2>Choose a time</h2><p>Browse one week at a time. Times use {timezone || "the business timezone"}.</p></div></div>
     <div className="week-controls"><button type="button" disabled={week.getTime() <= currentWeek.getTime()} onClick={() => changeWeek(-1)} aria-label="Previous week">←</button><strong>{dates[0].toLocaleDateString([], { month: "short", day: "numeric" })} – {dates[6].toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}</strong><button type="button" onClick={() => changeWeek(1)} aria-label="Next week">→</button></div>

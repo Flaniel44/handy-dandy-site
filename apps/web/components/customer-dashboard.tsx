@@ -5,11 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 import { ContactLinks } from "./contact-links";
 
 type Appointment = { id: string; status: string; adminNotes: string; clientNotes: string; startsAt: string; endsAt: string; serviceId: string; serviceName: string };
-type Service = { id: string; name: string; durationMinutes: number };
+type Service = { id: string; name: string; description: string; durationMinutes: number; priceCents: number };
 type Slot = { startsAt: string; endsAt: string; label: string };
 type Profile = { firstName: string; lastName: string; email: string; phone: string; streetAddress: string; unit: string; city: string; postalCode: string; country: string };
 
-export function CustomerDashboard({ firstName, bookingsEnabled }: { firstName: string; bookingsEnabled: boolean }) {
+export function CustomerDashboard({ firstName, bookingsEnabled, launchOfferEnabled = false }: { firstName: string; bookingsEnabled: boolean; launchOfferEnabled?: boolean }) {
   const router = useRouter(); const [appointments, setAppointments] = useState<Appointment[]>([]); const [message, setMessage] = useState("");
   const [now] = useState(() => Date.now());
   const load = useCallback(async () => {
@@ -36,7 +36,7 @@ export function CustomerDashboard({ firstName, bookingsEnabled }: { firstName: s
   return <main className="account-page"><header className="account-header"><div><p className="eyebrow">Your account</p><h1>Greetings, {firstName}.</h1></div></header>
     {message && <p className="admin-message">{message}</p>}
     {bookingsEnabled
-      ? <AccountScheduler onBooked={load} onMessage={setMessage} />
+      ? <AccountScheduler onBooked={load} onMessage={setMessage} launchOfferEnabled={launchOfferEnabled} />
       : <section className="account-panel scheduler-panel"><p className="eyebrow">Coming soon</p><h2>Online booking is not open yet.</h2><p>Please check back soon. Your existing appointments are still available below.</p></section>}
     <section className="account-panel"><h2>Upcoming appointments</h2>{upcoming.length === 0 ? <p className="empty-state">You have no upcoming appointments.</p> : <div className="customer-appointments">{upcoming.map((appointment) => <UpcomingAppointment key={appointment.id} appointment={appointment} save={saveNotes} cancel={cancelAppointment} onChanged={load} onMessage={setMessage} />)}</div>}</section>
     <section className="account-panel"><h2>Past appointments</h2>{past.length === 0 ? <p className="empty-state">Your appointment history will appear here.</p> : <div className="customer-appointments">{past.map((appointment) => <article key={appointment.id}><AppointmentHeading appointment={appointment} />{appointment.adminNotes && <div className="shared-notes"><strong>Notes from Digital Handyman</strong><p>{appointment.adminNotes}</p></div>}{appointment.clientNotes && <div className="shared-notes"><strong>Your notes</strong><p>{appointment.clientNotes}</p></div>}</article>)}</div>}</section>
@@ -45,13 +45,14 @@ export function CustomerDashboard({ firstName, bookingsEnabled }: { firstName: s
   </main>;
 }
 
-function AccountScheduler({ onBooked, onMessage }: { onBooked: () => Promise<void>; onMessage: (message: string) => void }) {
+function AccountScheduler({ onBooked, onMessage, launchOfferEnabled }: { onBooked: () => Promise<void>; onMessage: (message: string) => void; launchOfferEnabled: boolean }) {
   const [open, setOpen] = useState(false); const [services, setServices] = useState<Service[]>([]); const [serviceId, setServiceId] = useState("");
   const [currentWeek] = useState(startOfWeek); const [week, setWeek] = useState(startOfWeek);
   const [availability, setAvailability] = useState<Record<string, Slot[]>>({});
   const [timezone, setTimezone] = useState("");
   const [selected, setSelected] = useState<{ date: string; slot: Slot }>(); const [notes, setNotes] = useState(""); const [loading, setLoading] = useState(false);
   const dates = Array.from({ length: 7 }, (_, index) => addDays(week, index));
+  const service = services.find((item) => item.id === serviceId);
 
   useEffect(() => {
     if (!open || services.length) return;
@@ -82,8 +83,9 @@ function AccountScheduler({ onBooked, onMessage }: { onBooked: () => Promise<voi
   }
 
   return <section className="account-panel scheduler-panel"><button className="scheduler-toggle" onClick={() => { setOpen((value) => !value); setLoading(!open); }}>{open ? "Close appointment scheduler" : "Schedule new appointment"}</button>{open && <div className="scheduler-content">
-    <label>Service<select value={serviceId} onChange={(event) => { setServiceId(event.target.value); setSelected(undefined); setLoading(true); }}>{services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}</select></label>
-    <p className="service-summary">Times use {timezone || "the business timezone"}.</p>
+    {launchOfferEnabled && <aside className="launch-offer-note"><strong>Launch offer: your service is free.</strong><span>Honest feedback is welcome afterward, but a review is never required.</span></aside>}
+    <label>Service<select value={serviceId} onChange={(event) => { setServiceId(event.target.value); setSelected(undefined); setLoading(true); }}>{services.map((item) => <option key={item.id} value={item.id}>{item.name}{item.priceCents === 0 ? " — Free" : ""}</option>)}</select></label>
+    <p className="service-summary">{service ? `${service.description} · ${service.durationMinutes} minutes · ${service.priceCents === 0 ? "Free" : `$${(service.priceCents / 100).toFixed(2)}`} · ` : ""}Times use {timezone || "the business timezone"}.</p>
     <div className="week-controls"><button disabled={week.getTime() <= currentWeek.getTime()} onClick={() => changeWeek(-1)} aria-label="Previous week">←</button><strong>{dates[0].toLocaleDateString([], { month: "short", day: "numeric" })} – {dates[6].toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}</strong><button onClick={() => changeWeek(1)} aria-label="Next week">→</button></div>
     <div className="weekly-availability" aria-busy={loading}>{dates.map((date) => { const dateText = formatDateInput(date); const slots = availability[dateText] ?? []; return <section key={dateText}><header><strong>{date.toLocaleDateString([], { weekday: "short" })}</strong><span>{date.toLocaleDateString([], { month: "short", day: "numeric" })}</span></header><div>{slots.length ? slots.map((slot) => <button className={selected?.slot.startsAt === slot.startsAt ? "is-selected" : ""} key={slot.startsAt} onClick={() => setSelected({ date: dateText, slot })}>{slot.label}</button>) : <small>No times</small>}</div></section>; })}</div>
     {selected && <div className="scheduler-confirm"><label>Notes for this appointment<textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} /></label><button disabled={loading} onClick={book}>{loading ? "Scheduling…" : `Confirm ${selected.slot.label}`}</button></div>}

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { areNewBookingsEnabled, bookingsClosedResponse, BOOKINGS_CLOSED_MESSAGE } from "./booking-status";
+import { areNewBookingsEnabled, bookingsClosedResponse, BOOKINGS_CLOSED_MESSAGE, isLaunchOfferEnabled } from "./booking-status";
 
 describe("booking status", () => {
   afterEach(() => vi.unstubAllEnvs());
@@ -21,6 +21,14 @@ describe("booking status", () => {
 
     vi.stubEnv("BOOKINGS_ENABLED", "false");
     expect(areNewBookingsEnabled()).toBe(false);
+  });
+
+  it("enables launch pricing only when explicitly configured", () => {
+    vi.stubEnv("LAUNCH_OFFER_ENABLED", "");
+    expect(isLaunchOfferEnabled()).toBe(false);
+
+    vi.stubEnv("LAUNCH_OFFER_ENABLED", "true");
+    expect(isLaunchOfferEnabled()).toBe(true);
   });
 
   it("returns a machine-readable temporary closure response", async () => {
