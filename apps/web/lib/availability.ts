@@ -53,7 +53,7 @@ export async function getAvailabilityForDate(date: string, serviceId: string) {
     )),
     getGoogleBusyRanges(
       dayStart.minus({ minutes: settings.appointmentBufferMinutes }).toJSDate(),
-      dayEnd.toJSDate(),
+      dayEnd.plus({ minutes: settings.appointmentBufferMinutes }).toJSDate(),
     ),
   ]);
 
@@ -62,7 +62,7 @@ export async function getAvailabilityForDate(date: string, serviceId: string) {
     endsAt: new Date(range.endsAt.getTime() + settings.appointmentBufferMinutes * 60_000),
   }));
   const bufferedGoogleBusy = googleBusy.map((range) => ({
-    startsAt: range.startsAt,
+    startsAt: new Date(range.startsAt.getTime() - settings.appointmentBufferMinutes * 60_000),
     endsAt: new Date(range.endsAt.getTime() + settings.appointmentBufferMinutes * 60_000),
   }));
 

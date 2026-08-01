@@ -104,6 +104,19 @@ describe("Google Calendar integration", () => {
     expect(count).toBe(2);
   });
 
+  it("sorts admin availability events by their nearest start time", async () => {
+    await connect();
+    const day = futureDay();
+    googleState.events = [
+      timedEvent("later", "Later event", day, 15, 16),
+      timedEvent("nearest", "Nearest event", day, 9, 10),
+      timedEvent("middle", "Middle event", day, 12, 13),
+    ];
+
+    const status = await calendar.getGoogleCalendarStatus();
+    expect(status.events.map((event) => event.id)).toEqual(["nearest", "middle", "later"]);
+  });
+
   it("creates, updates, and deletes the Google event attached to an appointment", async () => {
     await connect();
     const appointment = await seedAppointment("confirmed");

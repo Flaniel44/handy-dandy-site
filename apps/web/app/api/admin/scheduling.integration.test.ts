@@ -172,6 +172,23 @@ describe("admin scheduling controls", () => {
     expect(availability?.slots.some((slot) => slot.localTime === "12:30")).toBe(false);
   });
 
+  it("keeps one hour free before a blocking Google Calendar event", async () => {
+    auth.isAdmin = true;
+    const day = futureBusinessDay();
+    const weekday = day.weekday % 7;
+    await putWorkingHours(jsonRequest("/api/admin/working-hours", {
+      hours: [{ weekday, startsAtLocal: "17:00", endsAtLocal: "22:00" }],
+    }, "PUT"));
+    googleCalendar.getGoogleBusyRanges.mockResolvedValue([{
+      startsAt: day.set({ hour: 21 }).toUTC().toJSDate(),
+      endsAt: day.set({ hour: 22 }).toUTC().toJSDate(),
+    }]);
+
+    const availability = await getAvailabilityForDate(day.toISODate()!, SERVICE_ID);
+    expect(availability?.slots.at(-1)?.localTime).toBe("19:00");
+    expect(availability?.slots.some((slot) => slot.localTime === "20:00")).toBe(false);
+  });
+
   it("uses the configured buffer after confirmed appointments", async () => {
     auth.isAdmin = true;
     const day = futureBusinessDay();

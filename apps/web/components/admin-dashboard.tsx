@@ -244,7 +244,7 @@ export function AdminDashboard() {
         <label>Required advance notice for new bookings (minutes)<input type="number" min="0" max="43200" step="15" value={policies.minimumNoticeMinutes} onChange={(event) => updatePolicy("minimumNoticeMinutes", event.target.value)} required /><small>For example, 120 means clients must book at least 2 hours ahead.</small></label>
         <label>Maximum advance window (days)<input type="number" min="1" max="730" value={policies.bookingWindowDays} onChange={(event) => updatePolicy("bookingWindowDays", event.target.value)} required /></label>
         <label>Time-slot interval (minutes)<input type="number" min="5" max="240" step="5" value={policies.slotIntervalMinutes} onChange={(event) => updatePolicy("slotIntervalMinutes", event.target.value)} required /></label>
-        <label>Buffer after appointments/events (minutes)<input type="number" min="0" max="1440" step="15" value={policies.appointmentBufferMinutes} onChange={(event) => updatePolicy("appointmentBufferMinutes", event.target.value)} required /></label>
+        <label>Travel/buffer time around calendar events (minutes)<input type="number" min="0" max="1440" step="15" value={policies.appointmentBufferMinutes} onChange={(event) => updatePolicy("appointmentBufferMinutes", event.target.value)} required /><small>Applied before and after Google Calendar events, and after booked appointments.</small></label>
         <label>Cancellation/rescheduling notice (minutes)<input type="number" min="0" max="43200" step="15" value={policies.cancellationNoticeMinutes} onChange={(event) => updatePolicy("cancellationNoticeMinutes", event.target.value)} required /></label>
         <button type="submit">Save booking policies</button>
       </form>}

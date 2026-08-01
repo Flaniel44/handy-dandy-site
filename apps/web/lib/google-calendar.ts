@@ -60,6 +60,7 @@ export async function getGoogleCalendarStatus() {
   const successfulDates = candidates.flatMap((item) => item.calendarSyncedAt ? [item.calendarSyncedAt] : []);
   const [settings] = connection ? await getDb().select().from(businessSettings).where(eq(businessSettings.id, connection.businessId)).limit(1) : [];
   const calendarEvents = connection && settings ? await getGoogleAvailabilityEvents(new Date(), DateTime.now().setZone(settings.timezone).plus({ days: settings.bookingWindowDays + 1 }).toUTC().toJSDate()) : [];
+  calendarEvents.sort((first, second) => first.startsAt.getTime() - second.startsAt.getTime());
   return {
     configured: googleCalendarConfigured(), connected: Boolean(connection), connection: connection ?? null,
     health: {
