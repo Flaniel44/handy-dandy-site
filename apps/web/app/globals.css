@@ -626,4 +626,12 @@ a { color: inherit; }
   .site-session-nav { top: 10px; right: 10px; gap: 9px; }
   .site-home-link { top: 10px; left: 10px; }
   .site-session-nav a, .site-session-nav button { font-size: .7rem; }
+  .week-controls { grid-template-columns: 42px minmax(0, 1fr) 42px; gap: 8px; }
+  .week-controls strong { font-size: .86rem; line-height: 1.35; }
+  .weekly-availability { grid-template-columns: minmax(0, 1fr); gap: 10px; overflow-x: visible; padding-bottom: 0; }
+  .weekly-availability > section { min-height: 0; display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; padding: 10px; }
+  .weekly-availability header { align-content: start; padding: 5px 10px 5px 0; border-right: 1px solid #29304a; border-bottom: 0; }
+  .weekly-availability section > div { grid-template-columns: repeat(auto-fit, minmax(82px, 1fr)); align-content: start; margin-top: 0; }
+  .weekly-availability section button { min-height: 44px; padding: 9px 6px; touch-action: manipulation; }
+  .weekly-availability section small { align-self: center; padding: 7px 2px; }
 }
