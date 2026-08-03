@@ -1,6 +1,22 @@
 import "server-only";
 
 type EmailMessage = { to: string; subject: string; html: string; text: string };
+type AdminAppointmentDetails = {
+  appointmentId: string;
+  source: string;
+  clientNotes: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string | null;
+  streetAddress: string | null;
+  unit: string | null;
+  city: string | null;
+  postalCode: string | null;
+  country: string | null;
+  serviceName: string;
+  startsAt: Date;
+  endsAt: Date;
+};
 const MAX_DELIVERY_ATTEMPTS = 3;
 
 export async function sendTransactionalEmail(message: EmailMessage) {
@@ -54,13 +70,15 @@ export async function sendPasswordChangedEmail(to: string, firstName: string) {
   });
 }
 
-export async function sendBookingConfirmation(to: string, name: string, serviceName: string, startsAt: Date) {
+export async function sendBookingConfirmation(to: string, name: string, serviceName: string, startsAt: Date, manageUrl?: string) {
   const formatted = new Intl.DateTimeFormat("en-CA", { dateStyle: "full", timeStyle: "short", timeZone: process.env.BUSINESS_TIMEZONE ?? "America/Toronto" }).format(startsAt);
+  const manageText = manageUrl ? `\n\nNeed to make a change? Reschedule or cancel here:\n${manageUrl}` : "";
+  const manageHtml = manageUrl ? `<p><a href="${escapeHtml(manageUrl)}">Reschedule or cancel this appointment</a></p>` : "";
   await sendTransactionalEmail({
     to,
     subject: "Your Digital Handyman appointment is confirmed",
-    text: `Hi ${name},\n\nYour ${serviceName} appointment is confirmed for ${formatted}.\n\nReply to this email if you need help.`,
-    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment is confirmed for:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p><p>Reply to this email if you need help.</p>`,
+    text: `Hi ${name},\n\nYour ${serviceName} appointment is confirmed for ${formatted}.${manageText}\n\nReply to this email if you need help.`,
+    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment is confirmed for:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p>${manageHtml}<p>Reply to this email if you need help.</p>`,
   });
 }
 
@@ -82,22 +100,32 @@ export async function sendGuestBookingVerification(
   });
 }
 
-export async function sendAppointmentCancelled(to: string, name: string, serviceName: string, startsAt: Date) {
+export async function sendAppointmentCancelled(to: string, name: string, serviceName: string, startsAt: Date, rebookUrl?: string) {
   const formatted = formatAppointmentTime(startsAt);
+  const rebookText = rebookUrl ? `\n\nChoose another time:\n${rebookUrl}` : "";
+  const rebookHtml = rebookUrl ? `<p><a href="${escapeHtml(rebookUrl)}">Choose another appointment time</a></p>` : "";
   await sendTransactionalEmail({
     to, subject: "Your Digital Handyman appointment was cancelled",
-    text: `Hi ${name},\n\nYour ${serviceName} appointment for ${formatted} has been cancelled.`,
-    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment for ${escapeHtml(formatted)} has been cancelled.</p>`,
+    text: `Hi ${name},\n\nYour ${serviceName} appointment for ${formatted} has been cancelled.${rebookText}`,
+    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment for ${escapeHtml(formatted)} has been cancelled.</p>${rebookHtml}`,
   });
 }
 
-export async function sendAppointmentRescheduled(to: string, name: string, serviceName: string, previousStartsAt: Date, startsAt: Date) {
+export async function sendAdminAppointmentBooked(details: AdminAppointmentDetails) {
+  await sendAdminAppointmentUpdate("booked", details);
+}
+
+export async function sendAdminAppointmentCancelled(details: AdminAppointmentDetails) {
+  await sendAdminAppointmentUpdate("cancelled", details);
+}
+
+export async function sendAppointmentRescheduled(to: string, name: string, serviceName: string, previousStartsAt: Date, startsAt: Date, manageUrl?: string) {
   const previousFormatted = formatAppointmentTime(previousStartsAt);
   const formatted = formatAppointmentTime(startsAt);
   await sendTransactionalEmail({
     to, subject: "Your Digital Handyman appointment was rescheduled",
-    text: `Hi ${name},\n\nYour ${serviceName} appointment was moved from ${previousFormatted} to ${formatted}.\n\nReply to this email if you need help.`,
-    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment was rescheduled.</p><p><span style="text-decoration:line-through">${escapeHtml(previousFormatted)}</span><br><strong style="font-size:18px">${escapeHtml(formatted)}</strong></p><p>Reply to this email if you need help.</p>`,
+    text: `Hi ${name},\n\nYour ${serviceName} appointment was moved from ${previousFormatted} to ${formatted}.${manageUrl ? `\n\nMake another change:\n${manageUrl}` : ""}\n\nReply to this email if you need help.`,
+    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment was rescheduled.</p><p><span style="text-decoration:line-through">${escapeHtml(previousFormatted)}</span><br><strong style="font-size:18px">${escapeHtml(formatted)}</strong></p>${manageUrl ? `<p><a href="${escapeHtml(manageUrl)}">Reschedule or cancel this appointment</a></p>` : ""}<p>Reply to this email if you need help.</p>`,
   });
 }
 
@@ -131,6 +159,40 @@ export async function sendAdminAppointmentReminder(
 
 function formatAppointmentTime(startsAt: Date) {
   return new Intl.DateTimeFormat("en-CA", { dateStyle: "full", timeStyle: "short", timeZone: process.env.BUSINESS_TIMEZONE ?? "America/Toronto" }).format(startsAt);
+}
+
+async function sendAdminAppointmentUpdate(action: "booked" | "cancelled", details: AdminAppointmentDetails) {
+  const to = process.env.ADMIN_EMAIL ?? process.env.EMAIL_FAILURE_ALERT_TO;
+  if (!to) throw new Error("ADMIN_EMAIL or EMAIL_FAILURE_ALERT_TO is required for appointment notifications.");
+  const startsAt = formatAppointmentTime(details.startsAt);
+  const endsAt = new Intl.DateTimeFormat("en-CA", { timeStyle: "short", timeZone: process.env.BUSINESS_TIMEZONE ?? "America/Toronto" }).format(details.endsAt);
+  const address = formatCustomerAddress(details);
+  const heading = action === "booked" ? "New appointment booked" : "Client cancelled appointment";
+  const fields = [
+    ["Client", details.customerName],
+    ["Email", details.customerEmail],
+    ["Phone", details.customerPhone || "Not provided"],
+    ["Address", address || "Not provided"],
+    ["Service", details.serviceName],
+    ["When", `${startsAt} to ${endsAt}`],
+    ["Client notes", details.clientNotes || "None provided"],
+    ["Booking source", details.source],
+    ["Appointment ID", details.appointmentId],
+  ] as const;
+  const text = [heading, "", ...fields.map(([label, value]) => `${label}: ${value}`)].join("\n");
+  const html = `<p><strong>${escapeHtml(heading)}</strong></p><table style="border-collapse:collapse">${fields.map(([label, value]) => `<tr><td style="padding:4px 14px 4px 0;vertical-align:top;color:#666"><strong>${escapeHtml(label)}</strong></td><td style="padding:4px 0;white-space:pre-wrap">${escapeHtml(value)}</td></tr>`).join("")}</table>`;
+  await sendTransactionalEmail({
+    to,
+    subject: action === "booked" ? `New booking: ${details.customerName} — ${details.serviceName}` : `Cancellation: ${details.customerName} — ${details.serviceName}`,
+    text,
+    html,
+  });
+}
+
+function formatCustomerAddress(details: AdminAppointmentDetails) {
+  const street = [details.streetAddress, details.unit && `Unit ${details.unit}`].filter(Boolean).join(", ");
+  const locality = [details.city, details.postalCode].filter(Boolean).join(" ");
+  return [street, locality, details.country].filter(Boolean).join(", ");
 }
 
 function escapeHtml(value: string) {

@@ -10,8 +10,11 @@ const sendGuestBookingVerification = vi.fn().mockResolvedValue(undefined);
 const sendBookingConfirmation = vi.fn().mockResolvedValue(undefined);
 const createGoogleEventForAppointment = vi.fn().mockResolvedValue(undefined);
 const markCalendarSyncFailure = vi.fn().mockResolvedValue(undefined);
+const notifyAdminAppointmentBooked = vi.fn().mockResolvedValue(undefined);
 
+vi.mock("server-only", () => ({}));
 vi.mock("../../../lib/email", () => ({ sendGuestBookingVerification, sendBookingConfirmation }));
+vi.mock("../../../lib/appointment-notifications", () => ({ notifyAdminAppointmentBooked }));
 vi.mock("../../../lib/google-calendar", () => ({
   createGoogleEventForAppointment,
   getGoogleBusyRanges: vi.fn().mockResolvedValue([]),
@@ -70,6 +73,7 @@ describe("POST /api/bookings", () => {
     expect(await appointmentCount()).toBe(0);
     expect(sendGuestBookingVerification).toHaveBeenCalledOnce();
     expect(sendBookingConfirmation).not.toHaveBeenCalled();
+    expect(notifyAdminAppointmentBooked).not.toHaveBeenCalled();
     expect(createGoogleEventForAppointment).not.toHaveBeenCalled();
 
     const token = verificationToken();
@@ -98,13 +102,17 @@ describe("POST /api/bookings", () => {
       client_notes: "Please check the living-room lights.",
     });
     expect(sendBookingConfirmation).toHaveBeenCalledOnce();
+    expect(sendBookingConfirmation.mock.calls[0]?.[4]).toMatch(/^http:\/\/localhost\/book\/manage\?token=/);
+    expect(notifyAdminAppointmentBooked).toHaveBeenCalledWith(confirmed.appointment_id);
     expect(createGoogleEventForAppointment).toHaveBeenCalledWith(confirmed.appointment_id);
     expect(await confirmationCount()).toBe(0);
+    expect(await managementTokenCount()).toBe(1);
 
     const replay = await confirmBookingRequest(token);
     expect(replay.headers.get("location")).toBe("http://localhost/book/confirmation?status=invalid");
     expect(await appointmentCount()).toBe(1);
     expect(createGoogleEventForAppointment).toHaveBeenCalledTimes(1);
+    expect(notifyAdminAppointmentBooked).toHaveBeenCalledTimes(1);
   });
 
   it("updates a returning guest instead of creating a duplicate customer", async () => {
@@ -223,6 +231,13 @@ async function appointmentCount() {
 async function confirmationCount() {
   const [{ count }] = await testSql<{ count: number }[]>`
     SELECT COUNT(*)::int AS count FROM guest_booking_confirmations
+  `;
+  return count;
+}
+
+async function managementTokenCount() {
+  const [{ count }] = await testSql<{ count: number }[]>`
+    SELECT COUNT(*)::int AS count FROM guest_appointment_management_tokens
   `;
   return count;
 }

@@ -9,6 +9,7 @@ const originalEnvironment = {
   from: process.env.EMAIL_FROM,
   replyTo: process.env.EMAIL_REPLY_TO,
   alertTo: process.env.EMAIL_FAILURE_ALERT_TO,
+  adminEmail: process.env.ADMIN_EMAIL,
   appUrl: process.env.APP_URL,
   timezone: process.env.BUSINESS_TIMEZONE,
 };
@@ -24,6 +25,7 @@ beforeEach(() => {
   process.env.EMAIL_FROM = "Digital Handyman <dan@digitalhandydan.ca>";
   process.env.EMAIL_REPLY_TO = "dan@digitalhandydan.ca";
   process.env.EMAIL_FAILURE_ALERT_TO = "owner@whatisthis.place";
+  process.env.ADMIN_EMAIL = "admin@digitalhandydan.ca";
   process.env.APP_URL = "https://whatisthis.place/";
   process.env.BUSINESS_TIMEZONE = "America/Toronto";
   fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "email-id" }), { status: 200 }));
@@ -36,6 +38,7 @@ afterAll(() => {
   restoreEnvironment("EMAIL_FROM", originalEnvironment.from);
   restoreEnvironment("EMAIL_REPLY_TO", originalEnvironment.replyTo);
   restoreEnvironment("EMAIL_FAILURE_ALERT_TO", originalEnvironment.alertTo);
+  restoreEnvironment("ADMIN_EMAIL", originalEnvironment.adminEmail);
   restoreEnvironment("APP_URL", originalEnvironment.appUrl);
   restoreEnvironment("BUSINESS_TIMEZONE", originalEnvironment.timezone);
   vi.unstubAllGlobals();
@@ -163,6 +166,19 @@ describe("transactional email delivery", () => {
     expect(resendBody(2).subject).toBe("Your Digital Handyman password was changed");
   });
 
+  it("includes private management and rebooking links in customer appointment emails", async () => {
+    const oldTime = new Date("2026-08-03T17:00:00.000Z");
+    const newTime = new Date("2026-08-04T19:00:00.000Z");
+    await email.sendBookingConfirmation("ada@example.com", "Ada", "Consultation", oldTime, "https://digitalhandydan.ca/book/manage?token=secret");
+    await email.sendAppointmentRescheduled("ada@example.com", "Ada", "Consultation", oldTime, newTime, "https://digitalhandydan.ca/book/manage?token=rotated");
+    await email.sendAppointmentCancelled("ada@example.com", "Ada", "Consultation", newTime, "https://digitalhandydan.ca/book");
+
+    expect(resendBody(0).text).toContain("https://digitalhandydan.ca/book/manage?token=secret");
+    expect(resendBody(1).html).toContain("token=rotated");
+    expect(resendBody(2).text).toContain("Choose another time");
+    expect(resendBody(2).text).toContain("https://digitalhandydan.ca/book");
+  });
+
   it("generates separate client and admin appointment reminders", async () => {
     const startsAt = new Date("2026-08-03T17:00:00.000Z");
     await email.sendCustomerAppointmentReminder("client@example.com", "Ada", "Consultation", startsAt);
@@ -175,6 +191,39 @@ describe("transactional email delivery", () => {
     expect(resendBody(1).subject).toBe("Reminder: Ada is booked tomorrow");
     expect(resendBody(1).text).toContain("Client: Ada <client@example.com>");
     expect(resendBody(1).text).toContain("Bring the hub");
+  });
+
+  it("sends the owner complete booking and cancellation details", async () => {
+    const details = {
+      appointmentId: "appointment-123",
+      source: "web",
+      clientNotes: "Please check <all> downstairs lights.",
+      customerName: "Ada & Co",
+      customerEmail: "ada@example.com",
+      customerPhone: "6135550100",
+      streetAddress: "123 Main Street",
+      unit: "4B",
+      city: "Ottawa",
+      postalCode: "K1A 0B1",
+      country: "Canada",
+      serviceName: "Smart-home consultation",
+      startsAt: new Date("2026-08-03T17:00:00.000Z"),
+      endsAt: new Date("2026-08-03T18:00:00.000Z"),
+    };
+
+    await email.sendAdminAppointmentBooked(details);
+    await email.sendAdminAppointmentCancelled(details);
+
+    const booked = resendBody(0);
+    expect(booked.to).toBe("admin@digitalhandydan.ca");
+    expect(booked.subject).toBe("New booking: Ada & Co — Smart-home consultation");
+    expect(booked.text).toContain("Phone: 6135550100");
+    expect(booked.text).toContain("Address: 123 Main Street, Unit 4B, Ottawa K1A 0B1, Canada");
+    expect(booked.text).toContain("Client notes: Please check <all> downstairs lights.");
+    expect(booked.text).toContain("Appointment ID: appointment-123");
+    expect(booked.html).toContain("Ada &amp; Co");
+    expect(booked.html).toContain("Please check &lt;all&gt; downstairs lights.");
+    expect(resendBody(1).subject).toBe("Cancellation: Ada & Co — Smart-home consultation");
   });
 });
 

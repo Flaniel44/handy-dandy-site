@@ -3,6 +3,7 @@ import { z } from "zod";
 import { canCustomerManageAppointment } from "@handy-dani/domain";
 
 import { requireCustomer } from "../../../../../lib/admin-auth";
+import { notifyAdminAppointmentCancelled } from "../../../../../lib/appointment-notifications";
 import { getAvailabilityForDate } from "../../../../../lib/availability";
 import { getDb } from "../../../../../lib/db";
 import { hasDatabaseErrorCode } from "../../../../../lib/db/errors";
@@ -23,8 +24,10 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
     await tx.update(appointments).set({ status: "cancelled", updatedAt: new Date() }).where(and(eq(appointments.id, id), eq(appointments.customerId, session.customerId)));
     await tx.update(bookingSlots).set({ state: "released", updatedAt: new Date() }).where(eq(bookingSlots.id, current.slotId));
   });
-  try { await sendAppointmentCancelled(session.email, session.firstName, current.serviceName, current.startsAt); }
+  try { await sendAppointmentCancelled(session.email, session.firstName, current.serviceName, current.startsAt, `${appUrl()}/account`); }
   catch (error) { console.error("Appointment cancelled but email failed", error); }
+  try { await notifyAdminAppointmentCancelled(id); }
+  catch (error) { console.error("Appointment cancelled but admin notification failed", error); }
   try { await deleteGoogleEvent(current.googleEventId, id); }
   catch (error) { await markCalendarSyncFailure(id, error); console.error("Appointment cancelled but Google Calendar sync failed", error); }
   return Response.json({ ok: true });
@@ -58,11 +61,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     console.error("Unable to reschedule appointment", error);
     return Response.json({ error: "We could not reschedule the appointment." }, { status: 500 });
   }
-  try { await sendAppointmentRescheduled(session.email, session.firstName, current.serviceName, current.startsAt, startsAt); }
+  try { await sendAppointmentRescheduled(session.email, session.firstName, current.serviceName, current.startsAt, startsAt, `${appUrl()}/account`); }
   catch (error) { console.error("Appointment rescheduled but email failed", error); }
   try { await updateGoogleEventForAppointment(id); }
   catch (error) { await markCalendarSyncFailure(id, error); console.error("Appointment rescheduled but Google Calendar sync failed", error); }
   return Response.json({ ok: true });
+}
+
+function appUrl() {
+  return (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
 }
 
 async function findEditableAppointment(id: string, customerId: string) {

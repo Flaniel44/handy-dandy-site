@@ -383,6 +383,21 @@ a { color: inherit; }
 .booking-success h1, .booking-success h2 { font-size: clamp(2rem, 5vw, 3.4rem); margin: 14px 0 22px; }
 .booking-success p { color: var(--muted); line-height: 1.7; }
 .booking-success strong { color: var(--ink); overflow-wrap: anywhere; }
+.guest-appointment-card { display: grid; gap: 24px; }
+.guest-appointment-summary { display: grid; gap: 0; border: 1px solid #303957; border-radius: 9px; overflow: hidden; }
+.guest-appointment-summary > div { display: grid; grid-template-columns: minmax(110px, .45fr) 1fr; gap: 18px; padding: 14px 16px; border-bottom: 1px solid #29304a; }
+.guest-appointment-summary > div:last-child { border-bottom: 0; }
+.guest-appointment-summary span { color: var(--muted); font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.guest-appointment-summary strong { white-space: pre-wrap; overflow-wrap: anywhere; }
+.guest-appointment-status { color: #ffd6a8; text-transform: capitalize; }
+.guest-management-actions { margin-top: 0; }
+.guest-management-actions button { flex: 1; padding: 12px 15px; border: 1px solid #4a5580; border-radius: 6px; background: #242c48; color: var(--ink); cursor: pointer; font: inherit; font-weight: 700; }
+.guest-management-actions .danger-button { border-color: #744052; background: #351c27; color: #ffb8cf; }
+.guest-reschedule-panel { margin-top: 0; }
+.guest-reschedule-panel .reschedule-confirm { width: 100%; margin-top: 15px; padding: 12px 18px; border: 0; border-radius: 6px; background: var(--ink); color: var(--night); cursor: pointer; font: inherit; font-weight: 800; }
+.guest-management-finished { display: grid; gap: 16px; color: var(--muted); line-height: 1.6; }
+.guest-management-finished p { margin: 0; }
+.guest-management-finished .booking-submit { display: block; margin-top: 0; text-align: center; text-decoration: none; }
 
 @media (max-width: 620px) {
   body.landing-lights-off { overflow: hidden; overscroll-behavior: none; touch-action: none; }
@@ -634,4 +649,6 @@ a { color: inherit; }
   .weekly-availability section > div { grid-template-columns: repeat(auto-fit, minmax(82px, 1fr)); align-content: start; margin-top: 0; }
   .weekly-availability section button { min-height: 44px; padding: 9px 6px; touch-action: manipulation; }
   .weekly-availability section small { align-self: center; padding: 7px 2px; }
+  .guest-appointment-summary > div { grid-template-columns: 1fr; gap: 6px; }
+  .guest-management-actions { flex-direction: column; }
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { requireCustomer } from "../../../../lib/admin-auth";
+import { notifyAdminAppointmentBooked } from "../../../../lib/appointment-notifications";
 import { getAvailabilityForDate } from "../../../../lib/availability";
 import { areNewBookingsEnabled, bookingsClosedResponse } from "../../../../lib/booking-status";
 import { getDb } from "../../../../lib/db";
@@ -37,10 +38,12 @@ export async function POST(request: Request) {
       return created;
     });
     try {
-      await sendBookingConfirmation(session.email, session.firstName, availability.service.name, startsAt);
+      await sendBookingConfirmation(session.email, session.firstName, availability.service.name, startsAt, `${appUrl()}/account`);
     } catch (emailError) {
       console.error("Account booking created but confirmation email failed", emailError);
     }
+    try { await notifyAdminAppointmentBooked(appointment.id); }
+    catch (emailError) { console.error("Account booking created but admin notification failed", emailError); }
     try { await createGoogleEventForAppointment(appointment.id); }
     catch (calendarError) { await markCalendarSyncFailure(appointment.id, calendarError); console.error("Account booking created but Google Calendar sync failed", calendarError); }
     return Response.json({ appointmentId: appointment.id }, { status: 201 });
@@ -51,4 +54,8 @@ export async function POST(request: Request) {
     console.error("Unable to create account booking", error);
     return Response.json({ error: "We could not create the appointment." }, { status: 500 });
   }
+}
+
+function appUrl() {
+  return (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
 }

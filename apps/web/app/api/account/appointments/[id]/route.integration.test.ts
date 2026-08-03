@@ -18,6 +18,7 @@ const auth = vi.hoisted(() => ({ session: null as CustomerSession | null }));
 const integrations = vi.hoisted(() => ({
   deleteGoogleEvent: vi.fn().mockResolvedValue(undefined),
   markCalendarSyncFailure: vi.fn().mockResolvedValue(undefined),
+  notifyAdminAppointmentCancelled: vi.fn().mockResolvedValue(undefined),
   sendAppointmentCancelled: vi.fn().mockResolvedValue(undefined),
   sendAppointmentRescheduled: vi.fn().mockResolvedValue(undefined),
   updateGoogleEventForAppointment: vi.fn().mockResolvedValue(undefined),
@@ -29,6 +30,9 @@ vi.mock("../../../../../lib/admin-auth", () => ({
 vi.mock("../../../../../lib/email", () => ({
   sendAppointmentCancelled: integrations.sendAppointmentCancelled,
   sendAppointmentRescheduled: integrations.sendAppointmentRescheduled,
+}));
+vi.mock("../../../../../lib/appointment-notifications", () => ({
+  notifyAdminAppointmentCancelled: integrations.notifyAdminAppointmentCancelled,
 }));
 vi.mock("../../../../../lib/google-calendar", () => ({
   deleteGoogleEvent: integrations.deleteGoogleEvent,
@@ -77,11 +81,13 @@ describe("customer appointment lifecycle routes", () => {
     `;
     expect(saved).toEqual({ status: "cancelled", state: "released" });
     expect(integrations.sendAppointmentCancelled).toHaveBeenCalledOnce();
+    expect(integrations.notifyAdminAppointmentCancelled).toHaveBeenCalledWith(appointment.id);
     expect(integrations.deleteGoogleEvent).toHaveBeenCalledWith("google-event-1", appointment.id);
 
     const repeated = await cancelAppointment(new Request("http://localhost"), context(appointment.id));
     expect(repeated.status).toBe(409);
     expect(integrations.sendAppointmentCancelled).toHaveBeenCalledOnce();
+    expect(integrations.notifyAdminAppointmentCancelled).toHaveBeenCalledOnce();
   });
 
   it("does not allow a customer to cancel another customer's appointment", async () => {

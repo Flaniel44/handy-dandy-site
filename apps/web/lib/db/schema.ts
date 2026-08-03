@@ -138,6 +138,19 @@ export const appointments = pgTable("appointments", {
   index("appointments_reminder_due_idx").on(table.status, table.customerReminderSentAt, table.adminReminderSentAt),
 ]);
 
+export const guestAppointmentManagementTokens = pgTable("guest_appointment_management_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  appointmentId: uuid("appointment_id").notNull().references(() => appointments.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("guest_appointment_management_tokens_appointment_idx").on(table.appointmentId),
+  uniqueIndex("guest_appointment_management_tokens_hash_idx").on(table.tokenHash),
+  index("guest_appointment_management_tokens_expires_idx").on(table.expiresAt),
+]);
+
 export const googleCalendarConnections = pgTable("google_calendar_connections", {
   id: uuid("id").primaryKey().defaultRandom(),
   businessId: uuid("business_id").notNull().references(() => businessSettings.id, { onDelete: "cascade" }),
