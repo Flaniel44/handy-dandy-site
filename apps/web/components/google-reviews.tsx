@@ -65,7 +65,7 @@ export function GoogleReviews() {
     if (data.reviews.length < 2) return;
     const timer = window.setInterval(() => {
       setActiveIndex((index) => (index + 1) % data.reviews.length);
-    }, 5000);
+    }, 10_000);
     return () => window.clearInterval(timer);
   }, [data.reviews.length]);
 
