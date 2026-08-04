@@ -13,6 +13,7 @@ export async function GET() {
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const rows = await getDb().select({
     id: appointments.id, status: appointments.status, adminNotes: appointments.notes, clientNotes: appointments.clientNotes,
+    createdAt: appointments.createdAt,
     startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt, serviceId: services.id, serviceName: services.name,
     appointmentMode: appointments.appointmentMode, appointmentPhone: appointments.appointmentPhone,
     appointmentStreetAddress: appointments.appointmentStreetAddress, appointmentUnit: appointments.appointmentUnit,
@@ -20,7 +21,7 @@ export async function GET() {
     appointmentCountry: appointments.appointmentCountry,
   }).from(appointments).innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(services, eq(services.id, bookingSlots.serviceId))
-    .where(eq(appointments.customerId, session.customerId)).orderBy(desc(bookingSlots.startsAt));
+    .where(eq(appointments.customerId, session.customerId)).orderBy(desc(appointments.createdAt));
   return Response.json({ appointments: rows }, { headers: { "Cache-Control": "private, no-store, max-age=0" } });
 }
 

@@ -23,6 +23,7 @@ export async function GET() {
   if (!await requireAdmin()) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const rows = await getDb().select({
     id: appointments.id, status: appointments.status, notes: appointments.notes,
+    createdAt: appointments.createdAt,
     cancellationDiscountPercent: appointments.cancellationDiscountPercent, source: appointments.source,
     startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt, customerName: customers.name,
     customerEmail: customers.email, customerPhone: customers.phone, serviceName: services.name,
@@ -34,7 +35,7 @@ export async function GET() {
     .innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(customers, eq(customers.id, appointments.customerId))
     .innerJoin(services, eq(services.id, bookingSlots.serviceId))
-    .orderBy(desc(bookingSlots.startsAt));
+    .orderBy(desc(appointments.createdAt));
   return Response.json({ appointments: rows });
 }
 

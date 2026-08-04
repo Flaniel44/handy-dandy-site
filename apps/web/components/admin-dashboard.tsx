@@ -7,7 +7,7 @@ type Hours = { weekday: number; startsAtLocal: string; endsAtLocal: string };
 type Block = { id: string; startsAt: string; endsAt: string; reason: string };
 type Client = { id: string; name: string; email: string; phone?: string; appointmentCount: number };
 type ClientPagination = { page: number; pageSize: number; total: number; totalPages: number };
-type Appointment = { id: string; status: string; notes: string; cancellationDiscountPercent: number | null; startsAt: string; endsAt: string; customerName: string; customerEmail: string; customerPhone?: string; serviceName: string; source: string; appointmentMode: string; appointmentPhone: string | null; appointmentStreetAddress: string | null; appointmentUnit: string | null; appointmentCity: string | null; appointmentPostalCode: string | null; appointmentCountry: string | null };
+type Appointment = { id: string; status: string; notes: string; cancellationDiscountPercent: number | null; createdAt: string; startsAt: string; endsAt: string; customerName: string; customerEmail: string; customerPhone?: string; serviceName: string; source: string; appointmentMode: string; appointmentPhone: string | null; appointmentStreetAddress: string | null; appointmentUnit: string | null; appointmentCity: string | null; appointmentPostalCode: string | null; appointmentCountry: string | null };
 type Service = { id: string; name: string; description: string; durationMinutes: number; priceCents: number; active: boolean; sortOrder: number };
 type BookingPolicies = { timezone: string; slotIntervalMinutes: number; minimumNoticeMinutes: number; bookingWindowDays: number; appointmentBufferMinutes: number; cancellationNoticeMinutes: number };
 type AuditEntry = { id: string; actorId: string | null; action: string; entityType: string; entityId: string; details: Record<string, unknown>; createdAt: string };
@@ -231,10 +231,10 @@ export function AdminDashboard() {
   const activeAppointmentGroups = groupAppointmentsByCustomer(appointments.filter((appointment) => !["completed", "cancelled"].includes(appointment.status)));
   const completedAppointments = appointments
     .filter((appointment) => appointment.status === "completed")
-    .sort((first, second) => new Date(second.startsAt).getTime() - new Date(first.startsAt).getTime());
+    .sort(sortByNewestBooking);
   const cancelledAppointments = appointments
     .filter((appointment) => appointment.status === "cancelled")
-    .sort((first, second) => new Date(second.startsAt).getTime() - new Date(first.startsAt).getTime());
+    .sort(sortByNewestBooking);
 
   return <main className="admin-page">
     <header className="admin-header"><div><p className="eyebrow">Administration</p><h1>Admin</h1></div></header>
@@ -372,7 +372,7 @@ function AppointmentEditor({ appointment, save, showCustomer = true, reviewActio
     [appointment.appointmentCity, appointment.appointmentPostalCode].filter(Boolean).join(" "),
     appointment.appointmentCountry,
   ].filter(Boolean).join(", ");
-  return <article id={`appointment-${appointment.id}`} className={pending ? "is-awaiting-approval" : ""}><div className="appointment-summary"><div>{showCustomer && <strong>{appointment.customerName}</strong>}<span>{appointment.serviceName} · {formatDate(appointment.startsAt)}</span>{showCustomer && <a href={`mailto:${appointment.customerEmail}`}>{appointment.customerEmail}</a>}</div><small>{pending ? "Awaiting approval" : appointment.source}</small></div>
+  return <article id={`appointment-${appointment.id}`} className={pending ? "is-awaiting-approval" : ""}><div className="appointment-summary"><div>{showCustomer && <strong>{appointment.customerName}</strong>}<span>{appointment.serviceName} · {formatDate(appointment.startsAt)}</span><span className="appointment-booked-date">Booked on {formatDate(appointment.createdAt)}</span>{showCustomer && <a href={`mailto:${appointment.customerEmail}`}>{appointment.customerEmail}</a>}</div><small>{pending ? "Awaiting approval" : appointment.source}</small></div>
     <p className="appointment-meeting-details"><strong>{appointment.appointmentMode === "in_person" ? "In person" : "By phone"}</strong><span>{appointment.appointmentMode === "in_person" ? appointmentAddress || "Address not provided" : appointment.appointmentPhone || appointment.customerPhone || "Phone not provided"}</span></p>
     {pending ? <div className="appointment-approval-controls">
       {!declining && <><button className="approve-appointment" onClick={() => save(appointment.id, notes, "confirmed")}>Approve appointment</button><button className="decline-appointment" onClick={() => setDeclining(true)}>Decline</button></>}
@@ -390,8 +390,12 @@ function groupAppointmentsByCustomer(items: Appointment[]) {
     groups.set(key, group);
   }
   return [...groups.values()]
-    .sort((first, second) => first.name.localeCompare(second.name))
-    .map((group) => ({ ...group, appointments: group.appointments.sort((first, second) => new Date(first.startsAt).getTime() - new Date(second.startsAt).getTime()) }));
+    .map((group) => ({ ...group, appointments: group.appointments.sort(sortByNewestBooking) }))
+    .sort((first, second) => sortByNewestBooking(first.appointments[0], second.appointments[0]));
+}
+
+function sortByNewestBooking(first: Appointment, second: Appointment) {
+  return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
 }
 
 function formatAuditAction(action: string) { return action.split(".").map((part) => part.replace(/_/g, " ")).join(" · "); }

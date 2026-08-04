@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ContactLinks } from "./contact-links";
 import { AppointmentDetailsFields, emptyAppointmentDetails, type BookingAppointmentDetails } from "./appointment-details-fields";
 
-type Appointment = { id: string; status: string; adminNotes: string; clientNotes: string; startsAt: string; endsAt: string; serviceId: string; serviceName: string; appointmentMode: string; appointmentPhone: string | null; appointmentStreetAddress: string | null; appointmentUnit: string | null; appointmentCity: string | null; appointmentPostalCode: string | null; appointmentCountry: string | null };
+type Appointment = { id: string; status: string; adminNotes: string; clientNotes: string; createdAt: string; startsAt: string; endsAt: string; serviceId: string; serviceName: string; appointmentMode: string; appointmentPhone: string | null; appointmentStreetAddress: string | null; appointmentUnit: string | null; appointmentCity: string | null; appointmentPostalCode: string | null; appointmentCountry: string | null };
 type Service = { id: string; name: string; description: string; durationMinutes: number; priceCents: number };
 type Slot = { startsAt: string; endsAt: string; label: string };
 type Profile = { firstName: string; lastName: string; email: string; phone: string; streetAddress: string; unit: string; city: string; postalCode: string; country: string };
@@ -37,8 +37,8 @@ export function CustomerDashboard({ firstName, bookingsEnabled, launchOfferEnabl
       await load();
     }
   }
-  const upcoming = appointments.filter((item) => new Date(item.endsAt).getTime() >= now && ["pending_approval", "confirmed"].includes(item.status)).reverse();
-  const past = appointments.filter((item) => new Date(item.endsAt).getTime() < now || !["pending_approval", "confirmed"].includes(item.status));
+  const upcoming = appointments.filter((item) => new Date(item.endsAt).getTime() >= now && ["pending_approval", "confirmed"].includes(item.status)).sort(sortByNewestBooking);
+  const past = appointments.filter((item) => new Date(item.endsAt).getTime() < now || !["pending_approval", "confirmed"].includes(item.status)).sort(sortByNewestBooking);
   return <main className="account-page"><header className="account-header"><div><p className="eyebrow">Your account</p><h1>Greetings, {firstName}.</h1></div></header>
     {message && <div className="account-message" role="status"><span>{message}</span><button type="button" onClick={() => setMessage("")} aria-label="Dismiss notification">&times;</button></div>}
     {bookingsEnabled
@@ -184,7 +184,8 @@ function AppointmentRescheduler({ appointment, onChanged, onMessage }: { appoint
     {selected && <button className="reschedule-confirm" disabled={loading} onClick={confirm}>{loading ? "Rescheduling…" : `Move to ${selected.slot.label}`}</button>}
   </div>}</div>;
 }
-function AppointmentHeading({ appointment }: { appointment: Appointment }) { return <header><div><strong>{appointment.serviceName}</strong><time>{new Date(appointment.startsAt).toLocaleString([], { dateStyle: "full", timeStyle: "short" })}</time></div><span>{appointment.status === "pending_approval" ? "awaiting approval" : appointment.status.replace("_", " ")}</span></header>; }
+function AppointmentHeading({ appointment }: { appointment: Appointment }) { return <header><div><strong>{appointment.serviceName}</strong><time>{new Date(appointment.startsAt).toLocaleString([], { dateStyle: "full", timeStyle: "short" })}</time><small>Booked on {new Date(appointment.createdAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</small></div><span>{appointment.status === "pending_approval" ? "awaiting approval" : appointment.status.replace("_", " ")}</span></header>; }
+function sortByNewestBooking(first: Appointment, second: Appointment) { return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(); }
 function startOfWeek() { const value = new Date(); value.setHours(0, 0, 0, 0); value.setDate(value.getDate() - ((value.getDay() + 6) % 7)); return value; }
 function addDays(date: Date, amount: number) { const value = new Date(date); value.setDate(value.getDate() + amount); return value; }
 function formatDateInput(date: Date) { return date.toLocaleDateString("en-CA"); }

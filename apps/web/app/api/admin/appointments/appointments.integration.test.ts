@@ -230,20 +230,23 @@ describe("admin appointment status and notes", () => {
     expect(integrations.sendAppointmentCancelled).not.toHaveBeenCalled();
   });
 
-  it("lists appointments newest first with phone-booking details", async () => {
+  it("lists appointments by booking creation date, newest first, with phone-booking details", async () => {
     auth.isAdmin = true;
-    await seedAppointment(null, futureLocalTime(9), "Older Customer");
-    await seedAppointment(null, futureLocalTime(15), "Newer Customer");
+    await seedAppointment(null, futureLocalTime(15), "Older Customer", "confirmed", new Date("2026-01-01T12:00:00Z"));
+    await seedAppointment(null, futureLocalTime(9), "Newer Customer", "confirmed", new Date("2026-01-02T12:00:00Z"));
     const response = await listAppointments();
     expect(response.status).toBe(200);
-    const body = await response.json() as { appointments: Array<{ customerName: string; source: string; serviceName: string }> };
+    const body = await response.json() as { appointments: Array<{ customerName: string; source: string; serviceName: string; createdAt: string }> };
     expect(body.appointments.map((appointment) => appointment.customerName)).toEqual(["Newer Customer", "Older Customer"]);
+    expect(body.appointments.map((appointment) => appointment.createdAt)).toEqual([
+      "2026-01-02T12:00:00.000Z", "2026-01-01T12:00:00.000Z",
+    ]);
     expect(body.appointments.every((appointment) => appointment.source === "phone")).toBe(true);
     expect(body.appointments.every((appointment) => appointment.serviceName === "Smart-home consultation")).toBe(true);
   });
 });
 
-async function seedAppointment(googleEventId: string | null = null, startsAt = futureLocalTime(10), name = "Status Customer", status: "confirmed" | "pending_approval" = "confirmed") {
+async function seedAppointment(googleEventId: string | null = null, startsAt = futureLocalTime(10), name = "Status Customer", status: "confirmed" | "pending_approval" = "confirmed", createdAt = new Date()) {
   const email = `${name.toLowerCase().replace(/\s+/g, "-")}@example.com`;
   const source = status === "pending_approval" ? "guest" : "phone";
   const [customer] = await testSql<{ id: string }[]>`
@@ -255,8 +258,8 @@ async function seedAppointment(googleEventId: string | null = null, startsAt = f
     RETURNING id
   `;
   const [appointment] = await testSql<{ id: string }[]>`
-    INSERT INTO appointments (slot_id, customer_id, status, source, google_event_id)
-    VALUES (${slot.id}, ${customer.id}, ${status}, ${source}, ${googleEventId}) RETURNING id
+    INSERT INTO appointments (slot_id, customer_id, status, source, google_event_id, created_at)
+    VALUES (${slot.id}, ${customer.id}, ${status}, ${source}, ${googleEventId}, ${createdAt}) RETURNING id
   `;
   return { id: appointment.id, slotId: slot.id };
 }

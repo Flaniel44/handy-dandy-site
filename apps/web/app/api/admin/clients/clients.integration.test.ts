@@ -111,19 +111,22 @@ describe("on-demand client appointment history", () => {
     auth.isAdmin = true;
     const ownerId = await seedCustomer("History Owner", "owner@example.com", new Date());
     const otherId = await seedCustomer("Other Client", "other@example.com", new Date());
-    await seedAppointment(ownerId, futureTime(0), "completed", "Old completed note", "phone");
-    await seedAppointment(ownerId, futureTime(3), "confirmed", "Upcoming note", "web");
-    await seedAppointment(ownerId, futureTime(2), "cancelled", "Cancelled note", "web");
+    await seedAppointment(ownerId, futureTime(3), "completed", "Old completed note", "phone", new Date("2026-01-01T12:00:00Z"));
+    await seedAppointment(ownerId, futureTime(0), "confirmed", "Upcoming note", "web", new Date("2026-01-03T12:00:00Z"));
+    await seedAppointment(ownerId, futureTime(2), "cancelled", "Cancelled note", "web", new Date("2026-01-02T12:00:00Z"));
     await seedAppointment(otherId, futureTime(4), "confirmed", "Must not leak", "web");
 
     const response = await clientHistory(new Request("http://localhost"), context(ownerId));
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("private, no-store");
     const body = await response.json() as { appointments: Array<{
-      status: string; notes: string; source: string; customerEmail: string; serviceName: string;
+      status: string; notes: string; source: string; customerEmail: string; serviceName: string; createdAt: string;
     }> };
     expect(body.appointments.map((appointment) => appointment.status)).toEqual(["confirmed", "cancelled", "completed"]);
     expect(body.appointments.map((appointment) => appointment.notes)).toEqual(["Upcoming note", "Cancelled note", "Old completed note"]);
+    expect(body.appointments.map((appointment) => appointment.createdAt)).toEqual([
+      "2026-01-03T12:00:00.000Z", "2026-01-02T12:00:00.000Z", "2026-01-01T12:00:00.000Z",
+    ]);
     expect(body.appointments[2]?.source).toBe("phone");
     expect(body.appointments.every((appointment) => appointment.customerEmail === "owner@example.com")).toBe(true);
     expect(body.appointments.every((appointment) => appointment.serviceName === "Smart-home consultation")).toBe(true);
@@ -147,6 +150,7 @@ async function seedAppointment(
   status: "confirmed" | "completed" | "cancelled",
   notes: string,
   source = "web",
+  createdAt = new Date(),
 ) {
   const [slot] = await testSql<{ id: string }[]>`
     INSERT INTO booking_slots (service_id, starts_at, ends_at, state)
@@ -154,8 +158,8 @@ async function seedAppointment(
     RETURNING id
   `;
   await testSql`
-    INSERT INTO appointments (slot_id, customer_id, status, notes, source)
-    VALUES (${slot.id}, ${customerId}, ${status}, ${notes}, ${source})
+    INSERT INTO appointments (slot_id, customer_id, status, notes, source, created_at)
+    VALUES (${slot.id}, ${customerId}, ${status}, ${notes}, ${source}, ${createdAt})
   `;
 }
 

@@ -511,6 +511,7 @@ a { color: inherit; }
 .appointment-summary { display: flex; justify-content: space-between; margin-bottom: 15px; }
 .appointment-summary > div { display: grid; gap: 5px; }
 .appointment-summary span, .appointment-summary a, .appointment-summary small { color: var(--muted); }
+.appointment-summary .appointment-booked-date { font-size: .76rem; }
 .appointment-controls { display: grid; grid-template-columns: 160px minmax(150px, 190px) 1fr auto; gap: 12px; align-items: end; }
 .appointment-controls > label { display: grid; gap: 7px; color: #c9c7c0; font-size: .78rem; font-weight: 700; }
 .appointment-list article.is-awaiting-approval { border-color: #f5984288; box-shadow: 0 0 24px #f5984212; }
@@ -605,6 +606,7 @@ a { color: inherit; }
 .customer-appointments article > header { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 18px; }
 .customer-appointments article > header div { display: grid; gap: 6px; }
 .customer-appointments time, .customer-appointments article > header span { color: var(--muted); font-size: .86rem; }
+.customer-appointments article > header small { color: var(--muted); font-size: .76rem; }
 .customer-appointments article > header span { text-transform: capitalize; }
 .customer-appointments label { display: grid; gap: 8px; margin-top: 16px; color: #d8d6cf; font-size: .82rem; font-weight: 700; }
 .customer-appointments textarea { width: 100%; padding: 12px; border: 1px solid #3a4468; border-radius: 6px; background: #0b0f1c; color: var(--ink); font: inherit; }

@@ -13,6 +13,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   if (!id.success) return Response.json({ error: "Invalid client." }, { status: 400 });
   const rows = await getDb().select({
     id: appointments.id, status: appointments.status, notes: appointments.notes,
+    createdAt: appointments.createdAt,
     cancellationDiscountPercent: appointments.cancellationDiscountPercent, source: appointments.source,
     startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt, customerName: customers.name,
     customerEmail: customers.email, customerPhone: customers.phone, serviceName: services.name,
@@ -24,6 +25,6 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     .innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(customers, eq(customers.id, appointments.customerId))
     .innerJoin(services, eq(services.id, bookingSlots.serviceId))
-    .where(eq(appointments.customerId, id.data)).orderBy(desc(bookingSlots.startsAt));
+    .where(eq(appointments.customerId, id.data)).orderBy(desc(appointments.createdAt));
   return Response.json({ appointments: rows }, { headers: { "Cache-Control": "private, no-store" } });
 }
