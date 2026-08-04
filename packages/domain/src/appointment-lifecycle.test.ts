@@ -7,6 +7,7 @@ describe("appointment lifecycle", () => {
 
   it("allows customers to manage only future confirmed appointments with confirmed slots", () => {
     expect(canCustomerManageAppointment({ status: "confirmed", slotState: "confirmed", startsAt: "2026-07-13T13:00:00Z" }, now)).toBe(true);
+    expect(canCustomerManageAppointment({ status: "pending_approval", slotState: "confirmed", startsAt: "2026-07-13T13:00:00Z" }, now)).toBe(true);
     expect(canCustomerManageAppointment({ status: "completed", slotState: "released", startsAt: "2026-07-13T13:00:00Z" }, now)).toBe(false);
     expect(canCustomerManageAppointment({ status: "cancelled", slotState: "released", startsAt: "2026-07-13T13:00:00Z" }, now)).toBe(false);
     expect(canCustomerManageAppointment({ status: "no_show", slotState: "released", startsAt: "2026-07-13T13:00:00Z" }, now)).toBe(false);
@@ -23,6 +24,7 @@ describe("appointment lifecycle", () => {
 
   it("keeps only confirmed appointments reserved", () => {
     expect(slotStateForAppointmentStatus("confirmed")).toBe("confirmed");
+    expect(slotStateForAppointmentStatus("pending_approval")).toBe("confirmed");
     expect(slotStateForAppointmentStatus("pending_payment")).toBe("released");
     expect(slotStateForAppointmentStatus("cancelled")).toBe("released");
     expect(slotStateForAppointmentStatus("completed")).toBe("released");
@@ -32,6 +34,7 @@ describe("appointment lifecycle", () => {
   it("fires cancellation side effects only on the first transition to cancelled", () => {
     expect(shouldSendCancellation("confirmed", "cancelled")).toBe(true);
     expect(shouldSendCancellation("pending_payment", "cancelled")).toBe(true);
+    expect(shouldSendCancellation("pending_approval", "cancelled")).toBe(true);
     expect(shouldSendCancellation("cancelled", "cancelled")).toBe(false);
     expect(shouldSendCancellation("confirmed", "completed")).toBe(false);
   });

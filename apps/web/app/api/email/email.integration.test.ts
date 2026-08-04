@@ -124,6 +124,9 @@ describe("transactional email delivery", () => {
     expect(body.html).toContain("Ada &lt;Admin&gt;");
     expect(body.html).toContain("Lights &amp; Music");
     expect(body.text).toContain("Monday, August 3, 2026 at 1:00 p.m.");
+    expect(body.text).toContain("Take a look at some examples of what's possible!");
+    expect(body.text).toContain("https://whatisthis.place/demos");
+    expect(body.html).toContain('href="https://whatisthis.place/demos"');
   });
 
   it("sends guest verification links without confirming the appointment prematurely", async () => {
@@ -166,6 +169,19 @@ describe("transactional email delivery", () => {
     expect(resendBody(2).subject).toBe("Your Digital Handyman password was changed");
   });
 
+  it("tells clients that appointment requests are awaiting approval", async () => {
+    const startsAt = new Date("2026-08-03T17:00:00.000Z");
+    await email.sendBookingRequestReceived(
+      "ada@example.com", "Ada", "Consultation", startsAt, "https://digitalhandydan.ca/book/manage?token=secret",
+    );
+
+    const body = resendBody(0);
+    expect(body.subject).toBe("Your Digital Handyman appointment request was received");
+    expect(body.text).toContain("appointment is not confirmed yet");
+    expect(body.text).toContain("approved or declined");
+    expect(body.html).toContain("token=secret");
+  });
+
   it("includes private management and rebooking links in customer appointment emails", async () => {
     const oldTime = new Date("2026-08-03T17:00:00.000Z");
     const newTime = new Date("2026-08-04T19:00:00.000Z");
@@ -177,6 +193,29 @@ describe("transactional email delivery", () => {
     expect(resendBody(1).html).toContain("token=rotated");
     expect(resendBody(2).text).toContain("Choose another time");
     expect(resendBody(2).text).toContain("https://digitalhandydan.ca/book");
+  });
+
+  it("includes admin cancellation notes and a rebooking link in cancellation emails", async () => {
+    const startsAt = new Date("2026-08-03T17:00:00.000Z");
+    await email.sendAppointmentCancelled(
+      "ada@example.com",
+      "Ada",
+      "Consultation",
+      startsAt,
+      "https://digitalhandydan.ca/book",
+      "A scheduling conflict came up.\nSorry for the inconvenience.",
+      25,
+    );
+
+    const body = resendBody(0);
+    expect(body.text).toContain("Note from Digital Handyman:");
+    expect(body.text).toContain("A scheduling conflict came up.\nSorry for the inconvenience.");
+    expect(body.text).toContain("https://digitalhandydan.ca/book");
+    expect(body.text).toContain("Please accept a 25% discount if you decide to reschedule.");
+    expect(body.text).toContain("discount has been recorded and will be honoured");
+    expect(body.html).toContain("A scheduling conflict came up.<br>Sorry for the inconvenience.");
+    expect(body.html).toContain("<strong>25% discount</strong>");
+    expect(body.html).toContain('href="https://digitalhandydan.ca/book"');
   });
 
   it("generates separate client and admin appointment reminders", async () => {
@@ -196,6 +235,7 @@ describe("transactional email delivery", () => {
   it("sends the owner complete booking and cancellation details", async () => {
     const details = {
       appointmentId: "appointment-123",
+      status: "confirmed",
       source: "web",
       clientNotes: "Please check <all> downstairs lights.",
       customerName: "Ada & Co",

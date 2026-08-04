@@ -8,6 +8,7 @@ const SERVICE_ID = "22222222-2222-4222-8222-222222222222";
 const auth = vi.hoisted(() => ({ isAdmin: false }));
 const integrations = vi.hoisted(() => ({
   createGoogleEventForAppointment: vi.fn().mockResolvedValue(undefined),
+  updateGoogleEventForAppointment: vi.fn().mockResolvedValue(undefined),
   deleteGoogleEvent: vi.fn().mockResolvedValue(undefined),
   markCalendarSyncFailure: vi.fn().mockResolvedValue(undefined),
   sendAppointmentCancelled: vi.fn().mockResolvedValue(undefined),
@@ -23,6 +24,7 @@ vi.mock("../../../../lib/email", () => ({
 }));
 vi.mock("../../../../lib/google-calendar", () => ({
   createGoogleEventForAppointment: integrations.createGoogleEventForAppointment,
+  updateGoogleEventForAppointment: integrations.updateGoogleEventForAppointment,
   deleteGoogleEvent: integrations.deleteGoogleEvent,
   markCalendarSyncFailure: integrations.markCalendarSyncFailure,
 }));
@@ -43,6 +45,7 @@ beforeEach(async () => {
   auth.isAdmin = false;
   vi.clearAllMocks();
   integrations.createGoogleEventForAppointment.mockResolvedValue(undefined);
+  integrations.updateGoogleEventForAppointment.mockResolvedValue(undefined);
   integrations.deleteGoogleEvent.mockResolvedValue(undefined);
   integrations.markCalendarSyncFailure.mockResolvedValue(undefined);
   integrations.sendAppointmentCancelled.mockResolvedValue(undefined);
@@ -157,6 +160,9 @@ describe("admin appointment status and notes", () => {
     auth.isAdmin = true;
     expect((await updateAppointment(updateRequest({ status: "invalid" }), context("00000000-0000-4000-8000-000000000001"))).status).toBe(400);
     expect((await updateAppointment(updateRequest({ notes: "x".repeat(2001) }), context("00000000-0000-4000-8000-000000000001"))).status).toBe(400);
+    expect((await updateAppointment(updateRequest({ status: "cancelled", cancellationDiscountPercent: 0 }), context("00000000-0000-4000-8000-000000000001"))).status).toBe(400);
+    expect((await updateAppointment(updateRequest({ status: "cancelled", cancellationDiscountPercent: 101 }), context("00000000-0000-4000-8000-000000000001"))).status).toBe(400);
+    expect((await updateAppointment(updateRequest({ status: "confirmed", cancellationDiscountPercent: 20 }), context("00000000-0000-4000-8000-000000000001"))).status).toBe(400);
     expect((await updateAppointment(updateRequest({ notes: "Valid" }), context("not-a-uuid"))).status).toBe(400);
     expect((await updateAppointment(updateRequest({ notes: "Valid" }), context("00000000-0000-4000-8000-000000000001"))).status).toBe(404);
   });
@@ -185,16 +191,40 @@ describe("admin appointment status and notes", () => {
   it("cancels once, releases the slot, and sends email and calendar side effects once", async () => {
     auth.isAdmin = true;
     const appointment = await seedAppointment("google-event-1");
-    const first = await updateAppointment(updateRequest({ status: "cancelled", notes: "Customer called to cancel" }), context(appointment.id));
+    const first = await updateAppointment(updateRequest({ status: "cancelled", notes: "A scheduling conflict came up", cancellationDiscountPercent: 25 }), context(appointment.id));
     expect(first.status).toBe(200);
     const [saved] = await savedAppointment(appointment.id);
-    expect(saved).toMatchObject({ status: "cancelled", state: "released", notes: "Customer called to cancel" });
+    expect(saved).toMatchObject({ status: "cancelled", state: "released", notes: "A scheduling conflict came up", cancellationDiscountPercent: 25 });
     expect(integrations.sendAppointmentCancelled).toHaveBeenCalledOnce();
+    expect(integrations.sendAppointmentCancelled).toHaveBeenCalledWith(
+      expect.any(String),
+      "Status Customer",
+      "Smart-home consultation",
+      expect.any(Date),
+      "http://localhost:3000/book",
+      "A scheduling conflict came up",
+      25,
+    );
     expect(integrations.deleteGoogleEvent).toHaveBeenCalledWith("google-event-1", appointment.id);
 
     expect((await updateAppointment(updateRequest({ status: "cancelled" }), context(appointment.id))).status).toBe(200);
     expect(integrations.sendAppointmentCancelled).toHaveBeenCalledOnce();
     expect(integrations.deleteGoogleEvent).toHaveBeenCalledOnce();
+  });
+
+  it("approves a pending request, keeps its slot reserved, and notifies the client and calendar", async () => {
+    auth.isAdmin = true;
+    const appointment = await seedAppointment("tentative-event", futureLocalTime(11), "Approval Customer", "pending_approval");
+
+    expect((await updateAppointment(updateRequest({ status: "confirmed" }), context(appointment.id))).status).toBe(200);
+
+    const [saved] = await savedAppointment(appointment.id);
+    expect(saved).toMatchObject({ status: "confirmed", state: "confirmed" });
+    expect(integrations.sendBookingConfirmation).toHaveBeenCalledWith(
+      "approval-customer@example.com", "Approval Customer", "Smart-home consultation", expect.any(Date), undefined,
+    );
+    expect(integrations.updateGoogleEventForAppointment).toHaveBeenCalledWith(appointment.id);
+    expect(integrations.sendAppointmentCancelled).not.toHaveBeenCalled();
   });
 
   it("lists appointments newest first with phone-booking details", async () => {
@@ -210,8 +240,9 @@ describe("admin appointment status and notes", () => {
   });
 });
 
-async function seedAppointment(googleEventId: string | null = null, startsAt = futureLocalTime(10), name = "Status Customer") {
+async function seedAppointment(googleEventId: string | null = null, startsAt = futureLocalTime(10), name = "Status Customer", status: "confirmed" | "pending_approval" = "confirmed") {
   const email = `${name.toLowerCase().replace(/\s+/g, "-")}@example.com`;
+  const source = status === "pending_approval" ? "guest" : "phone";
   const [customer] = await testSql<{ id: string }[]>`
     INSERT INTO customers (email, name) VALUES (${email}, ${name}) RETURNING id
   `;
@@ -222,14 +253,14 @@ async function seedAppointment(googleEventId: string | null = null, startsAt = f
   `;
   const [appointment] = await testSql<{ id: string }[]>`
     INSERT INTO appointments (slot_id, customer_id, status, source, google_event_id)
-    VALUES (${slot.id}, ${customer.id}, 'confirmed', 'phone', ${googleEventId}) RETURNING id
+    VALUES (${slot.id}, ${customer.id}, ${status}, ${source}, ${googleEventId}) RETURNING id
   `;
   return { id: appointment.id, slotId: slot.id };
 }
 
 function savedAppointment(id: string) {
-  return testSql<{ notes: string; status: string; state: string }[]>`
-    SELECT a.notes, a.status, bs.state
+  return testSql<{ notes: string; status: string; state: string; cancellationDiscountPercent: number | null }[]>`
+    SELECT a.notes, a.status, a.cancellation_discount_percent AS "cancellationDiscountPercent", bs.state
     FROM appointments a JOIN booking_slots bs ON bs.id = a.slot_id
     WHERE a.id = ${id}
   `;

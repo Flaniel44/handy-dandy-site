@@ -3,15 +3,20 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function LoginForm() {
+export function LoginForm({ next }: { next?: string }) {
   const router = useRouter(); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setError(""); const form = new FormData(event.currentTarget);
     const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(form)) });
     const body = await response.json(); setBusy(false); if (!response.ok) return setError(body.error);
-    router.replace(body.destination); router.refresh();
+    const destination = body.destination === "/admin" && isSafeAdminDestination(next) ? next : body.destination;
+    router.replace(destination); router.refresh();
   }
   return <form className="auth-form" onSubmit={submit}><label>Email<input name="email" type="email" autoComplete="username" required /></label><label>Password<input name="password" type="password" autoComplete="current-password" required /></label><a className="auth-help-link" href="/forgot-password">Forgot your password?</a>{error && <p className="form-error">{error}</p>}<button disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button></form>;
+}
+
+function isSafeAdminDestination(value?: string): value is string {
+  return Boolean(value?.startsWith("/admin") && !value.startsWith("//"));
 }
 
 export function RegistrationForm() {

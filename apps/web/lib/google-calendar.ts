@@ -121,7 +121,8 @@ export async function createGoogleEventForAppointment(appointmentId: string) {
   if (!connection) return;
   const [row] = await getDb().select({
     serviceName: services.name, startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt,
-    customerName: customers.name, customerEmail: customers.email, clientNotes: appointments.clientNotes, adminNotes: appointments.notes,
+    status: appointments.status, customerName: customers.name, customerEmail: customers.email,
+    clientNotes: appointments.clientNotes, adminNotes: appointments.notes,
   }).from(appointments)
     .innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(services, eq(services.id, bookingSlots.serviceId))
@@ -129,11 +130,15 @@ export async function createGoogleEventForAppointment(appointmentId: string) {
     .where(eq(appointments.id, appointmentId)).limit(1);
   if (!row) return;
   const accessToken = await getAccessToken(connection.encryptedRefreshToken);
+  const approvalLinks = row.status === "pending_approval"
+    ? [`Review and approve: ${adminReviewUrl(appointmentId, "approve")}`, `Review and decline: ${adminReviewUrl(appointmentId, "decline")}`]
+    : [];
   const response = await googleFetch(`/calendars/${encodeURIComponent(connection.calendarId)}/events`, accessToken, {
     method: "POST",
     body: JSON.stringify({
-      summary: `Digital Handyman: ${row.serviceName} — ${row.customerName}`,
-      description: [`Client: ${row.customerName} <${row.customerEmail}>`, row.clientNotes && `Client notes: ${row.clientNotes}`, row.adminNotes && `Admin notes: ${row.adminNotes}`].filter(Boolean).join("\n\n"),
+      summary: `${row.status === "pending_approval" ? "APPROVAL NEEDED — " : ""}Digital Handyman: ${row.serviceName} — ${row.customerName}`,
+      description: [`Client: ${row.customerName} <${row.customerEmail}>`, row.clientNotes && `Client notes: ${row.clientNotes}`, row.adminNotes && `Admin notes: ${row.adminNotes}`, ...approvalLinks].filter(Boolean).join("\n\n"),
+      status: row.status === "pending_approval" ? "tentative" : "confirmed",
       start: { dateTime: row.startsAt.toISOString() }, end: { dateTime: row.endsAt.toISOString() },
       extendedProperties: { private: { handyDandyAppointmentId: appointmentId } },
     }),
@@ -146,14 +151,30 @@ export async function createGoogleEventForAppointment(appointmentId: string) {
 export async function updateGoogleEventForAppointment(appointmentId: string) {
   const connection = await getConnection();
   if (!connection) return;
-  const [row] = await getDb().select({ eventId: appointments.googleEventId, startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt })
-    .from(appointments).innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId)).where(eq(appointments.id, appointmentId)).limit(1);
+  const [row] = await getDb().select({
+    eventId: appointments.googleEventId, status: appointments.status,
+    startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt,
+    serviceName: services.name, customerName: customers.name, customerEmail: customers.email,
+    clientNotes: appointments.clientNotes, adminNotes: appointments.notes,
+  }).from(appointments)
+    .innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
+    .innerJoin(services, eq(services.id, bookingSlots.serviceId))
+    .innerJoin(customers, eq(customers.id, appointments.customerId))
+    .where(eq(appointments.id, appointmentId)).limit(1);
   if (!row) return;
   if (!row.eventId) return createGoogleEventForAppointment(appointmentId);
   const accessToken = await getAccessToken(connection.encryptedRefreshToken);
+  const approvalLinks = row.status === "pending_approval"
+    ? [`Review and approve: ${adminReviewUrl(appointmentId, "approve")}`, `Review and decline: ${adminReviewUrl(appointmentId, "decline")}`]
+    : [];
   const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(connection.calendarId)}/events/${encodeURIComponent(row.eventId)}`, {
     method: "PATCH", cache: "no-store", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ start: { dateTime: row.startsAt.toISOString() }, end: { dateTime: row.endsAt.toISOString() } }),
+    body: JSON.stringify({
+      summary: `${row.status === "pending_approval" ? "APPROVAL NEEDED — " : ""}Digital Handyman: ${row.serviceName} — ${row.customerName}`,
+      description: [`Client: ${row.customerName} <${row.customerEmail}>`, row.clientNotes && `Client notes: ${row.clientNotes}`, row.adminNotes && `Admin notes: ${row.adminNotes}`, ...approvalLinks].filter(Boolean).join("\n\n"),
+      status: row.status === "pending_approval" ? "tentative" : "confirmed",
+      start: { dateTime: row.startsAt.toISOString() }, end: { dateTime: row.endsAt.toISOString() },
+    }),
   });
   if (response.status === 404 || response.status === 410) {
     await getDb().update(appointments).set({ googleEventId: null, updatedAt: new Date() }).where(eq(appointments.id, appointmentId));
@@ -204,8 +225,18 @@ async function getReconciliationCandidates() {
     calendarSyncStatus: appointments.calendarSyncStatus, calendarSyncedAt: appointments.calendarSyncedAt,
   }).from(appointments).innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId)).where(or(
     and(eq(appointments.status, "confirmed"), gt(bookingSlots.endsAt, new Date())),
+    and(eq(appointments.status, "pending_approval"), gt(bookingSlots.endsAt, new Date())),
     and(eq(appointments.status, "cancelled"), isNotNull(appointments.googleEventId)),
   ));
+}
+
+function appUrl() {
+  return (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+}
+
+function adminReviewUrl(appointmentId: string, action: "approve" | "decline") {
+  const destination = `/admin?appointment=${encodeURIComponent(appointmentId)}&action=${action}#appointment-${appointmentId}`;
+  return `${appUrl()}/login?next=${encodeURIComponent(destination)}`;
 }
 
 async function markSync(appointmentId: string, status: "synced" | "failed", error?: unknown) {

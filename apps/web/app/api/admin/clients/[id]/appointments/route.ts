@@ -12,7 +12,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const id = z.uuid().safeParse((await params).id);
   if (!id.success) return Response.json({ error: "Invalid client." }, { status: 400 });
   const rows = await getDb().select({
-    id: appointments.id, status: appointments.status, notes: appointments.notes, source: appointments.source,
+    id: appointments.id, status: appointments.status, notes: appointments.notes,
+    cancellationDiscountPercent: appointments.cancellationDiscountPercent, source: appointments.source,
     startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt, customerName: customers.name,
     customerEmail: customers.email, customerPhone: customers.phone, serviceName: services.name,
   }).from(appointments)

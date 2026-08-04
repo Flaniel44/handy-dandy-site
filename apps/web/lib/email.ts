@@ -3,6 +3,7 @@ import "server-only";
 type EmailMessage = { to: string; subject: string; html: string; text: string };
 type AdminAppointmentDetails = {
   appointmentId: string;
+  status: string;
   source: string;
   clientNotes: string;
   customerName: string;
@@ -72,13 +73,24 @@ export async function sendPasswordChangedEmail(to: string, firstName: string) {
 
 export async function sendBookingConfirmation(to: string, name: string, serviceName: string, startsAt: Date, manageUrl?: string) {
   const formatted = new Intl.DateTimeFormat("en-CA", { dateStyle: "full", timeStyle: "short", timeZone: process.env.BUSINESS_TIMEZONE ?? "America/Toronto" }).format(startsAt);
+  const demosUrl = `${(process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "")}/demos`;
   const manageText = manageUrl ? `\n\nNeed to make a change? Reschedule or cancel here:\n${manageUrl}` : "";
   const manageHtml = manageUrl ? `<p><a href="${escapeHtml(manageUrl)}">Reschedule or cancel this appointment</a></p>` : "";
   await sendTransactionalEmail({
     to,
     subject: "Your Digital Handyman appointment is confirmed",
-    text: `Hi ${name},\n\nYour ${serviceName} appointment is confirmed for ${formatted}.${manageText}\n\nReply to this email if you need help.`,
-    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment is confirmed for:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p>${manageHtml}<p>Reply to this email if you need help.</p>`,
+    text: `Hi ${name},\n\nYour ${serviceName} appointment is confirmed for ${formatted}.${manageText}\n\nReply to this email if you need help.\n\nTake a look at some examples of what's possible!\n${demosUrl}`,
+    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment is confirmed for:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p>${manageHtml}<p>Reply to this email if you need help.</p><p style="margin-top:28px"><a href="${escapeHtml(demosUrl)}">Take a look at some examples of what's possible!</a></p>`,
+  });
+}
+
+export async function sendBookingRequestReceived(to: string, name: string, serviceName: string, startsAt: Date, manageUrl: string) {
+  const formatted = formatAppointmentTime(startsAt);
+  await sendTransactionalEmail({
+    to,
+    subject: "Your Digital Handyman appointment request was received",
+    text: `Hi ${name},\n\nWe received your request for a ${serviceName} appointment on ${formatted}. Your time is being held while Digital Handyman reviews it, but the appointment is not confirmed yet.\n\nYou will receive another email after the request is approved or declined.\n\nReview, reschedule, or cancel your request:\n${manageUrl}`,
+    html: `<p>Hi ${escapeHtml(name)},</p><p>We received your request for a <strong>${escapeHtml(serviceName)}</strong> appointment on:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p><p>Your time is being held while Digital Handyman reviews it, but the appointment is <strong>not confirmed yet</strong>.</p><p>You will receive another email after the request is approved or declined.</p><p><a href="${escapeHtml(manageUrl)}">Review, reschedule, or cancel your request</a></p>`,
   });
 }
 
@@ -100,14 +112,31 @@ export async function sendGuestBookingVerification(
   });
 }
 
-export async function sendAppointmentCancelled(to: string, name: string, serviceName: string, startsAt: Date, rebookUrl?: string) {
+export async function sendAppointmentCancelled(
+  to: string,
+  name: string,
+  serviceName: string,
+  startsAt: Date,
+  rebookUrl?: string,
+  cancellationNotes?: string,
+  cancellationDiscountPercent?: number,
+) {
   const formatted = formatAppointmentTime(startsAt);
   const rebookText = rebookUrl ? `\n\nChoose another time:\n${rebookUrl}` : "";
   const rebookHtml = rebookUrl ? `<p><a href="${escapeHtml(rebookUrl)}">Choose another appointment time</a></p>` : "";
+  const notes = cancellationNotes?.trim();
+  const notesText = notes ? `\n\nNote from Digital Handyman:\n${notes}` : "";
+  const notesHtml = notes ? `<p><strong>Note from Digital Handyman:</strong><br>${escapeHtml(notes).replaceAll("\n", "<br>")}</p>` : "";
+  const discountText = cancellationDiscountPercent
+    ? `\n\nWe are very sorry for having to cancel your appointment. Please accept a ${cancellationDiscountPercent}% discount if you decide to reschedule. Your discount has been recorded and will be honoured.`
+    : "";
+  const discountHtml = cancellationDiscountPercent
+    ? `<p><strong>We are very sorry for having to cancel your appointment.</strong> Please accept a <strong>${cancellationDiscountPercent}% discount</strong> if you decide to reschedule. Your discount has been recorded and will be honoured.</p>`
+    : "";
   await sendTransactionalEmail({
     to, subject: "Your Digital Handyman appointment was cancelled",
-    text: `Hi ${name},\n\nYour ${serviceName} appointment for ${formatted} has been cancelled.${rebookText}`,
-    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment for ${escapeHtml(formatted)} has been cancelled.</p>${rebookHtml}`,
+    text: `Hi ${name},\n\nYour ${serviceName} appointment for ${formatted} has been cancelled.${notesText}${discountText}${rebookText}`,
+    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment for ${escapeHtml(formatted)} has been cancelled.</p>${notesHtml}${discountHtml}${rebookHtml}`,
   });
 }
 
@@ -167,7 +196,10 @@ async function sendAdminAppointmentUpdate(action: "booked" | "cancelled", detail
   const startsAt = formatAppointmentTime(details.startsAt);
   const endsAt = new Intl.DateTimeFormat("en-CA", { timeStyle: "short", timeZone: process.env.BUSINESS_TIMEZONE ?? "America/Toronto" }).format(details.endsAt);
   const address = formatCustomerAddress(details);
-  const heading = action === "booked" ? "New appointment booked" : "Client cancelled appointment";
+  const pendingApproval = action === "booked" && details.status === "pending_approval";
+  const heading = action === "cancelled" ? "Client cancelled appointment" : pendingApproval ? "New appointment request awaiting approval" : "New appointment booked";
+  const reviewDestination = `/admin?appointment=${encodeURIComponent(details.appointmentId)}#appointment-${details.appointmentId}`;
+  const reviewUrl = pendingApproval ? `${(process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "")}/login?next=${encodeURIComponent(reviewDestination)}` : "";
   const fields = [
     ["Client", details.customerName],
     ["Email", details.customerEmail],
@@ -179,11 +211,11 @@ async function sendAdminAppointmentUpdate(action: "booked" | "cancelled", detail
     ["Booking source", details.source],
     ["Appointment ID", details.appointmentId],
   ] as const;
-  const text = [heading, "", ...fields.map(([label, value]) => `${label}: ${value}`)].join("\n");
-  const html = `<p><strong>${escapeHtml(heading)}</strong></p><table style="border-collapse:collapse">${fields.map(([label, value]) => `<tr><td style="padding:4px 14px 4px 0;vertical-align:top;color:#666"><strong>${escapeHtml(label)}</strong></td><td style="padding:4px 0;white-space:pre-wrap">${escapeHtml(value)}</td></tr>`).join("")}</table>`;
+  const text = [heading, "", ...fields.map(([label, value]) => `${label}: ${value}`), reviewUrl && `Review request: ${reviewUrl}`].filter(Boolean).join("\n");
+  const html = `<p><strong>${escapeHtml(heading)}</strong></p><table style="border-collapse:collapse">${fields.map(([label, value]) => `<tr><td style="padding:4px 14px 4px 0;vertical-align:top;color:#666"><strong>${escapeHtml(label)}</strong></td><td style="padding:4px 0;white-space:pre-wrap">${escapeHtml(value)}</td></tr>`).join("")}</table>${reviewUrl ? `<p><a href="${escapeHtml(reviewUrl)}">Review and approve or decline this request</a></p>` : ""}`;
   await sendTransactionalEmail({
     to,
-    subject: action === "booked" ? `New booking: ${details.customerName} — ${details.serviceName}` : `Cancellation: ${details.customerName} — ${details.serviceName}`,
+    subject: action === "booked" ? `${pendingApproval ? "Approval needed" : "New booking"}: ${details.customerName} — ${details.serviceName}` : `Cancellation: ${details.customerName} — ${details.serviceName}`,
     text,
     html,
   });

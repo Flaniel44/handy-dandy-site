@@ -1,6 +1,7 @@
 export type AppointmentStatus =
   | "held"
   | "pending_payment"
+  | "pending_approval"
   | "confirmed"
   | "cancelled"
   | "completed"
@@ -28,7 +29,7 @@ export type Appointment = TimeRange &
   }>;
 
 export function isActiveAppointment(status: AppointmentStatus): boolean {
-  return status === "held" || status === "pending_payment" || status === "confirmed";
+  return status === "held" || status === "pending_payment" || status === "pending_approval" || status === "confirmed";
 }
 
 export function rangesOverlap(left: TimeRange, right: TimeRange): boolean {

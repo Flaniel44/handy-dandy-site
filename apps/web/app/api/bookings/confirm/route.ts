@@ -11,7 +11,7 @@ import {
   guestBookingConfirmations,
   services,
 } from "../../../../lib/db/schema";
-import { sendBookingConfirmation } from "../../../../lib/email";
+import { sendBookingRequestReceived } from "../../../../lib/email";
 import { createGuestManagementToken, guestManagementExpiry } from "../../../../lib/guest-appointment-management";
 import { hashGuestBookingConfirmationToken } from "../../../../lib/guest-booking-confirmation";
 import { createGoogleEventForAppointment, markCalendarSyncFailure } from "../../../../lib/google-calendar";
@@ -90,7 +90,8 @@ export async function POST(request: Request) {
       const [appointment] = await tx.insert(appointments).values({
         slotId: confirmedSlot.id,
         customerId: customer.id,
-        status: "confirmed",
+        status: "pending_approval",
+        source: "guest",
         clientNotes: confirmation.clientNotes,
       }).returning({ id: appointments.id });
 
@@ -101,7 +102,7 @@ export async function POST(request: Request) {
       });
 
       return {
-        state: "confirmed" as const,
+        state: "requested" as const,
         appointmentId: appointment.id,
         email: confirmation.email,
         name: confirmation.name,
@@ -111,9 +112,9 @@ export async function POST(request: Request) {
       };
     });
 
-    if (result.state !== "confirmed") return redirectResult(request, result.state);
+    if (result.state !== "requested") return redirectResult(request, result.state);
     try {
-      await sendBookingConfirmation(
+      await sendBookingRequestReceived(
         result.email,
         result.name,
         result.serviceName,
@@ -121,26 +122,26 @@ export async function POST(request: Request) {
         publicUrl(request, `/book/manage?token=${encodeURIComponent(result.managementToken)}`).toString(),
       );
     } catch (emailError) {
-      console.error("Guest booking confirmed but confirmation email failed", emailError);
+      console.error("Guest booking request created but request email failed", emailError);
     }
     try {
       await notifyAdminAppointmentBooked(result.appointmentId);
     } catch (emailError) {
-      console.error("Guest booking confirmed but admin notification failed", emailError);
+      console.error("Guest booking request created but admin notification failed", emailError);
     }
     try {
       await createGoogleEventForAppointment(result.appointmentId);
     } catch (calendarError) {
       await markCalendarSyncFailure(result.appointmentId, calendarError);
-      console.error("Guest booking confirmed but Google Calendar sync failed", calendarError);
+      console.error("Guest booking request created but Google Calendar sync failed", calendarError);
     }
-    return redirectResult(request, "confirmed");
+    return redirectResult(request, "requested");
   } catch (error) {
     console.error("Unable to confirm guest booking", error);
     return redirectResult(request, "failed");
   }
 }
 
-function redirectResult(request: Request, status: "confirmed" | "expired" | "invalid" | "failed") {
+function redirectResult(request: Request, status: "requested" | "expired" | "invalid" | "failed") {
   return Response.redirect(publicUrl(request, `/book/confirmation?status=${status}`), 303);
 }

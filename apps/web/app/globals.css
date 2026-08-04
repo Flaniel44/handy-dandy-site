@@ -9,7 +9,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   margin: 0;
   background: var(--night);
@@ -430,6 +430,10 @@ a { color: inherit; }
 .admin-header { max-width: 1180px; margin: 0 auto 45px; display: flex; justify-content: space-between; align-items: center; }
 .admin-header h1 { margin: 2px 0 0; font-size: 3rem; }
 .admin-message { position: sticky; top: 14px; z-index: 5; width: min(100%, 600px); margin: 0 auto 20px; padding: 12px 16px; border: 1px solid #6b61c2; border-radius: 7px; background: #292451; text-align: center; }
+.account-message { position: relative; width: min(100%, 600px); margin: 0 auto 20px; padding: 12px 46px 12px 16px; border: 1px solid #6b61c2; border-radius: 7px; background: #292451; text-align: center; }
+.account-message button { position: absolute; top: 50%; right: 8px; width: 32px; height: 32px; padding: 0; transform: translateY(-50%); border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; font: inherit; font-size: 1.45rem; line-height: 1; }
+.account-message button:hover { background: rgb(255 255 255 / 8%); color: var(--ink); }
+.account-message button:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
 .admin-panel { width: 100%; max-width: 1180px; margin: 0 auto 22px; padding: clamp(20px, 3vw, 34px); border: 1px solid #2d3552; border-radius: 12px; background: #111522; }
 .admin-appointments-panel { order: 1; }
 .admin-clients-panel { order: 2; }
@@ -496,7 +500,14 @@ a { color: inherit; }
 .appointment-summary { display: flex; justify-content: space-between; margin-bottom: 15px; }
 .appointment-summary > div { display: grid; gap: 5px; }
 .appointment-summary span, .appointment-summary a, .appointment-summary small { color: var(--muted); }
-.appointment-controls { display: grid; grid-template-columns: 160px 1fr auto; gap: 12px; align-items: end; }
+.appointment-controls { display: grid; grid-template-columns: 160px minmax(150px, 190px) 1fr auto; gap: 12px; align-items: end; }
+.appointment-controls > label { display: grid; gap: 7px; color: #c9c7c0; font-size: .78rem; font-weight: 700; }
+.appointment-list article.is-awaiting-approval { border-color: #f5984288; box-shadow: 0 0 24px #f5984212; }
+.appointment-approval-controls { display: flex; flex-wrap: wrap; gap: 12px; }
+.appointment-approval-controls .approve-appointment { border-color: #5f906f; background: #193326; color: #c8f5d5; }
+.appointment-approval-controls .decline-appointment { border-color: #744052; background: #351c27; color: #ffb8cf; }
+.appointment-decline-form { width: 100%; display: grid; grid-template-columns: minmax(180px, 230px) minmax(260px, 1fr) auto auto; gap: 12px; align-items: end; }
+.appointment-decline-form label { display: grid; gap: 7px; color: #c9c7c0; font-size: .78rem; font-weight: 700; }
 .appointment-archive { margin-top: 16px; border: 1px solid #343c5b; border-radius: 9px; background: #0c101d; }
 .appointment-archive > summary { display: flex; justify-content: space-between; align-items: center; padding: 17px 19px; cursor: pointer; font-weight: 800; list-style: none; }
 .appointment-archive > summary::-webkit-details-marker { display: none; }
@@ -535,7 +546,7 @@ a { color: inherit; }
 .calendar-events-list article small { color: #a8aec2; }
 
 @media (max-width: 760px) {
-  .admin-inline-form, .admin-grid-form, .appointment-controls, .service-admin-card { grid-template-columns: 1fr; }
+  .admin-inline-form, .admin-grid-form, .appointment-controls, .appointment-decline-form, .service-admin-card { grid-template-columns: 1fr; }
   .service-admin-card .wide { grid-column: auto; }
   .service-order-actions { flex-wrap: wrap; }
   .service-order-actions span { flex-basis: 100%; }
@@ -631,6 +642,7 @@ a { color: inherit; }
 .scheduler-confirm > button { padding: 12px 18px; border: 0; border-radius: 6px; background: var(--ink); color: var(--night); cursor: pointer; font: inherit; font-weight: 800; }
 
 @media (max-width: 620px) {
+  input, select, textarea { font-size: 16px !important; }
   .auth-grid { grid-template-columns: 1fr; }
   .auth-grid .wide { grid-column: auto; }
   .account-header { flex-direction: column; gap: 20px; }

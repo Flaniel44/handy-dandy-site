@@ -21,7 +21,8 @@ const manualAppointmentSchema = z.object({
 export async function GET() {
   if (!await requireAdmin()) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const rows = await getDb().select({
-    id: appointments.id, status: appointments.status, notes: appointments.notes, source: appointments.source,
+    id: appointments.id, status: appointments.status, notes: appointments.notes,
+    cancellationDiscountPercent: appointments.cancellationDiscountPercent, source: appointments.source,
     startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt, customerName: customers.name,
     customerEmail: customers.email, customerPhone: customers.phone, serviceName: services.name,
   }).from(appointments)

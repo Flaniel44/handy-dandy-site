@@ -125,9 +125,10 @@ describe("Google Calendar integration", () => {
     let [saved] = await appointmentSyncState(appointment.id);
     expect(saved).toMatchObject({ google_event_id: "created-google-event", calendar_sync_status: "synced" });
     const createRequest = calendarRequest("POST");
-    const createBody = JSON.parse(String(createRequest?.[1]?.body)) as { summary: string; extendedProperties: { private: { handyDandyAppointmentId: string } } };
+    const createBody = JSON.parse(String(createRequest?.[1]?.body)) as { summary: string; status: string; extendedProperties: { private: { handyDandyAppointmentId: string } } };
     expect(createBody.summary).toContain("Smart-home consultation");
     expect(createBody.summary).toContain("Calendar Customer");
+    expect(createBody.status).toBe("confirmed");
     expect(createBody.extendedProperties.private.handyDandyAppointmentId).toBe(appointment.id);
 
     const movedStart = futureDay().plus({ days: 1 }).set({ hour: 14 });
@@ -143,6 +144,19 @@ describe("Google Calendar integration", () => {
     [saved] = await appointmentSyncState(appointment.id);
     expect(saved).toMatchObject({ google_event_id: null, calendar_sync_status: "synced" });
     expect(calendarRequest("DELETE")).toBeTruthy();
+  });
+
+  it("creates pending requests as tentative events with admin approval links", async () => {
+    await connect();
+    const appointment = await seedAppointment("pending_approval");
+
+    await calendar.createGoogleEventForAppointment(appointment.id);
+
+    const createBody = JSON.parse(String(calendarRequest("POST")?.[1]?.body)) as { summary: string; status: string; description: string };
+    expect(createBody.summary).toContain("APPROVAL NEEDED");
+    expect(createBody.status).toBe("tentative");
+    expect(createBody.description).toContain(`http://localhost:3000/login?next=${encodeURIComponent(`/admin?appointment=${appointment.id}&action=approve#appointment-${appointment.id}`)}`);
+    expect(createBody.description).toContain(`http://localhost:3000/login?next=${encodeURIComponent(`/admin?appointment=${appointment.id}&action=decline#appointment-${appointment.id}`)}`);
   });
 
   it("recreates an appointment event when Google reports that the old event is gone", async () => {
@@ -178,7 +192,7 @@ async function connect() {
   await calendar.connectGoogleCalendar("authorization-code");
 }
 
-async function seedAppointment(status: "confirmed" | "cancelled", googleEventId: string | null = null, dayOffset = 0) {
+async function seedAppointment(status: "pending_approval" | "confirmed" | "cancelled", googleEventId: string | null = null, dayOffset = 0) {
   const [customer] = await testSql<{ id: string }[]>`
     INSERT INTO customers (email, name, first_name, last_name)
     VALUES (${`calendar-${dayOffset}@example.com`}, 'Calendar Customer', 'Calendar', 'Customer')

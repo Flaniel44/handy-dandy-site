@@ -113,6 +113,20 @@
       "when": 1785715200000,
       "tag": "0015_guest_appointment_management",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1785801600000,
+      "tag": "0016_cancellation_discounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1785888000000,
+      "tag": "0017_booking_approval",
+      "breakpoints": true
     }
   ]
 }

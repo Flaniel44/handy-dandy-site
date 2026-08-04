@@ -108,7 +108,7 @@ export function GuestAppointmentManager({ initialToken }: { initialToken: string
       <div><span>Date and time</span><strong>{formatAppointment(appointment.startsAt, appointment.endsAt)}</strong></div>
       <div><span>Booked for</span><strong>{appointment.customerName} · {appointment.customerEmail}</strong></div>
       {appointment.clientNotes && <div><span>Your notes</span><strong>{appointment.clientNotes}</strong></div>}
-      <div><span>Status</span><strong className="guest-appointment-status">{appointment.status.replace("_", " ")}</strong></div>
+      <div><span>Status</span><strong className="guest-appointment-status">{appointment.status === "pending_approval" ? "Awaiting approval" : appointment.status.replace("_", " ")}</strong></div>
     </div>
 
     {cancelled ? <div className="guest-management-finished"><p>This appointment has been cancelled and its time is available again.</p><Link className="booking-submit" href="/book">Choose another appointment time</Link></div> : appointment.canManage ? <>

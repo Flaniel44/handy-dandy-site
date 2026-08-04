@@ -18,6 +18,11 @@ export function CustomerDashboard({ firstName, bookingsEnabled, launchOfferEnabl
     setAppointments((await response.json()).appointments ?? []);
   }, [router]);
   useEffect(() => { const timer = window.setTimeout(() => void load(), 0); return () => clearTimeout(timer); }, [load]);
+  useEffect(() => {
+    if (!message) return;
+    const timer = window.setTimeout(() => setMessage(""), 6_000);
+    return () => window.clearTimeout(timer);
+  }, [message]);
   async function saveNotes(id: string, clientNotes: string) {
     const response = await fetch("/api/account/appointments", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, clientNotes }) });
     setMessage(response.ok ? "Your notes were saved." : "Could not save your notes."); if (response.ok) await load();
@@ -31,10 +36,10 @@ export function CustomerDashboard({ firstName, bookingsEnabled, launchOfferEnabl
       await load();
     }
   }
-  const upcoming = appointments.filter((item) => new Date(item.endsAt).getTime() >= now && item.status === "confirmed").reverse();
-  const past = appointments.filter((item) => new Date(item.endsAt).getTime() < now || item.status !== "confirmed");
+  const upcoming = appointments.filter((item) => new Date(item.endsAt).getTime() >= now && ["pending_approval", "confirmed"].includes(item.status)).reverse();
+  const past = appointments.filter((item) => new Date(item.endsAt).getTime() < now || !["pending_approval", "confirmed"].includes(item.status));
   return <main className="account-page"><header className="account-header"><div><p className="eyebrow">Your account</p><h1>Greetings, {firstName}.</h1></div></header>
-    {message && <p className="admin-message">{message}</p>}
+    {message && <div className="account-message" role="status"><span>{message}</span><button type="button" onClick={() => setMessage("")} aria-label="Dismiss notification">&times;</button></div>}
     {bookingsEnabled
       ? <AccountScheduler onBooked={load} onMessage={setMessage} launchOfferEnabled={launchOfferEnabled} />
       : <section className="account-panel scheduler-panel"><p className="eyebrow">Coming soon</p><h2>Online booking is not open yet.</h2><p>Please check back soon. Your existing appointments are still available below.</p></section>}
@@ -79,7 +84,7 @@ function AccountScheduler({ onBooked, onMessage, launchOfferEnabled }: { onBooke
     const response = await fetch("/api/account/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ serviceId, date: selected.date, startsAt: selected.slot.startsAt, clientNotes: notes }) });
     const body = await response.json(); setLoading(false);
     if (!response.ok) return onMessage(body.error ?? "Could not create the appointment.");
-    onMessage("Your appointment was scheduled."); setOpen(false); setSelected(undefined); setNotes(""); await onBooked();
+    onMessage("Your appointment request was sent for approval."); setOpen(false); setSelected(undefined); setNotes(""); await onBooked();
   }
 
   return <section className="account-panel scheduler-panel"><button className="scheduler-toggle" onClick={() => { setOpen((value) => !value); setLoading(!open); }}>{open ? "Close appointment scheduler" : "Schedule new appointment"}</button>{open && <div className="scheduler-content">
@@ -157,7 +162,7 @@ function AppointmentRescheduler({ appointment, onChanged, onMessage }: { appoint
     {selected && <button className="reschedule-confirm" disabled={loading} onClick={confirm}>{loading ? "Rescheduling…" : `Move to ${selected.slot.label}`}</button>}
   </div>}</div>;
 }
-function AppointmentHeading({ appointment }: { appointment: Appointment }) { return <header><div><strong>{appointment.serviceName}</strong><time>{new Date(appointment.startsAt).toLocaleString([], { dateStyle: "full", timeStyle: "short" })}</time></div><span>{appointment.status.replace("_", " ")}</span></header>; }
+function AppointmentHeading({ appointment }: { appointment: Appointment }) { return <header><div><strong>{appointment.serviceName}</strong><time>{new Date(appointment.startsAt).toLocaleString([], { dateStyle: "full", timeStyle: "short" })}</time></div><span>{appointment.status === "pending_approval" ? "awaiting approval" : appointment.status.replace("_", " ")}</span></header>; }
 function startOfWeek() { const value = new Date(); value.setHours(0, 0, 0, 0); value.setDate(value.getDate() - ((value.getDay() + 6) % 7)); return value; }
 function addDays(date: Date, amount: number) { const value = new Date(date); value.setDate(value.getDate() + amount); return value; }
 function formatDateInput(date: Date) { return date.toLocaleDateString("en-CA"); }

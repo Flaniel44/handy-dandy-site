@@ -1,10 +1,10 @@
 import Link from "next/link";
 
 const RESULTS = {
-  confirmed: {
-    eyebrow: "Booking confirmed",
-    heading: "Your appointment is booked.",
-    message: "Your appointment has been added to the calendar. A confirmation email is on its way.",
+  requested: {
+    eyebrow: "Request received",
+    heading: "Your appointment is awaiting approval.",
+    message: "Your requested time is being held. Digital Handyman will review it and email you when it is approved or declined.",
   },
   expired: {
     eyebrow: "Hold expired",
@@ -34,7 +34,7 @@ export default async function BookingConfirmationPage({ searchParams }: { search
         <p className="eyebrow">{result.eyebrow}</p>
         <h1>{result.heading}</h1>
         <p>{result.message}</p>
-        <p><Link href={status === "confirmed" ? "/" : "/book"}>{status === "confirmed" ? "Return home" : "Return to booking"}</Link></p>
+        <p><Link href={status === "requested" ? "/" : "/book"}>{status === "requested" ? "Return home" : "Return to booking"}</Link></p>
       </section>
     </main>
   );

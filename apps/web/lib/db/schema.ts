@@ -16,6 +16,7 @@ import {
 export const slotState = pgEnum("slot_state", ["held", "confirmed", "released", "expired"]);
 export const appointmentStatus = pgEnum("appointment_status", [
   "pending_payment",
+  "pending_approval",
   "confirmed",
   "cancelled",
   "completed",
@@ -121,6 +122,7 @@ export const appointments = pgTable("appointments", {
   status: appointmentStatus("status").notNull().default("pending_payment"),
   notes: text("notes").notNull().default(""),
   clientNotes: text("client_notes").notNull().default(""),
+  cancellationDiscountPercent: smallint("cancellation_discount_percent"),
   source: text("source").notNull().default("web"),
   stripeCheckoutSessionId: text("stripe_checkout_session_id"),
   googleEventId: text("google_event_id"),

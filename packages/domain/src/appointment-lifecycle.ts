@@ -1,4 +1,4 @@
-export type LifecycleAppointmentStatus = "pending_payment" | "confirmed" | "cancelled" | "completed" | "no_show";
+export type LifecycleAppointmentStatus = "pending_payment" | "pending_approval" | "confirmed" | "cancelled" | "completed" | "no_show";
 export type LifecycleSlotState = "held" | "confirmed" | "released" | "expired";
 
 export type CustomerManageableAppointment = Readonly<{
@@ -9,12 +9,12 @@ export type CustomerManageableAppointment = Readonly<{
 
 export function canCustomerManageAppointment(appointment: CustomerManageableAppointment, now: string | Date = new Date()) {
   const startsAt = toTime(appointment.startsAt); const currentTime = toTime(now);
-  return appointment.status === "confirmed" && appointment.slotState === "confirmed"
+  return (appointment.status === "pending_approval" || appointment.status === "confirmed") && appointment.slotState === "confirmed"
     && startsAt !== null && currentTime !== null && startsAt > currentTime;
 }
 
 export function slotStateForAppointmentStatus(status: LifecycleAppointmentStatus): LifecycleSlotState {
-  return status === "confirmed" ? "confirmed" : "released";
+  return status === "pending_approval" || status === "confirmed" ? "confirmed" : "released";
 }
 
 export function shouldSendCancellation(previousStatus: LifecycleAppointmentStatus, nextStatus: LifecycleAppointmentStatus) {

@@ -7,13 +7,13 @@ const SERVICE_ID = "22222222-2222-4222-8222-222222222222";
 const testDatabaseUrl = process.env.DATABASE_URL!;
 
 const sendGuestBookingVerification = vi.fn().mockResolvedValue(undefined);
-const sendBookingConfirmation = vi.fn().mockResolvedValue(undefined);
+const sendBookingRequestReceived = vi.fn().mockResolvedValue(undefined);
 const createGoogleEventForAppointment = vi.fn().mockResolvedValue(undefined);
 const markCalendarSyncFailure = vi.fn().mockResolvedValue(undefined);
 const notifyAdminAppointmentBooked = vi.fn().mockResolvedValue(undefined);
 
 vi.mock("server-only", () => ({}));
-vi.mock("../../../lib/email", () => ({ sendGuestBookingVerification, sendBookingConfirmation }));
+vi.mock("../../../lib/email", () => ({ sendGuestBookingVerification, sendBookingRequestReceived }));
 vi.mock("../../../lib/appointment-notifications", () => ({ notifyAdminAppointmentBooked }));
 vi.mock("../../../lib/google-calendar", () => ({
   createGoogleEventForAppointment,
@@ -72,14 +72,14 @@ describe("POST /api/bookings", () => {
     });
     expect(await appointmentCount()).toBe(0);
     expect(sendGuestBookingVerification).toHaveBeenCalledOnce();
-    expect(sendBookingConfirmation).not.toHaveBeenCalled();
+    expect(sendBookingRequestReceived).not.toHaveBeenCalled();
     expect(notifyAdminAppointmentBooked).not.toHaveBeenCalled();
     expect(createGoogleEventForAppointment).not.toHaveBeenCalled();
 
     const token = verificationToken();
     const confirmation = await confirmBookingRequest(token);
     expect(confirmation.status).toBe(303);
-    expect(confirmation.headers.get("location")).toBe("http://localhost/book/confirmation?status=confirmed");
+    expect(confirmation.headers.get("location")).toBe("http://localhost/book/confirmation?status=requested");
 
     const [confirmed] = await testSql<{
       email: string;
@@ -97,12 +97,12 @@ describe("POST /api/bookings", () => {
     expect(confirmed).toMatchObject({
       email: "ada@example.com",
       name: "Ada Lovelace",
-      status: "confirmed",
+      status: "pending_approval",
       state: "confirmed",
       client_notes: "Please check the living-room lights.",
     });
-    expect(sendBookingConfirmation).toHaveBeenCalledOnce();
-    expect(sendBookingConfirmation.mock.calls[0]?.[4]).toMatch(/^http:\/\/localhost\/book\/manage\?token=/);
+    expect(sendBookingRequestReceived).toHaveBeenCalledOnce();
+    expect(sendBookingRequestReceived.mock.calls[0]?.[4]).toMatch(/^http:\/\/localhost\/book\/manage\?token=/);
     expect(notifyAdminAppointmentBooked).toHaveBeenCalledWith(confirmed.appointment_id);
     expect(createGoogleEventForAppointment).toHaveBeenCalledWith(confirmed.appointment_id);
     expect(await confirmationCount()).toBe(0);

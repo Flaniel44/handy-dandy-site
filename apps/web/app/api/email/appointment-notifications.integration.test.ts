@@ -57,6 +57,7 @@ describe("admin appointment notifications", () => {
 
     const expected = expect.objectContaining({
       appointmentId: appointment.id,
+      status: "confirmed",
       source: "web",
       clientNotes: "Please check the downstairs lights.",
       customerName: "Ada Lovelace",

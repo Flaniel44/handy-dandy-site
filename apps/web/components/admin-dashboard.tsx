@@ -7,12 +7,13 @@ type Hours = { weekday: number; startsAtLocal: string; endsAtLocal: string };
 type Block = { id: string; startsAt: string; endsAt: string; reason: string };
 type Client = { id: string; name: string; email: string; phone?: string; appointmentCount: number };
 type ClientPagination = { page: number; pageSize: number; total: number; totalPages: number };
-type Appointment = { id: string; status: string; notes: string; startsAt: string; endsAt: string; customerName: string; customerEmail: string; customerPhone?: string; serviceName: string; source: string };
+type Appointment = { id: string; status: string; notes: string; cancellationDiscountPercent: number | null; startsAt: string; endsAt: string; customerName: string; customerEmail: string; customerPhone?: string; serviceName: string; source: string };
 type Service = { id: string; name: string; description: string; durationMinutes: number; priceCents: number; active: boolean; sortOrder: number };
 type BookingPolicies = { timezone: string; slotIntervalMinutes: number; minimumNoticeMinutes: number; bookingWindowDays: number; appointmentBufferMinutes: number; cancellationNoticeMinutes: number };
 type AuditEntry = { id: string; actorId: string | null; action: string; entityType: string; entityId: string; details: Record<string, unknown>; createdAt: string };
 type CalendarEvent = { id: string; name: string; startsAt: string; endsAt: string; isAllDay: boolean; googleBusy: boolean; override: "available" | "unavailable" | null; blocksAvailability: boolean };
 type CalendarStatus = { configured: boolean; connected: boolean; connection: { calendarId: string; updatedAt: string } | null; health?: { pending: number; failed: number; synced: number; lastSyncedAt: string | null }; events?: CalendarEvent[] };
+type ReviewTarget = { appointmentId: string; action: "approve" | "decline" | null };
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export function AdminDashboard() {
@@ -33,6 +34,13 @@ export function AdminDashboard() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditLoaded, setAuditLoaded] = useState(false);
   const [message, setMessage] = useState("");
+  const [reviewTarget] = useState<ReviewTarget | undefined>(() => {
+    if (typeof window === "undefined") return undefined;
+    const params = new URLSearchParams(window.location.search);
+    const appointmentId = params.get("appointment");
+    const action = params.get("action");
+    return appointmentId ? { appointmentId, action: action === "approve" || action === "decline" ? action : null } : undefined;
+  });
 
   const load = useCallback(async () => {
     const endpoints = ["/api/admin/working-hours", "/api/admin/blocks", "/api/admin/appointments", "/api/admin/services", "/api/admin/booking-policies", "/api/admin/google-calendar"];
@@ -75,6 +83,12 @@ export function AdminDashboard() {
     return () => window.clearTimeout(timer);
   }, [load, loadClients]);
 
+  useEffect(() => {
+    if (!reviewTarget || !appointments.some((appointment) => appointment.id === reviewTarget.appointmentId)) return;
+    const timer = window.setTimeout(() => document.getElementById(`appointment-${reviewTarget.appointmentId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
+    return () => window.clearTimeout(timer);
+  }, [appointments, reviewTarget]);
+
   async function saveHours() {
     const response = await fetch("/api/admin/working-hours", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hours }) });
     const body = await response.json().catch(() => ({}));
@@ -110,9 +124,15 @@ export function AdminDashboard() {
     if (response.ok) { event.currentTarget.reset(); await Promise.all([load(), loadClients(clientPagination.page)]); }
   }
 
-  async function updateAppointment(id: string, notes: string, status: string) {
-    const response = await fetch(`/api/admin/appointments/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ notes, status }) });
-    setMessage(response.ok ? "Appointment updated." : "Could not update appointment."); if (response.ok) await load();
+  async function updateAppointment(id: string, notes: string, status: string, cancellationDiscountPercent?: number) {
+    const response = await fetch(`/api/admin/appointments/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notes, status, ...(cancellationDiscountPercent ? { cancellationDiscountPercent } : {}) }),
+    });
+    const body = await response.json().catch(() => ({}));
+    setMessage(response.ok ? status === "confirmed" ? "Appointment approved and the client was notified." : status === "cancelled" ? "Appointment declined and the client was notified." : "Appointment updated." : body.error ?? "Could not update appointment.");
+    if (response.ok) await load();
   }
 
   async function addService(event: FormEvent<HTMLFormElement>) {
@@ -275,7 +295,7 @@ export function AdminDashboard() {
       <div className="appointment-groups">
         {activeAppointmentGroups.length ? activeAppointmentGroups.map((group) => <section className="appointment-group" key={group.email}>
           <header><div><h3>{group.name}</h3><a href={`mailto:${group.email}`}>{group.email}</a></div><span>{group.appointments.length} appointment{group.appointments.length === 1 ? "" : "s"}</span></header>
-          <div className="appointment-list">{group.appointments.map((appointment) => <AppointmentEditor key={appointment.id} appointment={appointment} save={updateAppointment} showCustomer={false} />)}</div>
+          <div className="appointment-list">{group.appointments.map((appointment) => <AppointmentEditor key={appointment.id} appointment={appointment} save={updateAppointment} showCustomer={false} reviewAction={reviewTarget?.appointmentId === appointment.id ? reviewTarget.action : null} />)}</div>
         </section>) : <p className="empty-state">No current appointments.</p>}
       </div>
       <details className="appointment-archive">
@@ -330,22 +350,28 @@ function ServiceEditor({ service, save, canMoveUp, canMoveDown, moveUp, moveDown
   </form>;
 }
 
-function ClientHistory({ client, save }: { client: Client; save: (id: string, notes: string, status: string) => Promise<void> }) {
+function ClientHistory({ client, save }: { client: Client; save: (id: string, notes: string, status: string, cancellationDiscountPercent?: number) => Promise<void> }) {
   const [open, setOpen] = useState(false); const [appointments, setAppointments] = useState<Appointment[]>(); const [error, setError] = useState("");
   async function loadHistory() {
     setError(""); const response = await fetch(`/api/admin/clients/${client.id}/appointments`, { cache: "no-store" }); const body = await response.json();
     if (response.ok) setAppointments(body.appointments ?? []); else setError(body.error ?? "Could not load appointment history.");
   }
-  async function saveAndReload(id: string, notes: string, status: string) { await save(id, notes, status); await loadHistory(); }
+  async function saveAndReload(id: string, notes: string, status: string, cancellationDiscountPercent?: number) { await save(id, notes, status, cancellationDiscountPercent); await loadHistory(); }
   return <details className="client-history" onToggle={(event) => { const nextOpen = event.currentTarget.open; setOpen(nextOpen); if (nextOpen && !appointments) void loadHistory(); }}><summary><div><strong>{client.name}</strong><a href={`mailto:${client.email}`} onClick={(event) => event.stopPropagation()}>{client.email}</a>{client.phone && <a href={`tel:${client.phone}`} onClick={(event) => event.stopPropagation()}>{client.phone}</a>}</div><span>{client.appointmentCount} appointment{client.appointmentCount === 1 ? "" : "s"}</span></summary>
     {open && <div className="client-appointment-history">{error ? <p className="form-error">{error}</p> : !appointments ? <p className="empty-state">Loading appointment history…</p> : appointments.length ? appointments.map((appointment) => <AppointmentEditor key={appointment.id} appointment={appointment} save={saveAndReload} showCustomer={false} />) : <p className="empty-state">No appointments found for this client.</p>}</div>}
   </details>;
 }
 
-function AppointmentEditor({ appointment, save, showCustomer = true }: { appointment: Appointment; save: (id: string, notes: string, status: string) => Promise<void>; showCustomer?: boolean }) {
+function AppointmentEditor({ appointment, save, showCustomer = true, reviewAction = null }: { appointment: Appointment; save: (id: string, notes: string, status: string, cancellationDiscountPercent?: number) => Promise<void>; showCustomer?: boolean; reviewAction?: ReviewTarget["action"] }) {
   const [notes, setNotes] = useState(appointment.notes); const [status, setStatus] = useState(appointment.status);
-  return <article><div className="appointment-summary"><div>{showCustomer && <strong>{appointment.customerName}</strong>}<span>{appointment.serviceName} · {formatDate(appointment.startsAt)}</span>{showCustomer && <a href={`mailto:${appointment.customerEmail}`}>{appointment.customerEmail}</a>}</div><small>{appointment.source}</small></div>
-    <div className="appointment-controls"><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="confirmed">Confirmed</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="no_show">No show</option></select><textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} placeholder="Appointment notes" /><button onClick={() => save(appointment.id, notes, status)}>Save</button></div>
+  const [discountPercent, setDiscountPercent] = useState(appointment.cancellationDiscountPercent?.toString() ?? "");
+  const [declining, setDeclining] = useState(reviewAction === "decline");
+  const pending = appointment.status === "pending_approval";
+  return <article id={`appointment-${appointment.id}`} className={pending ? "is-awaiting-approval" : ""}><div className="appointment-summary"><div>{showCustomer && <strong>{appointment.customerName}</strong>}<span>{appointment.serviceName} · {formatDate(appointment.startsAt)}</span>{showCustomer && <a href={`mailto:${appointment.customerEmail}`}>{appointment.customerEmail}</a>}</div><small>{pending ? "Awaiting approval" : appointment.source}</small></div>
+    {pending ? <div className="appointment-approval-controls">
+      {!declining && <><button className="approve-appointment" onClick={() => save(appointment.id, notes, "confirmed")}>Approve appointment</button><button className="decline-appointment" onClick={() => setDeclining(true)}>Decline</button></>}
+      {declining && <div className="appointment-decline-form"><label>Optional rescheduling discount (%)<input type="number" min="1" max="100" step="1" inputMode="numeric" value={discountPercent} onChange={(event) => setDiscountPercent(event.target.value)} placeholder="For example, 20" /></label><label>Message to the client<textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} placeholder="Explain why the appointment cannot be accepted" /></label><button className="decline-appointment" onClick={() => save(appointment.id, notes, "cancelled", discountPercent ? Number(discountPercent) : undefined)}>Send decline</button><button onClick={() => setDeclining(false)}>Keep request</button></div>}
+    </div> : <div className="appointment-controls"><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="confirmed">Confirmed</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="no_show">No show</option></select>{status === "cancelled" && <label>Rescheduling discount (%)<input type="number" min="1" max="100" step="1" inputMode="numeric" value={discountPercent} onChange={(event) => setDiscountPercent(event.target.value)} placeholder="Optional" /></label>}<textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} placeholder={status === "cancelled" ? "Cancellation note for the client" : "Appointment notes"} /><button onClick={() => save(appointment.id, notes, status, status === "cancelled" && discountPercent ? Number(discountPercent) : undefined)}>Save</button></div>}
   </article>;
 }
 

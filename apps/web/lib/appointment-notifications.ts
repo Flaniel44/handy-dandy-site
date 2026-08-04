@@ -17,6 +17,7 @@ export async function notifyAdminAppointmentCancelled(appointmentId: string) {
 async function getNotificationDetails(appointmentId: string) {
   const [details] = await getDb().select({
     appointmentId: appointments.id,
+    status: appointments.status,
     source: appointments.source,
     clientNotes: appointments.clientNotes,
     customerName: customers.name,
