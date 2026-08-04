@@ -646,6 +646,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
     const segmentLengths = points.slice(1).map((point, index) => Math.hypot(point.x - points[index].x, point.y - points[index].y));
     let pullStartX: number | undefined;
     let pullStartY: number | undefined;
+    let pullStartedAt: number | undefined;
     let pullDistance = 0;
     let suppressTouchClick = false;
     let previousPointerX: number | undefined;
@@ -879,7 +880,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
 
     const onPointerDown = (event: PointerEvent) => {
       const end = points.at(-1)!;
-      pullStartX = event.clientX; pullStartY = event.clientY; pullDistance = 0; grabbed = true;
+      pullStartX = event.clientX; pullStartY = event.clientY; pullStartedAt = performance.now(); pullDistance = 0; grabbed = true;
       mousePull = event.pointerType === "mouse";
       grabX = end.x; grabY = end.y + (mousePull ? 18 * svgScale() : 0);
       suppressTouchClick = event.pointerType !== "mouse";
@@ -898,8 +899,14 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
 
     const releasePullChain = (event: PointerEvent) => {
       if (!grabbed) return;
-      const shouldToggle = event.type === "pointerup" && event.pointerType !== "mouse" && pullDistance >= 42;
-      grabbed = false; mousePull = false; pullStartX = undefined; pullStartY = undefined;
+      const totalTravel = pullStartX === undefined || pullStartY === undefined
+        ? Number.POSITIVE_INFINITY
+        : Math.hypot(event.clientX - pullStartX, event.clientY - pullStartY);
+      const pressDuration = pullStartedAt === undefined ? Number.POSITIVE_INFINITY : performance.now() - pullStartedAt;
+      const isTouchTap = event.pointerType !== "mouse" && totalTravel <= 14 && pressDuration <= 550;
+      const isIntentionalTouchPull = event.pointerType !== "mouse" && pullDistance >= 42;
+      const shouldToggle = event.type === "pointerup" && (isTouchTap || isIntentionalTouchPull);
+      grabbed = false; mousePull = false; pullStartX = undefined; pullStartY = undefined; pullStartedAt = undefined;
       if (chain.hasPointerCapture(event.pointerId)) chain.releasePointerCapture(event.pointerId);
       startRope();
       if (shouldToggle) setPowered(!root.classList.contains("lit"));
