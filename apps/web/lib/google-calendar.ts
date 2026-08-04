@@ -135,14 +135,12 @@ export async function createGoogleEventForAppointment(appointmentId: string) {
     .where(eq(appointments.id, appointmentId)).limit(1);
   if (!row) return;
   const accessToken = await getAccessToken(connection.encryptedRefreshToken);
-  const approvalLinks = row.status === "pending_approval"
-    ? [`Review and approve: ${adminReviewUrl(appointmentId, "approve")}`, `Review and decline: ${adminReviewUrl(appointmentId, "decline")}`]
-    : [];
+  const adminLinks = adminAppointmentLinks(appointmentId, row.status);
   const response = await googleFetch(`/calendars/${encodeURIComponent(connection.calendarId)}/events`, accessToken, {
     method: "POST",
     body: JSON.stringify({
       summary: `${row.status === "pending_approval" ? "APPROVAL NEEDED — " : ""}Digital Handyman: ${row.serviceName} — ${row.customerName}`,
-      description: googleAppointmentDescription(row, approvalLinks),
+      description: googleAppointmentDescription(row, adminLinks),
       location: googleAppointmentLocation(row),
       status: row.status === "pending_approval" ? "tentative" : "confirmed",
       start: { dateTime: row.startsAt.toISOString() }, end: { dateTime: row.endsAt.toISOString() },
@@ -174,14 +172,12 @@ export async function updateGoogleEventForAppointment(appointmentId: string) {
   if (!row) return;
   if (!row.eventId) return createGoogleEventForAppointment(appointmentId);
   const accessToken = await getAccessToken(connection.encryptedRefreshToken);
-  const approvalLinks = row.status === "pending_approval"
-    ? [`Review and approve: ${adminReviewUrl(appointmentId, "approve")}`, `Review and decline: ${adminReviewUrl(appointmentId, "decline")}`]
-    : [];
+  const adminLinks = adminAppointmentLinks(appointmentId, row.status);
   const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(connection.calendarId)}/events/${encodeURIComponent(row.eventId)}`, {
     method: "PATCH", cache: "no-store", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       summary: `${row.status === "pending_approval" ? "APPROVAL NEEDED — " : ""}Digital Handyman: ${row.serviceName} — ${row.customerName}`,
-      description: googleAppointmentDescription(row, approvalLinks),
+      description: googleAppointmentDescription(row, adminLinks),
       location: googleAppointmentLocation(row),
       status: row.status === "pending_approval" ? "tentative" : "confirmed",
       start: { dateTime: row.startsAt.toISOString() }, end: { dateTime: row.endsAt.toISOString() },
@@ -250,7 +246,21 @@ function adminReviewUrl(appointmentId: string, action: "approve" | "decline") {
   return `${appUrl()}/login?next=${encodeURIComponent(destination)}`;
 }
 
-function googleAppointmentDescription(row: AppointmentDetails & { customerName: string; customerEmail: string; clientNotes: string; adminNotes: string }, approvalLinks: string[]) {
+function adminManageUrl(appointmentId: string) {
+  const destination = `/admin?appointment=${encodeURIComponent(appointmentId)}#appointment-${appointmentId}`;
+  return `${appUrl()}/login?next=${encodeURIComponent(destination)}`;
+}
+
+function adminAppointmentLinks(appointmentId: string, status: string) {
+  if (status === "pending_approval") return [
+    `Review and approve: ${adminReviewUrl(appointmentId, "approve")}`,
+    `Review and decline: ${adminReviewUrl(appointmentId, "decline")}`,
+  ];
+  if (status === "confirmed") return [`Manage appointment (add notes or cancel): ${adminManageUrl(appointmentId)}`];
+  return [];
+}
+
+function googleAppointmentDescription(row: AppointmentDetails & { customerName: string; customerEmail: string; clientNotes: string; adminNotes: string }, adminLinks: string[]) {
   return [
     `Client: ${row.customerName} <${row.customerEmail}>`,
     `Appointment format: ${appointmentModeLabel(row.appointmentMode)}`,
@@ -258,7 +268,7 @@ function googleAppointmentDescription(row: AppointmentDetails & { customerName: 
     row.appointmentMode === "in_person" && `Address: ${formatAppointmentAddress(row) || "Not provided"}`,
     row.clientNotes && `Client notes: ${row.clientNotes}`,
     row.adminNotes && `Admin notes: ${row.adminNotes}`,
-    ...approvalLinks,
+    ...adminLinks,
   ].filter(Boolean).join("\n\n");
 }
 

@@ -135,6 +135,7 @@ describe("Google Calendar integration", () => {
     expect(createBody.status).toBe("confirmed");
     expect(createBody.description).toContain("Appointment format: In person");
     expect(createBody.description).toContain("Address: 123 Main Street, Unit 4B, Ottawa K1A 0B1, Canada");
+    expect(createBody.description).toContain(`Manage appointment (add notes or cancel): http://localhost:3000/login?next=${encodeURIComponent(`/admin?appointment=${appointment.id}#appointment-${appointment.id}`)}`);
     expect(createBody.location).toBe("123 Main Street, Unit 4B, Ottawa K1A 0B1, Canada");
     expect(createBody.extendedProperties.private.handyDandyAppointmentId).toBe(appointment.id);
 
@@ -164,6 +165,14 @@ describe("Google Calendar integration", () => {
     expect(createBody.status).toBe("tentative");
     expect(createBody.description).toContain(`http://localhost:3000/login?next=${encodeURIComponent(`/admin?appointment=${appointment.id}&action=approve#appointment-${appointment.id}`)}`);
     expect(createBody.description).toContain(`http://localhost:3000/login?next=${encodeURIComponent(`/admin?appointment=${appointment.id}&action=decline#appointment-${appointment.id}`)}`);
+
+    await testSql`UPDATE appointments SET status = 'confirmed' WHERE id = ${appointment.id}`;
+    await calendar.updateGoogleEventForAppointment(appointment.id);
+    const approvedBody = JSON.parse(String(calendarRequest("PATCH")?.[1]?.body)) as { status: string; description: string };
+    expect(approvedBody.status).toBe("confirmed");
+    expect(approvedBody.description).toContain(`Manage appointment (add notes or cancel): http://localhost:3000/login?next=${encodeURIComponent(`/admin?appointment=${appointment.id}#appointment-${appointment.id}`)}`);
+    expect(approvedBody.description).not.toContain("Review and approve");
+    expect(approvedBody.description).not.toContain("Review and decline");
   });
 
   it("recreates an appointment event when Google reports that the old event is gone", async () => {
