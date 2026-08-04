@@ -10,6 +10,7 @@ import { prepareRouteTransition } from "./route-transition";
 
 const STORAGE_KEY = "handy-dandy-house-powered";
 const DEVICE_STORAGE_KEY = "handy-dandy-device-power";
+const POWER_STATE_TTL_MS = 24 * 60 * 60 * 1000;
 const ROOM_CLASSES = ["lamp1", "lamp2", "lamp3", "lamp4"] as const;
 const DEVICE_CONFIG = [
   {
@@ -480,7 +481,21 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
 
     let restored = false;
     try {
-      restored = window.sessionStorage.getItem(STORAGE_KEY) === "true";
+      const savedState = window.localStorage.getItem(STORAGE_KEY);
+      if (savedState) {
+        const parsed = JSON.parse(savedState) as { powered?: unknown; expiresAt?: unknown };
+        if (typeof parsed.powered === "boolean" && typeof parsed.expiresAt === "number" && parsed.expiresAt > Date.now()) {
+          restored = parsed.powered;
+        } else {
+          window.localStorage.removeItem(STORAGE_KEY);
+        }
+      } else if (window.sessionStorage.getItem(STORAGE_KEY) === "true") {
+        // Preserve the powered state for visitors who loaded the previous
+        // sessionStorage-based version before this update was deployed.
+        restored = true;
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ powered: true, expiresAt: Date.now() + POWER_STATE_TTL_MS }));
+        window.sessionStorage.removeItem(STORAGE_KEY);
+      }
     } catch {
       // The scene remains usable when browser storage is unavailable.
     }
@@ -508,8 +523,8 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
         root.classList.remove("session-restored", "ambient-ready", "sign-powered");
       }
       try {
-        if (powered) window.sessionStorage.setItem(STORAGE_KEY, "true");
-        else window.sessionStorage.removeItem(STORAGE_KEY);
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ powered, expiresAt: Date.now() + POWER_STATE_TTL_MS }));
+        window.sessionStorage.removeItem(STORAGE_KEY);
       } catch {
         // Persistence is an enhancement, not a requirement for the interaction.
       }
