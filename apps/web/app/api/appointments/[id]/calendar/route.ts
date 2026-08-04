@@ -47,7 +47,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   return new Response(calendar, {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": `attachment; filename="digital-handyman-appointment.ics"`,
+      "Content-Disposition": `attachment; filename="digital-handydan-appointment.ics"`,
       "Cache-Control": "private, no-store",
     },
   });

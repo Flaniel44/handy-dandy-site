@@ -22,7 +22,7 @@ beforeEach(() => {
   vi.unstubAllEnvs();
   vi.stubEnv("NODE_ENV", "test");
   process.env.RESEND_API_KEY = "re_test_key";
-  process.env.EMAIL_FROM = "Digital Handyman <dan@digitalhandydan.ca>";
+  process.env.EMAIL_FROM = "Digital HandyDan <dan@digitalhandydan.ca>";
   process.env.EMAIL_REPLY_TO = "dan@digitalhandydan.ca";
   process.env.EMAIL_FAILURE_ALERT_TO = "owner@whatisthis.place";
   process.env.ADMIN_EMAIL = "admin@digitalhandydan.ca";
@@ -56,7 +56,7 @@ describe("transactional email delivery", () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(log).toHaveBeenCalledWith("Development email", expect.objectContaining({
-      to: "client@example.com", from: "Digital Handyman <dan@digitalhandydan.ca>", replyTo: "dan@digitalhandydan.ca",
+      to: "client@example.com", from: "Digital HandyDan <dan@digitalhandydan.ca>", replyTo: "dan@digitalhandydan.ca",
     }));
     log.mockRestore();
   });
@@ -116,9 +116,9 @@ describe("transactional email delivery", () => {
     const body = JSON.parse(String(init?.body)) as Record<string, string>;
     expect(body).toMatchObject({
       to: "ada@example.com",
-      from: "Digital Handyman <dan@digitalhandydan.ca>",
+      from: "Digital HandyDan <dan@digitalhandydan.ca>",
       reply_to: "dan@digitalhandydan.ca",
-      subject: "Your Digital Handyman appointment is confirmed",
+      subject: "Your Digital HandyDan appointment is confirmed",
     });
     expect(body.text).toContain("Ada <Admin>");
     expect(body.html).toContain("Ada &lt;Admin&gt;");
@@ -142,7 +142,7 @@ describe("transactional email delivery", () => {
     );
 
     const body = resendBody(0);
-    expect(body.subject).toBe("Confirm your Digital Handyman appointment");
+    expect(body.subject).toBe("Confirm your Digital HandyDan appointment");
     expect(body.text).toContain("https://whatisthis.place/book/confirm?token=token%2Bwith%3Fsymbols");
     expect(body.text).toContain("will not be added to the calendar until you confirm");
     expect(body.html).toContain("Ada &amp; Co");
@@ -165,10 +165,10 @@ describe("transactional email delivery", () => {
     await email.sendAppointmentRescheduled("ada@example.com", "Ada", "Consultation", oldTime, newTime);
     await email.sendPasswordChangedEmail("ada@example.com", "Ada");
 
-    expect(resendBody(0).subject).toBe("Your Digital Handyman appointment was cancelled");
-    expect(resendBody(1).subject).toBe("Your Digital Handyman appointment was rescheduled");
+    expect(resendBody(0).subject).toBe("Your Digital HandyDan appointment was cancelled");
+    expect(resendBody(1).subject).toBe("Your Digital HandyDan appointment was rescheduled");
     expect(resendBody(1).text).toContain("Tuesday, August 4, 2026 at 3:00 p.m.");
-    expect(resendBody(2).subject).toBe("Your Digital Handyman password was changed");
+    expect(resendBody(2).subject).toBe("Your Digital HandyDan password was changed");
   });
 
   it("tells clients that appointment requests are awaiting approval", async () => {
@@ -178,7 +178,7 @@ describe("transactional email delivery", () => {
     );
 
     const body = resendBody(0);
-    expect(body.subject).toBe("Your Digital Handyman appointment request was received");
+    expect(body.subject).toBe("Your Digital HandyDan appointment request was received");
     expect(body.text).toContain("appointment is not confirmed yet");
     expect(body.text).toContain("approved or declined");
     expect(body.html).toContain("token=secret");
@@ -210,7 +210,7 @@ describe("transactional email delivery", () => {
     );
 
     const body = resendBody(0);
-    expect(body.text).toContain("Note from Digital Handyman:");
+    expect(body.text).toContain("Note from Digital HandyDan:");
     expect(body.text).toContain("A scheduling conflict came up.\nSorry for the inconvenience.");
     expect(body.text).toContain("https://digitalhandydan.ca/book");
     expect(body.text).toContain("Please accept a 25% discount if you decide to reschedule.");
@@ -227,7 +227,7 @@ describe("transactional email delivery", () => {
       "owner@example.com", "Ada", "client@example.com", "Consultation", startsAt, "Bring the hub",
     );
 
-    expect(resendBody(0).subject).toBe("Reminder: your Digital Handyman appointment is tomorrow");
+    expect(resendBody(0).subject).toBe("Reminder: your Digital HandyDan appointment is tomorrow");
     expect(resendBody(0).text).toContain("Monday, August 3, 2026 at 1:00 p.m.");
     expect(resendBody(1).subject).toBe("Reminder: Ada is booked tomorrow");
     expect(resendBody(1).text).toContain("Client: Ada <client@example.com>");

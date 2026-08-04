@@ -134,6 +134,13 @@
       "when": 1785974400000,
       "tag": "0018_appointment_details",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1786060800000,
+      "tag": "0019_digital_handydan_rebrand",
+      "breakpoints": true
     }
   ]
 }

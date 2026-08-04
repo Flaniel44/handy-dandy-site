@@ -141,7 +141,7 @@ export async function createGoogleEventForAppointment(appointmentId: string) {
   const response = await googleFetch(`/calendars/${encodeURIComponent(connection.calendarId)}/events?${params}`, accessToken, {
     method: "POST",
     body: JSON.stringify({
-      summary: `${row.status === "pending_approval" ? "APPROVAL NEEDED — " : ""}Digital Handyman: ${row.serviceName} — ${row.customerName}`,
+      summary: `${row.status === "pending_approval" ? "APPROVAL NEEDED — " : ""}Digital HandyDan: ${row.serviceName} — ${row.customerName}`,
       description: googleAppointmentDescription(row, adminLinks),
       location: googleAppointmentLocation(row),
       status: row.status === "pending_approval" ? "tentative" : "confirmed",
@@ -182,7 +182,7 @@ export async function updateGoogleEventForAppointment(appointmentId: string) {
   const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(connection.calendarId)}/events/${encodeURIComponent(row.eventId)}?${params}`, {
     method: "PATCH", cache: "no-store", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      summary: `${row.status === "pending_approval" ? "APPROVAL NEEDED — " : ""}Digital Handyman: ${row.serviceName} — ${row.customerName}`,
+      summary: `${row.status === "pending_approval" ? "APPROVAL NEEDED — " : ""}Digital HandyDan: ${row.serviceName} — ${row.customerName}`,
       description: googleAppointmentDescription(row, adminLinks),
       location: googleAppointmentLocation(row),
       status: row.status === "pending_approval" ? "tentative" : "confirmed",

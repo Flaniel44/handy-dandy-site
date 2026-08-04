@@ -26,7 +26,7 @@ type ReviewsResponse = {
 
 const EMPTY_REVIEWS: ReviewsResponse = {
   configured: false,
-  placeName: "Digital Handyman",
+  placeName: "Digital HandyDan",
   rating: null,
   reviewCount: 0,
   reviewsUrl: DEFAULT_GOOGLE_REVIEWS_URL,
@@ -134,12 +134,12 @@ export function GoogleReviews() {
         <div className="reviews-empty">
           <div className="landing-review-stars" aria-hidden="true">★★★★★</div>
           <h3>Reviews are coming soon.</h3>
-          <p>Digital Handyman is just getting started. Be one of the first to share your experience.</p>
+          <p>Digital HandyDan is just getting started. Be one of the first to share your experience.</p>
         </div>
       )}
 
       <a className="reviews-google-link" href={data.reviewsUrl} target="_blank" rel="noreferrer">
-        View Digital Handyman on <span translate="no">Google Maps</span>
+        View Digital HandyDan on <span translate="no">Google Maps</span>
         <span aria-hidden="true">↗</span>
       </a>
     </section>

@@ -245,7 +245,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
     const demosButton = root.querySelector<HTMLButtonElement>("[data-action='demos']");
     if (demosButton) demosButton.textContent = "What's Possible?";
     const businessName = root.querySelector<HTMLElement>(".name-ph");
-    if (businessName) businessName.textContent = "Digital Handyman";
+    if (businessName) businessName.textContent = "Digital HandyDan";
     const actions = root.querySelector<HTMLElement>(".cta-row");
     let reviewJump = root.querySelector<HTMLAnchorElement>(".landing-review-jump");
     if (actions && !reviewJump) {
@@ -1040,16 +1040,16 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
 
   return (
     <main className="landing-page">
-      <section className="landing-hero" aria-label="Digital Handyman">
+      <section className="landing-hero" aria-label="Digital HandyDan">
         <div
           ref={containerRef}
           className="landing-scene-shell"
           dangerouslySetInnerHTML={{
             __html: landingSceneMarkup
-              .replace(">Handy Dandy</p>", ">Digital Handyman</p>")
+              .replace(">Handy Dandy</p>", ">Digital HandyDan</p>")
               .replace(
                 '<div class="stage">',
-                `${launchOfferEnabled ? '<div class="landing-launch-badge">Launch offer · Services are free</div>' : ''}<h1 class="landing-brand-sign" data-text="Digital Handyman">Digital Handyman</h1><div class="stage">`,
+                `${launchOfferEnabled ? '<div class="landing-launch-badge">Launch offer · Services are free</div>' : ''}<h1 class="landing-brand-sign" data-text="Digital HandyDan">Digital HandyDan</h1><div class="stage">`,
               ),
           }}
         />
@@ -1057,7 +1057,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       <GoogleReviews />
       <footer className="landing-footer">
         <ContactLinks className="landing-contact" title="Let’s get connected" />
-        <p>© {new Date().getFullYear()} Digital Handyman</p>
+        <p>© {new Date().getFullYear()} Digital HandyDan</p>
       </footer>
       <style>{`
         /* Demo-inspired material illustration treatment for the interactive house. */

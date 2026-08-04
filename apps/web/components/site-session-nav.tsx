@@ -13,7 +13,7 @@ export function SiteSessionNav() {
   }, [pathname]);
   async function logout() { await fetch("/api/auth/logout", { method: "POST" }); setUser(null); router.replace("/"); router.refresh(); }
   return <>
-    {pathname !== "/" && <Link className="site-home-link" href="/" aria-label="Back to Digital Handyman home">← Digital Handyman</Link>}
+    {pathname !== "/" && <Link className="site-home-link" href="/" aria-label="Back to Digital HandyDan home">← Digital HandyDan</Link>}
     <nav className="site-session-nav" aria-label="Account navigation">
       {user ? <><Link href={user.role === "admin" ? "/admin" : "/account"}>Hi, {user.firstName}</Link><button onClick={logout}>Sign out</button></> : user === null ? <Link href="/login">Sign in</Link> : null}
     </nav>

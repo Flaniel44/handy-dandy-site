@@ -305,7 +305,7 @@ export default function DemosPage() {
           <h1>Could my home<br />do that?</h1>
           <p>
             You might be surprised. Here are some questions people ask—and practical
-            ways Digital Handyman can make them possible.
+            ways Digital HandyDan can make them possible.
           </p>
         </div>
         <nav className="possibilities-topics" aria-label="Smart home topics">

@@ -11,7 +11,7 @@ export default function BookPage() {
       <section className="booking-intro">
         <p className="eyebrow">Book a consultation</p>
         <h1>Let&apos;s make your technology work for you.</h1>
-        <p>{launchOfferEnabled ? "For a limited time, every service is free while Digital Handyman gets started." : "Choose a convenient time, tell me what you need help with, and reserve your consultation."}</p>
+        <p>{launchOfferEnabled ? "For a limited time, every service is free while Digital HandyDan gets started." : "Choose a convenient time, tell me what you need help with, and reserve your consultation."}</p>
       </section>
       <BookingForm bookingsEnabled={bookingsEnabled} launchOfferEnabled={launchOfferEnabled} />
     </main>

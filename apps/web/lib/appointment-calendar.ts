@@ -20,19 +20,19 @@ export function buildAppointmentCalendarFile(details: {
   location: string;
   joinUrl?: string | null;
 }) {
-  const description = [`Appointment with Digital Handyman`, `Format: ${details.modeLabel}`, details.joinUrl && `Join Google Meet: ${details.joinUrl}`].filter(Boolean).join("\n");
+  const description = [`Appointment with Digital HandyDan`, `Format: ${details.modeLabel}`, details.joinUrl && `Join Google Meet: ${details.joinUrl}`].filter(Boolean).join("\n");
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "PRODID:-//Digital Handyman//Appointments//EN",
+    "PRODID:-//Digital HandyDan//Appointments//EN",
     "BEGIN:VEVENT",
     `UID:${escapeCalendarText(details.id)}@digitalhandydan.ca`,
     `DTSTAMP:${calendarDate(new Date())}`,
     `DTSTART:${calendarDate(details.startsAt)}`,
     `DTEND:${calendarDate(details.endsAt)}`,
-    `SUMMARY:${escapeCalendarText(`Digital Handyman: ${details.serviceName}`)}`,
+    `SUMMARY:${escapeCalendarText(`Digital HandyDan: ${details.serviceName}`)}`,
     `DESCRIPTION:${escapeCalendarText(description)}`,
     details.location && `LOCATION:${escapeCalendarText(details.location)}`,
     details.joinUrl && `URL:${details.joinUrl}`,

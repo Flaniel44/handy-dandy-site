@@ -29,7 +29,7 @@ const MAX_DELIVERY_ATTEMPTS = 3;
 
 export async function sendTransactionalEmail(message: EmailMessage) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM ?? "Digital Handyman <dan@digitalhandydan.ca>";
+  const from = process.env.EMAIL_FROM ?? "Digital HandyDan <dan@digitalhandydan.ca>";
   const replyTo = process.env.EMAIL_REPLY_TO ?? "dan@digitalhandydan.ca";
 
   if (!apiKey) {
@@ -63,18 +63,18 @@ export async function sendPasswordResetEmail(to: string, firstName: string, toke
   const safeName = escapeHtml(firstName);
   await sendTransactionalEmail({
     to,
-    subject: "Reset your Digital Handyman password",
+    subject: "Reset your Digital HandyDan password",
     text: `Hi ${firstName},\n\nUse this link within 30 minutes to reset your password:\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
-    html: `<p>Hi ${safeName},</p><p>Use the button below within 30 minutes to reset your Digital Handyman password.</p><p><a href="${escapeHtml(resetUrl)}" style="display:inline-block;padding:12px 18px;background:#f5f1e8;color:#0b0d16;text-decoration:none;border-radius:6px;font-weight:700">Reset password</a></p><p>If you did not request this, you can safely ignore this email.</p>`,
+    html: `<p>Hi ${safeName},</p><p>Use the button below within 30 minutes to reset your Digital HandyDan password.</p><p><a href="${escapeHtml(resetUrl)}" style="display:inline-block;padding:12px 18px;background:#f5f1e8;color:#0b0d16;text-decoration:none;border-radius:6px;font-weight:700">Reset password</a></p><p>If you did not request this, you can safely ignore this email.</p>`,
   });
 }
 
 export async function sendPasswordChangedEmail(to: string, firstName: string) {
   await sendTransactionalEmail({
     to,
-    subject: "Your Digital Handyman password was changed",
-    text: `Hi ${firstName},\n\nYour Digital Handyman password was changed. If this was not you, reply to this email immediately.`,
-    html: `<p>Hi ${escapeHtml(firstName)},</p><p>Your Digital Handyman password was changed.</p><p>If this was not you, reply to this email immediately.</p>`,
+    subject: "Your Digital HandyDan password was changed",
+    text: `Hi ${firstName},\n\nYour Digital HandyDan password was changed. If this was not you, reply to this email immediately.`,
+    html: `<p>Hi ${escapeHtml(firstName)},</p><p>Your Digital HandyDan password was changed.</p><p>If this was not you, reply to this email immediately.</p>`,
   });
 }
 
@@ -87,7 +87,7 @@ export async function sendBookingConfirmation(to: string, name: string, serviceN
   const calendarHtml = calendarUrl ? `<p><a href="${escapeHtml(calendarUrl)}" style="display:inline-block;padding:11px 16px;border:1px solid #8279e5;color:#332b6a;text-decoration:none;border-radius:6px;font-weight:700">Add to your calendar</a></p>` : "";
   await sendTransactionalEmail({
     to,
-    subject: "Your Digital Handyman appointment is confirmed",
+    subject: "Your Digital HandyDan appointment is confirmed",
     text: `Hi ${name},\n\nYour ${serviceName} appointment is confirmed for ${formatted}.${manageText}${calendarText}\n\nReply to this email if you need help.\n\nTake a look at some examples of what's possible!\n${demosUrl}`,
     html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment is confirmed for:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p>${calendarHtml}${manageHtml}<p>Reply to this email if you need help.</p><p style="margin-top:28px"><a href="${escapeHtml(demosUrl)}">Take a look at some examples of what's possible!</a></p>`,
   });
@@ -97,9 +97,9 @@ export async function sendBookingRequestReceived(to: string, name: string, servi
   const formatted = formatAppointmentTime(startsAt);
   await sendTransactionalEmail({
     to,
-    subject: "Your Digital Handyman appointment request was received",
-    text: `Hi ${name},\n\nWe received your request for a ${serviceName} appointment on ${formatted}. Your time is being held while Digital Handyman reviews it, but the appointment is not confirmed yet.\n\nYou will receive another email after the request is approved or declined.\n\nReview, reschedule, or cancel your request:\n${manageUrl}`,
-    html: `<p>Hi ${escapeHtml(name)},</p><p>We received your request for a <strong>${escapeHtml(serviceName)}</strong> appointment on:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p><p>Your time is being held while Digital Handyman reviews it, but the appointment is <strong>not confirmed yet</strong>.</p><p>You will receive another email after the request is approved or declined.</p><p><a href="${escapeHtml(manageUrl)}">Review, reschedule, or cancel your request</a></p>`,
+    subject: "Your Digital HandyDan appointment request was received",
+    text: `Hi ${name},\n\nWe received your request for a ${serviceName} appointment on ${formatted}. Your time is being held while Digital HandyDan reviews it, but the appointment is not confirmed yet.\n\nYou will receive another email after the request is approved or declined.\n\nReview, reschedule, or cancel your request:\n${manageUrl}`,
+    html: `<p>Hi ${escapeHtml(name)},</p><p>We received your request for a <strong>${escapeHtml(serviceName)}</strong> appointment on:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p><p>Your time is being held while Digital HandyDan reviews it, but the appointment is <strong>not confirmed yet</strong>.</p><p>You will receive another email after the request is approved or declined.</p><p><a href="${escapeHtml(manageUrl)}">Review, reschedule, or cancel your request</a></p>`,
   });
 }
 
@@ -115,7 +115,7 @@ export async function sendGuestBookingVerification(
   const formatted = formatAppointmentTime(startsAt);
   await sendTransactionalEmail({
     to,
-    subject: "Confirm your Digital Handyman appointment",
+    subject: "Confirm your Digital HandyDan appointment",
     text: `Hi ${name},\n\nPlease confirm your ${serviceName} appointment for ${formatted} within 15 minutes:\n${confirmationUrl}\n\nThe appointment will not be added to the calendar until you confirm it. If you did not request this, you can ignore this email.`,
     html: `<p>Hi ${escapeHtml(name)},</p><p>Please confirm your <strong>${escapeHtml(serviceName)}</strong> appointment for:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p><p><a href="${escapeHtml(confirmationUrl)}" style="display:inline-block;padding:12px 18px;background:#f5f1e8;color:#0b0d16;text-decoration:none;border-radius:6px;font-weight:700">Review and confirm appointment</a></p><p>This link expires in 15 minutes. The appointment will not be added to the calendar until you confirm it.</p><p>If you did not request this, you can safely ignore this email.</p>`,
   });
@@ -134,8 +134,8 @@ export async function sendAppointmentCancelled(
   const rebookText = rebookUrl ? `\n\nChoose another time:\n${rebookUrl}` : "";
   const rebookHtml = rebookUrl ? `<p><a href="${escapeHtml(rebookUrl)}">Choose another appointment time</a></p>` : "";
   const notes = cancellationNotes?.trim();
-  const notesText = notes ? `\n\nNote from Digital Handyman:\n${notes}` : "";
-  const notesHtml = notes ? `<p><strong>Note from Digital Handyman:</strong><br>${escapeHtml(notes).replaceAll("\n", "<br>")}</p>` : "";
+  const notesText = notes ? `\n\nNote from Digital HandyDan:\n${notes}` : "";
+  const notesHtml = notes ? `<p><strong>Note from Digital HandyDan:</strong><br>${escapeHtml(notes).replaceAll("\n", "<br>")}</p>` : "";
   const discountText = cancellationDiscountPercent
     ? `\n\nWe are very sorry for having to cancel your appointment. Please accept a ${cancellationDiscountPercent}% discount if you decide to reschedule. Your discount has been recorded and will be honoured.`
     : "";
@@ -143,7 +143,7 @@ export async function sendAppointmentCancelled(
     ? `<p><strong>We are very sorry for having to cancel your appointment.</strong> Please accept a <strong>${cancellationDiscountPercent}% discount</strong> if you decide to reschedule. Your discount has been recorded and will be honoured.</p>`
     : "";
   await sendTransactionalEmail({
-    to, subject: "Your Digital Handyman appointment was cancelled",
+    to, subject: "Your Digital HandyDan appointment was cancelled",
     text: `Hi ${name},\n\nYour ${serviceName} appointment for ${formatted} has been cancelled.${notesText}${discountText}${rebookText}`,
     html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment for ${escapeHtml(formatted)} has been cancelled.</p>${notesHtml}${discountHtml}${rebookHtml}`,
   });
@@ -161,7 +161,7 @@ export async function sendAppointmentRescheduled(to: string, name: string, servi
   const previousFormatted = formatAppointmentTime(previousStartsAt);
   const formatted = formatAppointmentTime(startsAt);
   await sendTransactionalEmail({
-    to, subject: "Your Digital Handyman appointment was rescheduled",
+    to, subject: "Your Digital HandyDan appointment was rescheduled",
     text: `Hi ${name},\n\nYour ${serviceName} appointment was moved from ${previousFormatted} to ${formatted}.${manageUrl ? `\n\nMake another change:\n${manageUrl}` : ""}${calendarUrl ? `\n\nAdd the updated appointment to your calendar:\n${calendarUrl}` : ""}\n\nReply to this email if you need help.`,
     html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment was rescheduled.</p><p><span style="text-decoration:line-through">${escapeHtml(previousFormatted)}</span><br><strong style="font-size:18px">${escapeHtml(formatted)}</strong></p>${calendarUrl ? `<p><a href="${escapeHtml(calendarUrl)}">Add the updated appointment to your calendar</a></p>` : ""}${manageUrl ? `<p><a href="${escapeHtml(manageUrl)}">Reschedule or cancel this appointment</a></p>` : ""}<p>Reply to this email if you need help.</p>`,
   });
@@ -171,7 +171,7 @@ export async function sendCustomerAppointmentReminder(to: string, name: string, 
   const formatted = formatAppointmentTime(startsAt);
   await sendTransactionalEmail({
     to,
-    subject: "Reminder: your Digital Handyman appointment is tomorrow",
+    subject: "Reminder: your Digital HandyDan appointment is tomorrow",
     text: `Hi ${name},\n\nThis is a reminder that your ${serviceName} appointment is scheduled for ${formatted}.\n\nReply to this email if you need help.`,
     html: `<p>Hi ${escapeHtml(name)},</p><p>This is a reminder that your <strong>${escapeHtml(serviceName)}</strong> appointment is scheduled for:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p><p>Reply to this email if you need help.</p>`,
   });
@@ -275,7 +275,7 @@ async function alertDeliveryFailure(
     to: alertTo,
     subject: `Action required: email to ${original.to} failed`,
     text: [
-      `Digital Handyman could not deliver an email after ${attempts} attempt${attempts === 1 ? "" : "s"}.`,
+      `Digital HandyDan could not deliver an email after ${attempts} attempt${attempts === 1 ? "" : "s"}.`,
       `Customer: ${original.to}`,
       `Subject: ${original.subject}`,
       `Failure: ${failure.message}`,
@@ -284,7 +284,7 @@ async function alertDeliveryFailure(
       "",
       original.text,
     ].join("\n"),
-    html: `<p><strong>Digital Handyman could not deliver an email after ${attempts} attempt${attempts === 1 ? "" : "s"}.</strong></p><p>Customer: ${escapeHtml(original.to)}<br>Subject: ${escapeHtml(original.subject)}<br>Failure: ${escapeHtml(failure.message)}</p><p>Please contact the customer manually with this message:</p><pre style="white-space:pre-wrap">${escapeHtml(original.text)}</pre>`,
+    html: `<p><strong>Digital HandyDan could not deliver an email after ${attempts} attempt${attempts === 1 ? "" : "s"}.</strong></p><p>Customer: ${escapeHtml(original.to)}<br>Subject: ${escapeHtml(original.subject)}<br>Failure: ${escapeHtml(failure.message)}</p><p>Please contact the customer manually with this message:</p><pre style="white-space:pre-wrap">${escapeHtml(original.text)}</pre>`,
   };
   try {
     const response = await deliverEmail(apiKey, from, replyTo, alert);

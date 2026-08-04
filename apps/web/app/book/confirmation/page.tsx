@@ -4,7 +4,7 @@ const RESULTS = {
   requested: {
     eyebrow: "Request received",
     heading: "Your appointment is awaiting approval.",
-    message: "Your requested time is being held. Digital Handyman will review it and email you when it is approved or declined.",
+    message: "Your requested time is being held. Digital HandyDan will review it and email you when it is approved or declined.",
   },
   expired: {
     eyebrow: "Hold expired",
@@ -19,7 +19,7 @@ const RESULTS = {
   failed: {
     eyebrow: "Something went wrong",
     heading: "The appointment could not be confirmed.",
-    message: "Please try the link again. If the problem continues, contact Digital Handyman for help.",
+    message: "Please try the link again. If the problem continues, contact Digital HandyDan for help.",
   },
 } as const;
 

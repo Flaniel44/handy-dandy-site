@@ -5,8 +5,8 @@ import { useLayoutEffect, useState } from "react";
 import type { AnimationEvent, MouseEvent, ReactNode } from "react";
 
 type RouteTransitionDirection = "forward" | "back";
-const DIRECTION_KEY = "digital-handyman-route-direction";
-const SOURCE_KEY = "digital-handyman-route-source";
+const DIRECTION_KEY = "digital-handydan-route-direction";
+const SOURCE_KEY = "digital-handydan-route-source";
 let activeScrollFrame: number | undefined;
 
 function scrollToSection(section: HTMLElement) {

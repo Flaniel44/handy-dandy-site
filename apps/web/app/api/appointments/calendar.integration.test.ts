@@ -41,7 +41,7 @@ describe("GET /api/appointments/:id/calendar", () => {
     expect(response.headers.get("Content-Type")).toContain("text/calendar");
     const calendar = await response.text();
     expect(calendar).toContain("BEGIN:VCALENDAR");
-    expect(calendar).toContain("SUMMARY:Digital Handyman: Smart-home consultation");
+    expect(calendar).toContain("SUMMARY:Digital HandyDan: Smart-home consultation");
     expect(calendar).toContain("LOCATION:123 Main Street\\, Unit 4B\\, Ottawa K1A 0B1\\, Canada");
   });
 
