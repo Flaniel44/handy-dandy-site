@@ -190,7 +190,48 @@ a { color: inherit; }
     linear-gradient(145deg, #171d31, #10131f);
   box-shadow: 0 35px 90px #0005;
 }
-.review-card { min-height: 300px; display: flex; flex-direction: column; }
+.reviews-carousel { overflow: hidden; }
+.reviews-carousel-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  padding-block: 8px 16px;
+  touch-action: pan-y;
+}
+.review-card {
+  position: relative;
+  z-index: 1;
+  grid-area: 1 / 1;
+  justify-self: center;
+  width: min(76%, 760px);
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(24px, 4vw, 42px);
+  border: 1px solid #3b4568;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #1b2239, #111625);
+  box-shadow: 0 22px 55px #0006;
+  opacity: .46;
+  transform: scale(.88);
+  transition: transform .45s ease, opacity .45s ease, border-color .45s ease;
+}
+.review-card.is-active { z-index: 3; opacity: 1; transform: translateX(0) scale(1); border-color: #56638f; }
+.review-card.is-previous { transform: translateX(-88%) scale(.88); }
+.review-card.is-next { transform: translateX(88%) scale(.88); }
+.review-card.is-hidden { visibility: hidden; opacity: 0; pointer-events: none; }
+.review-card-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.review-card-select:focus-visible { outline: 2px solid #f59842; outline-offset: -4px; }
 .review-author { display: flex; gap: 14px; align-items: center; margin-bottom: 24px; }
 .review-author > img,
 .review-author > span { width: 48px; height: 48px; flex: 0 0 48px; border-radius: 50%; }
@@ -423,7 +464,9 @@ a { color: inherit; }
   .landing-reviews-heading { display: block; }
   .reviews-summary { justify-items: start; margin-top: 24px; }
   .reviews-carousel, .reviews-empty { padding: 30px 20px; }
-  .review-card { min-height: 340px; }
+  .review-card { width: 86%; min-height: 340px; padding: 24px 20px; }
+  .review-card.is-previous { transform: translateX(-91%) scale(.88); }
+  .review-card.is-next { transform: translateX(91%) scale(.88); }
   .landing-contact a { min-width: 54px; font-size: .68rem; }
   .landing-contact a span { width: 46px; height: 46px; }
   .field-grid, .appointment-format-options { grid-template-columns: 1fr; }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const DEFAULT_GOOGLE_REVIEWS_URL = "https://share.google/VD1C5gAPBzR7oXF0Y";
 
@@ -46,6 +46,11 @@ function Stars({ rating }: { rating: number }) {
 export function GoogleReviews() {
   const [data, setData] = useState<ReviewsResponse>(EMPTY_REVIEWS);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [carouselVisible, setCarouselVisible] = useState(false);
+  const [interactionPaused, setInteractionPaused] = useState(false);
+  const [userPaused, setUserPaused] = useState(false);
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+  const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -60,8 +65,30 @@ export function GoogleReviews() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    const carousel = carouselRef.current;
+    if (!carousel || data.reviews.length < 2) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setCarouselVisible(entry.isIntersecting && entry.intersectionRatio >= 0.35),
+      { threshold: [0, 0.35, 1] },
+    );
+    observer.observe(carousel);
+    return () => observer.disconnect();
+  }, [data.reviews.length]);
+
+  useEffect(() => {
+    if (!carouselVisible || interactionPaused || userPaused || data.reviews.length < 2) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => {
+      setActiveIndex((index) => (index + 1) % data.reviews.length);
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [activeIndex, carouselVisible, data.reviews.length, interactionPaused, userPaused]);
+
   const safeIndex = data.reviews.length ? activeIndex % data.reviews.length : 0;
   const review = data.reviews[safeIndex];
+  const previousIndex = data.reviews.length ? (safeIndex - 1 + data.reviews.length) % data.reviews.length : 0;
+  const nextIndex = data.reviews.length ? (safeIndex + 1) % data.reviews.length : 0;
   const previous = () => setActiveIndex((safeIndex - 1 + data.reviews.length) % data.reviews.length);
   const next = () => setActiveIndex((safeIndex + 1) % data.reviews.length);
 
@@ -82,33 +109,81 @@ export function GoogleReviews() {
       </div>
 
       {review ? (
-        <div className="reviews-carousel">
-          <article className="review-card">
-            <div className="review-author">
-              {review.authorPhotoUrl ? (
-                // Google supplies this image as part of the required reviewer attribution.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={review.authorPhotoUrl} alt="" />
-              ) : (
-                <span aria-hidden="true">{review.authorName.charAt(0)}</span>
-              )}
-              <div>
-                {review.authorProfileUrl ? (
-                  <a href={review.authorProfileUrl} target="_blank" rel="noreferrer">
-                    {review.authorName}
+        <div
+          ref={carouselRef}
+          className="reviews-carousel"
+          onMouseEnter={() => setInteractionPaused(true)}
+          onMouseLeave={() => setInteractionPaused(false)}
+          onFocusCapture={() => setInteractionPaused(true)}
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setInteractionPaused(false);
+          }}
+        >
+          <div
+            className="reviews-carousel-stage"
+            aria-live="polite"
+            onTouchStart={(event) => { touchStartX.current = event.touches[0]?.clientX ?? null; }}
+            onTouchEnd={(event) => {
+              const startX = touchStartX.current;
+              const endX = event.changedTouches[0]?.clientX;
+              touchStartX.current = null;
+              if (startX === null || endX === undefined || data.reviews.length < 2) return;
+              const distance = endX - startX;
+              if (Math.abs(distance) < 45) return;
+              if (distance > 0) previous();
+              else next();
+            }}
+          >
+            {data.reviews.map((item, index) => {
+              const isActive = index === safeIndex;
+              const isPrevious = data.reviews.length > 2 && index === previousIndex;
+              const isNext = data.reviews.length > 1 && index === nextIndex;
+              const position = isActive
+                ? "is-active"
+                : isPrevious
+                  ? "is-previous"
+                  : isNext
+                    ? "is-next"
+                    : "is-hidden";
+
+              return (
+                <article key={item.id} className={`review-card ${position}`} aria-hidden={position === "is-hidden" || undefined}>
+                  <div className="review-author">
+                    {item.authorPhotoUrl ? (
+                      // Google supplies this image as part of the required reviewer attribution.
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.authorPhotoUrl} alt="" />
+                    ) : (
+                      <span aria-hidden="true">{item.authorName.charAt(0)}</span>
+                    )}
+                    <div>
+                      {item.authorProfileUrl ? (
+                        <a href={item.authorProfileUrl} target="_blank" rel="noreferrer" tabIndex={isActive ? 0 : -1}>
+                          {item.authorName}
+                        </a>
+                      ) : (
+                        <strong>{item.authorName}</strong>
+                      )}
+                      <small>{item.relativeDate}</small>
+                    </div>
+                  </div>
+                  <Stars rating={item.rating} />
+                  <blockquote>“{item.text}”</blockquote>
+                  <a className="review-source" href={item.sourceUrl} target="_blank" rel="noreferrer" tabIndex={isActive ? 0 : -1}>
+                    Read this review on Google Maps <span aria-hidden="true">↗</span>
                   </a>
-                ) : (
-                  <strong>{review.authorName}</strong>
-                )}
-                <small>{review.relativeDate}</small>
-              </div>
-            </div>
-            <Stars rating={review.rating} />
-            <blockquote>“{review.text}”</blockquote>
-            <a className="review-source" href={review.sourceUrl} target="_blank" rel="noreferrer">
-              Read this review on Google Maps <span aria-hidden="true">↗</span>
-            </a>
-          </article>
+                  {!isActive && (isPrevious || isNext) && (
+                    <button
+                      className="review-card-select"
+                      type="button"
+                      onClick={() => setActiveIndex(index)}
+                      aria-label={`${isPrevious ? "Show previous" : "Show next"} review by ${item.authorName}`}
+                    />
+                  )}
+                </article>
+              );
+            })}
+          </div>
 
           {data.reviews.length > 1 && (
             <div className="reviews-carousel-controls">
@@ -126,6 +201,15 @@ export function GoogleReviews() {
                 ))}
               </div>
               <button type="button" onClick={next} aria-label="Next review">→</button>
+              <button
+                type="button"
+                className="reviews-autoplay-toggle"
+                onClick={() => setUserPaused((paused) => !paused)}
+                aria-label={userPaused ? "Resume automatic review rotation" : "Pause automatic review rotation"}
+                aria-pressed={userPaused}
+              >
+                <span aria-hidden="true">{userPaused ? "▶" : "Ⅱ"}</span>
+              </button>
             </div>
           )}
           <p className="reviews-order-note">Reviews supplied by Google Maps and ordered by relevance.</p>
