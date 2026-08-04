@@ -11,6 +11,7 @@ const googleState = {
   createStatus: 200,
   updateStatus: 200,
   deleteStatus: 204,
+  eventDetail: { hangoutLink: "https://meet.google.com/abc-defg-hij" },
 };
 
 vi.mock("server-only", () => ({}));
@@ -37,6 +38,7 @@ beforeEach(async () => {
   googleState.createStatus = 200;
   googleState.updateStatus = 200;
   googleState.deleteStatus = 204;
+  googleState.eventDetail = { hangoutLink: "https://meet.google.com/abc-defg-hij" };
   fetchMock = vi.fn(googleFetchImplementation);
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -157,22 +159,52 @@ describe("Google Calendar integration", () => {
   it("creates pending requests as tentative events with admin approval links", async () => {
     await connect();
     const appointment = await seedAppointment("pending_approval");
+    await testSql`UPDATE appointments SET appointment_mode = 'google_meet' WHERE id = ${appointment.id}`;
 
     await calendar.createGoogleEventForAppointment(appointment.id);
 
-    const createBody = JSON.parse(String(calendarRequest("POST")?.[1]?.body)) as { summary: string; status: string; description: string };
+    const createRequest = calendarRequest("POST");
+    const createBody = JSON.parse(String(createRequest?.[1]?.body)) as { summary: string; status: string; description: string; attendees?: Array<{ email: string }>; conferenceData: unknown };
     expect(createBody.summary).toContain("APPROVAL NEEDED");
     expect(createBody.status).toBe("tentative");
+    expect(createBody.conferenceData).toBeTruthy();
+    expect(createBody.attendees).toBeUndefined();
+    expect(String(createRequest?.[0])).toContain("sendUpdates=none");
     expect(createBody.description).toContain(`http://localhost:3000/login?next=${encodeURIComponent(`/admin?appointment=${appointment.id}&action=approve#appointment-${appointment.id}`)}`);
     expect(createBody.description).toContain(`http://localhost:3000/login?next=${encodeURIComponent(`/admin?appointment=${appointment.id}&action=decline#appointment-${appointment.id}`)}`);
 
     await testSql`UPDATE appointments SET status = 'confirmed' WHERE id = ${appointment.id}`;
     await calendar.updateGoogleEventForAppointment(appointment.id);
-    const approvedBody = JSON.parse(String(calendarRequest("PATCH")?.[1]?.body)) as { status: string; description: string };
+    const approvedRequest = calendarRequest("PATCH");
+    const approvedBody = JSON.parse(String(approvedRequest?.[1]?.body)) as { status: string; description: string; attendees: Array<{ email: string }> };
     expect(approvedBody.status).toBe("confirmed");
+    expect(approvedBody.attendees).toEqual([{ email: "calendar-0@example.com" }]);
+    expect(String(approvedRequest?.[0])).toContain("sendUpdates=all");
     expect(approvedBody.description).toContain(`Manage appointment (add notes or cancel): http://localhost:3000/login?next=${encodeURIComponent(`/admin?appointment=${appointment.id}#appointment-${appointment.id}`)}`);
     expect(approvedBody.description).not.toContain("Review and approve");
     expect(approvedBody.description).not.toContain("Review and decline");
+  });
+
+  it("creates a Meet conference and invites the client when a Meet appointment is confirmed", async () => {
+    await connect();
+    const appointment = await seedAppointment("confirmed");
+    await testSql`UPDATE appointments SET appointment_mode = 'google_meet' WHERE id = ${appointment.id}`;
+
+    await calendar.createGoogleEventForAppointment(appointment.id);
+
+    const createRequest = calendarRequest("POST");
+    expect(String(createRequest?.[0])).toContain("conferenceDataVersion=1");
+    expect(String(createRequest?.[0])).toContain("sendUpdates=all");
+    const createBody = JSON.parse(String(createRequest?.[1]?.body)) as {
+      location: string;
+      attendees: Array<{ email: string }>;
+      conferenceData: { createRequest: { requestId: string; conferenceSolutionKey: { type: string } } };
+    };
+    expect(createBody.location).toBe("Google Meet");
+    expect(createBody.attendees).toEqual([{ email: "calendar-0@example.com" }]);
+    expect(createBody.conferenceData.createRequest.requestId).toBeTruthy();
+    expect(createBody.conferenceData.createRequest.conferenceSolutionKey.type).toBe("hangoutsMeet");
+    expect(await calendar.getGoogleMeetUrl("created-google-event")).toBe("https://meet.google.com/abc-defg-hij");
   });
 
   it("recreates an appointment event when Google reports that the old event is gone", async () => {
@@ -262,7 +294,9 @@ async function googleFetchImplementation(input: string | URL | Request, init?: R
     return jsonResponse({ access_token: "integration-access-token" });
   }
   if (!url.includes("https://www.googleapis.com/calendar/v3/calendars/")) return jsonResponse({}, 404);
-  if (method === "GET") return jsonResponse({ items: googleState.events });
+  if (method === "GET") return /\/events\/[^?]+/.test(new URL(url).pathname)
+    ? jsonResponse(googleState.eventDetail)
+    : jsonResponse({ items: googleState.events });
   if (method === "POST") return googleState.createStatus < 400
     ? jsonResponse({ id: googleState.createEventId }, googleState.createStatus)
     : googleError(googleState.createStatus);

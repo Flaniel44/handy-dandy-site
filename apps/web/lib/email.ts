@@ -215,7 +215,7 @@ async function sendAdminAppointmentUpdate(action: "booked" | "cancelled", detail
     ["Email", details.customerEmail],
     ["Phone", details.customerPhone || "Not provided"],
     ["Address", address || "Not provided"],
-    ["Appointment format", details.appointmentMode === "in_person" ? "In person" : "By phone"],
+    ["Appointment format", details.appointmentMode === "in_person" ? "In person" : details.appointmentMode === "google_meet" ? "Google Meet" : "By phone"],
     ["Appointment phone", details.appointmentMode === "phone" ? details.appointmentPhone || "Not provided" : "Not applicable"],
     ["Appointment address", details.appointmentMode === "in_person" ? appointmentAddress || "Not provided" : "Not applicable"],
     ["Service", details.serviceName],

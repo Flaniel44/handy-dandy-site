@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const appointmentDetailsShape = {
-  appointmentMode: z.enum(["phone", "in_person"]),
+  appointmentMode: z.enum(["phone", "in_person", "google_meet"]),
   appointmentPhone: z.string().trim().regex(/^\d*$/, "Phone number can only contain numbers.").max(30).default(""),
   appointmentStreetAddress: z.string().trim().max(200).default(""),
   appointmentUnit: z.string().trim().max(30).default(""),
@@ -15,6 +15,7 @@ export const appointmentDetailsSchema = z.object(appointmentDetailsShape).superR
       if (value.appointmentPhone.length < 7) context.addIssue({ code: "custom", path: ["appointmentPhone"], message: "Enter a phone number with at least 7 digits." });
       return;
     }
+    if (value.appointmentMode !== "in_person") return;
     for (const [field, label] of [
       ["appointmentStreetAddress", "street address"],
       ["appointmentCity", "city"],
@@ -54,5 +55,7 @@ export function formatAppointmentAddress(details: Pick<AppointmentDetails, "appo
 }
 
 export function appointmentModeLabel(mode: string) {
-  return mode === "in_person" ? "In person" : "By phone";
+  if (mode === "in_person") return "In person";
+  if (mode === "google_meet") return "Google Meet";
+  return "By phone";
 }

@@ -115,7 +115,7 @@ export function GuestAppointmentManager({ initialToken }: { initialToken: string
       <div><span>Service</span><strong>{appointment.serviceName}</strong></div>
       <div><span>Date and time</span><strong>{formatAppointment(appointment.startsAt, appointment.endsAt)}</strong></div>
       <div><span>Booked for</span><strong>{appointment.customerName} · {appointment.customerEmail}</strong></div>
-      <div><span>Appointment format</span><strong>{appointment.appointmentMode === "in_person" ? `In person · ${appointmentAddress}` : `By phone · ${appointment.appointmentPhone ?? "Phone not provided"}`}</strong></div>
+      <div><span>Appointment format</span><strong>{appointment.appointmentMode === "in_person" ? `In person · ${appointmentAddress}` : appointment.appointmentMode === "google_meet" ? "Google Meet · Join link included with the confirmed calendar invitation" : `By phone · ${appointment.appointmentPhone ?? "Phone not provided"}`}</strong></div>
       {appointment.clientNotes && <div><span>Your notes</span><strong>{appointment.clientNotes}</strong></div>}
       <div><span>Status</span><strong className="guest-appointment-status">{appointment.status === "pending_approval" ? "Awaiting approval" : appointment.status.replace("_", " ")}</strong></div>
     </div>

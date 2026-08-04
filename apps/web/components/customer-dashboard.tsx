@@ -147,7 +147,9 @@ function UpcomingAppointment({ appointment, save, cancel, onChanged, onMessage }
 
 function AppointmentMeetingDetails({ appointment }: { appointment: Appointment }) {
   const address = [[appointment.appointmentStreetAddress, appointment.appointmentUnit && `Unit ${appointment.appointmentUnit}`].filter(Boolean).join(", "), [appointment.appointmentCity, appointment.appointmentPostalCode].filter(Boolean).join(" "), appointment.appointmentCountry].filter(Boolean).join(", ");
-  return <p className="appointment-meeting-details"><strong>{appointment.appointmentMode === "in_person" ? "In person" : "By phone"}</strong><span>{appointment.appointmentMode === "in_person" ? address : appointment.appointmentPhone}</span></p>;
+  const mode = appointment.appointmentMode === "in_person" ? "In person" : appointment.appointmentMode === "google_meet" ? "Google Meet" : "By phone";
+  const detail = appointment.appointmentMode === "in_person" ? address : appointment.appointmentMode === "google_meet" ? "Join link included with the confirmed calendar invitation" : appointment.appointmentPhone;
+  return <p className="appointment-meeting-details"><strong>{mode}</strong><span>{detail}</span></p>;
 }
 
 function AppointmentRescheduler({ appointment, onChanged, onMessage }: { appointment: Appointment; onChanged: () => Promise<void>; onMessage: (message: string) => void }) {

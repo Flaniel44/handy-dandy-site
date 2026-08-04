@@ -50,6 +50,23 @@ describe("POST /api/bookings", () => {
     expect(await confirmationCount()).toBe(0);
   });
 
+  it("accepts Google Meet without requiring a phone number or address", async () => {
+    const response = await postBooking(bookingRequest(nextBookableSlot(9), {
+      name: "Meet Guest",
+      email: "meet@example.com",
+      appointmentMode: "google_meet",
+      appointmentPhone: "",
+      appointmentCountry: "",
+    }));
+
+    expect(response.status).toBe(202);
+    const [saved] = await testSql<{ appointment_mode: string; appointment_phone: string | null; appointment_street_address: string | null }[]>`
+      SELECT appointment_mode, appointment_phone, appointment_street_address
+      FROM guest_booking_confirmations
+    `;
+    expect(saved).toEqual({ appointment_mode: "google_meet", appointment_phone: null, appointment_street_address: null });
+  });
+
   it("holds a guest slot until its email token is explicitly confirmed", async () => {
     const slot = nextBookableSlot(9);
     const response = await postBooking(bookingRequest(slot, {
@@ -275,7 +292,7 @@ function nextBookableSlot(hour: number) {
 
 function bookingRequest(
   slot: { date: string; startsAt: string },
-  customer: { name: string; email: string; notes?: string; appointmentMode?: "phone" | "in_person"; appointmentPhone?: string; appointmentStreetAddress?: string; appointmentUnit?: string; appointmentCity?: string; appointmentPostalCode?: string; appointmentCountry?: string },
+  customer: { name: string; email: string; notes?: string; appointmentMode?: "phone" | "in_person" | "google_meet"; appointmentPhone?: string; appointmentStreetAddress?: string; appointmentUnit?: string; appointmentCity?: string; appointmentPostalCode?: string; appointmentCountry?: string },
 ) {
   return new Request("http://localhost/api/bookings", {
     method: "POST",

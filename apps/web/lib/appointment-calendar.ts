@@ -18,8 +18,9 @@ export function buildAppointmentCalendarFile(details: {
   endsAt: Date;
   modeLabel: string;
   location: string;
+  joinUrl?: string | null;
 }) {
-  const description = [`Appointment with Digital Handyman`, `Format: ${details.modeLabel}`].join("\n");
+  const description = [`Appointment with Digital Handyman`, `Format: ${details.modeLabel}`, details.joinUrl && `Join Google Meet: ${details.joinUrl}`].filter(Boolean).join("\n");
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -34,6 +35,7 @@ export function buildAppointmentCalendarFile(details: {
     `SUMMARY:${escapeCalendarText(`Digital Handyman: ${details.serviceName}`)}`,
     `DESCRIPTION:${escapeCalendarText(description)}`,
     details.location && `LOCATION:${escapeCalendarText(details.location)}`,
+    details.joinUrl && `URL:${details.joinUrl}`,
     "STATUS:CONFIRMED",
     "END:VEVENT",
     "END:VCALENDAR",

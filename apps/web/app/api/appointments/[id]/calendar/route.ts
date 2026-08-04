@@ -4,6 +4,7 @@ import { appointmentModeLabel, formatAppointmentAddress } from "../../../../../l
 import { buildAppointmentCalendarFile, validAppointmentCalendarToken } from "../../../../../lib/appointment-calendar";
 import { getDb } from "../../../../../lib/db";
 import { appointments, bookingSlots, services } from "../../../../../lib/db/schema";
+import { getGoogleMeetUrl } from "../../../../../lib/google-calendar";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const [appointment] = await getDb().select({
     id: appointments.id,
+    googleEventId: appointments.googleEventId,
     serviceName: services.name,
     startsAt: bookingSlots.startsAt,
     endsAt: bookingSlots.endsAt,
@@ -30,11 +32,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     .limit(1);
   if (!appointment) return new Response("This appointment is no longer confirmed.", { status: 404 });
 
-  const location = appointment.appointmentMode === "in_person" ? formatAppointmentAddress(appointment) : "Phone appointment";
+  const location = appointment.appointmentMode === "in_person" ? formatAppointmentAddress(appointment) : appointment.appointmentMode === "google_meet" ? "Google Meet" : "Phone appointment";
+  let joinUrl: string | null = null;
+  if (appointment.appointmentMode === "google_meet") {
+    try { joinUrl = await getGoogleMeetUrl(appointment.googleEventId); }
+    catch (error) { console.error("Unable to add the Google Meet URL to the calendar download", error); }
+  }
   const calendar = buildAppointmentCalendarFile({
     ...appointment,
     modeLabel: appointmentModeLabel(appointment.appointmentMode),
     location,
+    joinUrl,
   });
   return new Response(calendar, {
     headers: {

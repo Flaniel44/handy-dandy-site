@@ -5,6 +5,9 @@ import { resetTestData } from "../../../test/integration/database";
 import { appointmentCalendarUrl } from "../../../lib/appointment-calendar";
 
 vi.mock("server-only", () => ({}));
+vi.mock("../../../lib/google-calendar", () => ({
+  getGoogleMeetUrl: vi.fn(async () => "https://meet.google.com/abc-defg-hij"),
+}));
 
 const SERVICE_ID = "22222222-2222-4222-8222-222222222222";
 let testSql: ReturnType<typeof postgres>;
@@ -45,5 +48,24 @@ describe("GET /api/appointments/:id/calendar", () => {
   it("rejects an invalid token", async () => {
     const response = await downloadCalendar(new Request("http://localhost/api/appointments/missing/calendar?token=invalid"), { params: Promise.resolve({ id: "missing" }) });
     expect(response.status).toBe(404);
+  });
+
+  it("includes the Google Meet join URL in a Meet appointment calendar file", async () => {
+    const [customer] = await testSql<{ id: string }[]>`INSERT INTO customers (email, name) VALUES ('meet@example.com', 'Meet Client') RETURNING id`;
+    const [slot] = await testSql<{ id: string }[]>`
+      INSERT INTO booking_slots (service_id, starts_at, ends_at, state)
+      VALUES (${SERVICE_ID}, '2026-09-02T17:00:00Z', '2026-09-02T18:00:00Z', 'confirmed') RETURNING id
+    `;
+    const [appointment] = await testSql<{ id: string }[]>`
+      INSERT INTO appointments (slot_id, customer_id, status, appointment_mode, google_event_id)
+      VALUES (${slot.id}, ${customer.id}, 'confirmed', 'google_meet', 'meet-event') RETURNING id
+    `;
+    const response = await downloadCalendar(new Request(appointmentCalendarUrl(appointment.id)), { params: Promise.resolve({ id: appointment.id }) });
+    const calendar = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(calendar).toContain("LOCATION:Google Meet");
+    expect(calendar).toContain("URL:https://meet.google.com/abc-defg-hij");
+    expect(calendar).toContain("Join Google Meet: https://meet.google.com/abc-defg-hij");
   });
 });

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, randomBytes, randomUUID } from "node:crypto";
 import { and, eq, gt, isNotNull, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 
@@ -136,7 +136,9 @@ export async function createGoogleEventForAppointment(appointmentId: string) {
   if (!row) return;
   const accessToken = await getAccessToken(connection.encryptedRefreshToken);
   const adminLinks = adminAppointmentLinks(appointmentId, row.status);
-  const response = await googleFetch(`/calendars/${encodeURIComponent(connection.calendarId)}/events`, accessToken, {
+  const isMeet = row.appointmentMode === "google_meet";
+  const params = new URLSearchParams({ conferenceDataVersion: "1", sendUpdates: row.status === "confirmed" && isMeet ? "all" : "none" });
+  const response = await googleFetch(`/calendars/${encodeURIComponent(connection.calendarId)}/events?${params}`, accessToken, {
     method: "POST",
     body: JSON.stringify({
       summary: `${row.status === "pending_approval" ? "APPROVAL NEEDED — " : ""}Digital Handyman: ${row.serviceName} — ${row.customerName}`,
@@ -145,6 +147,8 @@ export async function createGoogleEventForAppointment(appointmentId: string) {
       status: row.status === "pending_approval" ? "tentative" : "confirmed",
       start: { dateTime: row.startsAt.toISOString() }, end: { dateTime: row.endsAt.toISOString() },
       extendedProperties: { private: { handyDandyAppointmentId: appointmentId } },
+      ...(isMeet ? { conferenceData: { createRequest: { requestId: randomUUID(), conferenceSolutionKey: { type: "hangoutsMeet" } } } } : {}),
+      ...(row.status === "confirmed" && isMeet ? { attendees: [{ email: row.customerEmail }] } : {}),
     }),
   });
   const event = await response.json() as { id?: string };
@@ -173,7 +177,9 @@ export async function updateGoogleEventForAppointment(appointmentId: string) {
   if (!row.eventId) return createGoogleEventForAppointment(appointmentId);
   const accessToken = await getAccessToken(connection.encryptedRefreshToken);
   const adminLinks = adminAppointmentLinks(appointmentId, row.status);
-  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(connection.calendarId)}/events/${encodeURIComponent(row.eventId)}`, {
+  const isMeet = row.appointmentMode === "google_meet";
+  const params = new URLSearchParams({ conferenceDataVersion: "1", sendUpdates: row.status === "confirmed" && isMeet ? "all" : "none" });
+  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(connection.calendarId)}/events/${encodeURIComponent(row.eventId)}?${params}`, {
     method: "PATCH", cache: "no-store", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       summary: `${row.status === "pending_approval" ? "APPROVAL NEEDED — " : ""}Digital Handyman: ${row.serviceName} — ${row.customerName}`,
@@ -181,6 +187,7 @@ export async function updateGoogleEventForAppointment(appointmentId: string) {
       location: googleAppointmentLocation(row),
       status: row.status === "pending_approval" ? "tentative" : "confirmed",
       start: { dateTime: row.startsAt.toISOString() }, end: { dateTime: row.endsAt.toISOString() },
+      ...(isMeet ? { attendees: row.status === "confirmed" ? [{ email: row.customerEmail }] : [] } : {}),
     }),
   });
   if (response.status === 404 || response.status === 410) {
@@ -196,11 +203,24 @@ export async function deleteGoogleEvent(eventId: string | null, appointmentId?: 
   const connection = await getConnection();
   if (!connection) return;
   const accessToken = await getAccessToken(connection.encryptedRefreshToken);
-  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(connection.calendarId)}/events/${encodeURIComponent(eventId)}`, {
+  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(connection.calendarId)}/events/${encodeURIComponent(eventId)}?sendUpdates=all`, {
     method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store",
   });
   if (!response.ok && response.status !== 404 && response.status !== 410) throw new Error(`Google Calendar returned ${response.status}.`);
   if (appointmentId) await getDb().update(appointments).set({ googleEventId: null, calendarSyncStatus: "synced", calendarSyncError: null, calendarSyncedAt: new Date(), updatedAt: new Date() }).where(eq(appointments.id, appointmentId));
+}
+
+export async function getGoogleMeetUrl(eventId: string | null) {
+  if (!eventId) return null;
+  const connection = await getConnection();
+  if (!connection) return null;
+  const accessToken = await getAccessToken(connection.encryptedRefreshToken);
+  const response = await googleFetch(`/calendars/${encodeURIComponent(connection.calendarId)}/events/${encodeURIComponent(eventId)}?conferenceDataVersion=1`, accessToken);
+  const event = await response.json() as {
+    hangoutLink?: string;
+    conferenceData?: { entryPoints?: Array<{ entryPointType?: string; uri?: string }> };
+  };
+  return event.hangoutLink ?? event.conferenceData?.entryPoints?.find((entry) => entry.entryPointType === "video")?.uri ?? null;
 }
 
 export async function markCalendarSyncFailure(appointmentId: string, error: unknown) {
@@ -273,7 +293,8 @@ function googleAppointmentDescription(row: AppointmentDetails & { customerName: 
 }
 
 function googleAppointmentLocation(row: AppointmentDetails) {
-  return row.appointmentMode === "in_person" ? formatAppointmentAddress(row) : "Phone appointment";
+  if (row.appointmentMode === "in_person") return formatAppointmentAddress(row);
+  return row.appointmentMode === "google_meet" ? "Google Meet" : "Phone appointment";
 }
 
 async function markSync(appointmentId: string, status: "synced" | "failed", error?: unknown) {
