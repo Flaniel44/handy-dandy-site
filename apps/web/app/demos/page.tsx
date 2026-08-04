@@ -3,20 +3,22 @@ import Link from "next/link";
 import { ViewportSvgAnimation } from "../../components/viewport-svg-animation";
 
 const demoAnimationSources: Record<string, string> = {
-  "01": "/demos/motion-lights.svg",
-  "02": "/demos/arrival-automation.svg",
-  "03": "/demos/day-night-modes.svg",
-  "04": "/demos/physical-controls.svg",
-  "05": "/demos/vacation-security.svg",
-  "06": "/demos/energy-monitoring.svg",
-  "07": "/demos/local-private-network.svg",
-  "08": "/demos/smart-display-dashboard.svg",
-  "09": "/demos/automation-builder.svg",
-  "10": "/demos/infrared-devices.svg",
-  "11": "/demos/phone-tap-routine.svg",
-  "12": "/demos/qr-code-guest-wifi.svg",
-  "13": "/demos/scheduled-coffee.svg",
-  "14": "/demos/grow-lights.svg",
+  "01": "/demos/whole-home-entertainment.svg",
+  "02": "/demos/motion-lights.svg",
+  "03": "/demos/arrival-automation.svg",
+  "04": "/demos/day-night-modes.svg",
+  "05": "/demos/physical-controls.svg",
+  "06": "/demos/baby-monitoring.svg",
+  "07": "/demos/vacation-security.svg",
+  "08": "/demos/energy-monitoring.svg",
+  "09": "/demos/local-private-network.svg",
+  "10": "/demos/smart-display-dashboard.svg",
+  "11": "/demos/automation-builder.svg",
+  "12": "/demos/infrared-devices.svg",
+  "13": "/demos/phone-tap-routine.svg",
+  "14": "/demos/qr-code-guest-wifi.svg",
+  "15": "/demos/scheduled-coffee.svg",
+  "16": "/demos/grow-lights.svg",
 };
 const possibilitySections = [
   {
@@ -95,6 +97,13 @@ const possibilitySections = [
     title: "Music, television, and entertainment",
     items: [
       {
+        number: "15",
+        title: "Can I play audio in every room and have my lights match the TV?",
+        emphasis: "audio in every room",
+        description: "Yes. Speakers can play together throughout your home, while lights around the television react to the colours on screen for a more immersive movie, game, or music experience.",
+        mediaLabel: "Whole-home audio and TV-synced lighting demonstration",
+      },
+      {
         number: "09",
         title: "Can older devices become part of my smart home?",
         emphasis: "older devices",
@@ -136,6 +145,13 @@ const possibilitySections = [
     number: "06",
     title: "Security and resilience",
     items: [
+      {
+        number: "16",
+        title: "Can my home help me monitor the baby without constant checking?",
+        emphasis: "monitor the baby",
+        description: "Yes. A private baby-monitoring setup can show audio or video when you want it and send useful notifications when sound or movement needs your attention.",
+        mediaLabel: "Private baby monitoring and notification demonstration",
+      },
       {
         number: "12",
         title: "Can my smart home stay private and keep working without the internet?",
@@ -186,12 +202,13 @@ const orderedPossibilitySections = [
   {
     id: "everyday-comfort",
     number: "01",
-    title: "Everyday comfort",
+    title: "Everyday Comfort / Home Theater",
     items: orderedItems([
-      ["01", "01"],
-      ["04", "02"],
-      ["03", "03"],
-      ["05", "04"],
+      ["15", "01"],
+      ["01", "02"],
+      ["04", "03"],
+      ["03", "04"],
+      ["05", "05"],
     ]),
   },
   {
@@ -199,9 +216,10 @@ const orderedPossibilitySections = [
     number: "02",
     title: "Security and Monitoring",
     items: orderedItems([
-      ["13", "05"],
-      ["14", "06"],
-      ["12", "07"],
+      ["16", "06"],
+      ["13", "07"],
+      ["14", "08"],
+      ["12", "09"],
     ]),
   },
   {
@@ -209,9 +227,9 @@ const orderedPossibilitySections = [
     number: "03",
     title: "One simple, flexible system",
     items: orderedItems([
-      ["11", "08"],
-      ["08", "09"],
-      ["09", "10"],
+      ["11", "10"],
+      ["08", "11"],
+      ["09", "12"],
     ]),
   },
   {
@@ -219,10 +237,10 @@ const orderedPossibilitySections = [
     number: "04",
     title: "Creative possibilities",
     items: orderedItems([
-      ["06", "11"],
-      ["07", "12"],
-      ["10", "13"],
-      ["02", "14"],
+      ["06", "13"],
+      ["07", "14"],
+      ["10", "15"],
+      ["02", "16"],
     ]),
   },
 ];
@@ -323,7 +341,7 @@ export default function DemosPage() {
             <div className="possibility-section-grid">
               {section.items.map((item) => (
                 <article
-                  className={`possibility-card ${item.number === "09" ? "has-wide-demo" : ""} ${Number(item.number) % 2 === 0 ? "media-right" : "media-left"}`}
+                  className={`possibility-card ${item.number === "11" ? "has-wide-demo" : ""} ${Number(item.number) % 2 === 0 ? "media-right" : "media-left"}`}
                   key={item.number}
                 >
                   <div className={`possibility-media ${demoAnimationSources[item.number] ? "has-demo-animation" : ""}`}>
