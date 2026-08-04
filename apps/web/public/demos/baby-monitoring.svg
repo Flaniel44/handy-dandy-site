@@ -9,20 +9,18 @@
   <style>
     .sleep-z { fill:#a9c8ff; font:bold 22px sans-serif; opacity:0; animation:sleep 9s ease-in-out infinite; }
     .z-two { animation-delay:.55s; }.z-three { animation-delay:1.1s; }
-    .cry-wave { fill:none; stroke:#ff9bbd; stroke-width:5; stroke-linecap:round; opacity:0; animation:cry 9s ease-out infinite; }
+    .cry-wave { fill:none; stroke:#ff9bbd; stroke-width:5; stroke-linecap:round; opacity:0; stroke-dasharray:90; stroke-dashoffset:90; animation:cry 9s ease-out infinite; }
     .cry-two { animation-delay:.16s; }.cry-three { animation-delay:.32s; }
     .monitor-led { animation:monitor-led 9s linear infinite; }
-    .signal-pulse { fill:#73e6ff; filter:url(#baby-glow); offset-path:path('M420 128 C365 110 315 132 285 194 C259 248 222 292 151 330'); animation:signal 9s ease-in-out infinite; opacity:0; }
+    .signal-pulse { fill:#73e6ff; filter:url(#baby-glow); offset-path:path('M436 109 C395 130 350 135 318 184 C278 244 234 291 164 329'); animation:signal 9s ease-in-out infinite; opacity:0; }
     .phone { transform-box:fill-box; transform-origin:center; animation:phone-buzz 9s ease-in-out infinite; }
     .notification { opacity:0; transform-box:fill-box; transform-origin:center; animation:notification 9s ease-in-out infinite; }
-    .camera-head { transform-box:fill-box; transform-origin:70% 70%; animation:camera-look 9s ease-in-out infinite; }
     @keyframes sleep { 0%,20%{opacity:0;transform:translateY(8px)} 27%,43%{opacity:.9} 48%,100%{opacity:0;transform:translateY(-20px)} }
-    @keyframes cry { 0%,44%{opacity:0;transform:scale(.65)} 48%,57%{opacity:1;transform:scale(1)} 62%,100%{opacity:0;transform:scale(1.2)} }
+    @keyframes cry { 0%,44%{opacity:0;stroke-dashoffset:90} 48%{opacity:.35;stroke-dashoffset:90} 54%,59%{opacity:1;stroke-dashoffset:0} 64%,100%{opacity:0;stroke-dashoffset:0} }
     @keyframes monitor-led { 0%,44%,72%,100%{fill:#57d58a} 48%,68%{fill:#ff668f} }
     @keyframes signal { 0%,50%{opacity:0;offset-distance:0%} 53%{opacity:1} 66%{opacity:1;offset-distance:100%} 69%,100%{opacity:0;offset-distance:100%} }
     @keyframes phone-buzz { 0%,64%,75%,100%{transform:translateX(0) rotate(0)} 66%{transform:translateX(-4px) rotate(-1deg)} 68%{transform:translateX(4px) rotate(1deg)} 70%{transform:translateX(-3px) rotate(-1deg)} 72%{transform:translateX(3px) rotate(1deg)} }
     @keyframes notification { 0%,64%{opacity:0;transform:translateY(18px) scale(.94)} 69%,86%{opacity:1;transform:translateY(0) scale(1)} 94%,100%{opacity:0} }
-    @keyframes camera-look { 0%,42%,100%{transform:rotate(-5deg)} 52%,78%{transform:rotate(8deg)} }
   </style>
   <g clip-path="url(#baby-scene)">
     <rect width="600" height="500" fill="#101724"/>
@@ -39,7 +37,7 @@
       <circle cx="399" cy="101" r="12" fill="#111827" stroke="#73e6ff" stroke-width="4"/>
       <circle class="monitor-led" cx="436" cy="101" r="5" fill="#57d58a"/>
     </g>
-    <path d="M420 128 C365 110 315 132 285 194 C259 248 222 292 151 330" fill="none" stroke="#334b60" stroke-width="4" stroke-dasharray="8 11"/>
+    <path d="M436 109 C395 130 350 135 318 184 C278 244 234 291 164 329" fill="none" stroke="#334b60" stroke-width="4" stroke-dasharray="8 11" stroke-linecap="round"/>
     <circle class="signal-pulse" r="8"/>
 
     <g>
@@ -51,7 +49,9 @@
       <circle cx="405" cy="320" r="2.5" fill="#2e221d"/><circle cx="423" cy="320" r="2.5" fill="#2e221d"/>
       <path d="M407 331q8 5 15 0" fill="none" stroke="#6d3f3d" stroke-width="3" stroke-linecap="round"/>
       <text class="sleep-z" x="447" y="288">z</text><text class="sleep-z z-two" x="466" y="266">z</text><text class="sleep-z z-three" x="489" y="242">Z</text>
-      <path class="cry-wave" d="M445 310q23-20 46 0"/><path class="cry-wave cry-two" d="M452 293q31-29 62 0"/><path class="cry-wave cry-three" d="M461 274q38-37 76 0"/>
+      <path class="cry-wave" d="M427 337Q443 328 428 316"/>
+      <path class="cry-wave cry-two" d="M435 344Q461 328 436 307"/>
+      <path class="cry-wave cry-three" d="M443 352Q480 328 444 297"/>
     </g>
 
     <g class="phone">
