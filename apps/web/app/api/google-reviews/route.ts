@@ -26,16 +26,20 @@ export async function GET() {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   const placeId = process.env.GOOGLE_PLACE_ID;
   const configuredReviewsUrl = process.env.NEXT_PUBLIC_GOOGLE_REVIEWS_URL || DEFAULT_REVIEWS_URL;
+  const isProduction = process.env.NODE_ENV === "production";
 
   if (!apiKey || !placeId) {
-    return NextResponse.json({
-      configured: false,
-      placeName: "Digital HandyDan",
-      rating: null,
-      reviewCount: 0,
-      reviewsUrl: configuredReviewsUrl,
-      reviews: [],
-    });
+    return NextResponse.json(
+      {
+        configured: false,
+        placeName: "Digital HandyDan",
+        rating: null,
+        reviewCount: 0,
+        reviewsUrl: configuredReviewsUrl,
+        reviews: [],
+      },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   }
 
   try {
@@ -46,7 +50,7 @@ export async function GET() {
           "X-Goog-Api-Key": apiKey,
           "X-Goog-FieldMask": FIELD_MASK,
         },
-        next: { revalidate: 21_600 },
+        ...(isProduction ? { next: { revalidate: 21_600 } } : { cache: "no-store" as const }),
       },
     );
 
@@ -80,7 +84,9 @@ export async function GET() {
       },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=21600, stale-while-revalidate=86400",
+          "Cache-Control": isProduction
+            ? "public, s-maxage=21600, stale-while-revalidate=86400"
+            : "no-store",
         },
       },
     );
@@ -95,7 +101,7 @@ export async function GET() {
         reviewsUrl: configuredReviewsUrl,
         reviews: [],
       },
-      { status: 200 },
+      { status: 200, headers: { "Cache-Control": "no-store" } },
     );
   }
 }

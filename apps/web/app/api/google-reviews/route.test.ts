@@ -61,8 +61,10 @@ describe("GET /api/google-reviews", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining("places/place-123"),
       expect.objectContaining({
+        cache: "no-store",
         headers: expect.objectContaining({ "X-Goog-Api-Key": "secret-key" }),
       }),
     );
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
 });

@@ -54,7 +54,7 @@ export function GoogleReviews() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/google-reviews", { signal: controller.signal })
+    fetch("/api/google-reviews", { cache: "no-store", signal: controller.signal })
       .then((response) => response.ok ? response.json() : Promise.reject(new Error("Reviews unavailable")))
       .then((reviews: ReviewsResponse) => setData(reviews))
       .catch((error: unknown) => {
