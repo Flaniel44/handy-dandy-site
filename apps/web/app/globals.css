@@ -615,6 +615,17 @@ a { color: inherit; }
 .appointment-change-actions { display: flex; align-items: flex-start; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #29304a; }
 .appointment-change-actions > .appointment-rescheduler { flex: 1; }
 .customer-appointments .danger-button { border-color: #744052; background: #351c27; color: #ffb8cf; }
+.confirmation-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; background: #070912c7; backdrop-filter: blur(7px); animation: confirmation-fade-in 160ms ease-out; }
+.confirmation-dialog { width: min(100%, 460px); padding: clamp(24px, 5vw, 34px); border: 1px solid #744052; border-radius: 14px; background: radial-gradient(circle at 50% 0, #4b1f3038, transparent 48%), #111522; box-shadow: 0 24px 80px #000a; text-align: center; animation: confirmation-rise-in 200ms ease-out; }
+.confirmation-dialog-icon { width: 42px; height: 42px; display: grid; place-items: center; margin: 0 auto 17px; border: 1px solid #a85873; border-radius: 50%; background: #351c27; color: #ffb8cf; font-size: 1.25rem; font-weight: 900; }
+.confirmation-dialog h2 { margin: 0 0 12px; color: var(--ink); font-size: clamp(1.45rem, 5vw, 1.9rem); }
+.confirmation-dialog p { margin: 0; color: var(--muted); line-height: 1.65; }
+.confirmation-dialog-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-top: 26px; }
+.confirmation-dialog-actions button { min-height: 46px; margin: 0; padding: 11px 14px; border: 1px solid #4a5580; border-radius: 7px; background: #242c48; color: var(--ink); cursor: pointer; font: inherit; font-weight: 800; }
+.confirmation-dialog-actions .confirm-danger { border-color: #8d3f5d; background: #4b1f30; color: #ffd4e1; }
+.confirmation-dialog-actions button:disabled { cursor: wait; opacity: .58; }
+@keyframes confirmation-fade-in { from { opacity: 0; } }
+@keyframes confirmation-rise-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }
 .reschedule-panel { margin-top: 12px; padding: 14px; border: 1px solid #343c5b; border-radius: 8px; background: #090d18; }
 .reschedule-panel .week-controls { margin-top: 0; }
 .customer-appointments .reschedule-confirm { width: 100%; margin-top: 15px; border: 0; background: var(--ink); color: var(--night); }
@@ -664,6 +675,7 @@ a { color: inherit; }
   .auth-grid .wide { grid-column: auto; }
   .account-header { flex-direction: column; gap: 20px; }
   .customer-appointments article > header { flex-direction: column; }
+  .confirmation-dialog-actions { grid-template-columns: 1fr; }
   .profile-grid { grid-template-columns: 1fr; }
   .profile-grid .wide { grid-column: auto; }
   .scheduler-confirm { grid-template-columns: 1fr; }

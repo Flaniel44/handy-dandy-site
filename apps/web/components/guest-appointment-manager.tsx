@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ConfirmationDialog } from "./confirmation-dialog";
 
 type Appointment = {
   id: string;
@@ -36,6 +37,7 @@ export function GuestAppointmentManager({ initialToken }: { initialToken: string
   const [availability, setAvailability] = useState<Record<string, Slot[]>>({});
   const [timezone, setTimezone] = useState("");
   const [selected, setSelected] = useState<{ date: string; slot: Slot }>();
+  const [confirmingCancellation, setConfirmingCancellation] = useState(false);
   const dates = Array.from({ length: 7 }, (_, index) => addDays(week, index));
 
   useEffect(() => {
@@ -92,11 +94,11 @@ export function GuestAppointmentManager({ initialToken }: { initialToken: string
   }
 
   async function cancel() {
-    if (!window.confirm("Cancel this appointment? The time will be released for someone else to book.")) return;
     setLoading(true); setError(""); setMessage("");
     const response = await fetch("/api/bookings/manage", { method: "DELETE", headers: { "X-Appointment-Token": token } });
     const body = await response.json();
     setLoading(false);
+    setConfirmingCancellation(false);
     if (!response.ok) return setError(body.error ?? "The appointment could not be cancelled.");
     setAppointment((current) => current ? { ...current, status: "cancelled", canManage: false } : current);
     setRescheduling(false); setMessage("Your appointment was cancelled. A confirmation email is on its way.");
@@ -123,7 +125,7 @@ export function GuestAppointmentManager({ initialToken }: { initialToken: string
     {cancelled ? <div className="guest-management-finished"><p>This appointment has been cancelled and its time is available again.</p><Link className="booking-submit" href="/book">Choose another appointment time</Link></div> : appointment.canManage ? <>
       <div className="appointment-change-actions guest-management-actions">
         <button type="button" onClick={toggleRescheduling}>{rescheduling ? "Close rescheduling" : "Reschedule appointment"}</button>
-        <button type="button" className="danger-button" disabled={loading} onClick={cancel}>Cancel appointment</button>
+        <button type="button" className="danger-button" disabled={loading} onClick={() => setConfirmingCancellation(true)}>Cancel appointment</button>
       </div>
       {rescheduling && <div className="reschedule-panel guest-reschedule-panel">
         <p className="service-summary">Choose a new time. Times use {timezone || "the business timezone"}.</p>
@@ -132,6 +134,7 @@ export function GuestAppointmentManager({ initialToken }: { initialToken: string
         {selected && <button type="button" className="reschedule-confirm" disabled={loading} onClick={reschedule}>{loading ? "Rescheduling…" : `Move to ${selected.slot.label}`}</button>}
       </div>}
     </> : <div className="guest-management-finished"><p>This appointment is too close to its start time to change online. Please reply to your confirmation email if you need help.</p></div>}
+    <ConfirmationDialog open={confirmingCancellation} title="Cancel this appointment?" description={`Your ${appointment.serviceName} appointment on ${new Date(appointment.startsAt).toLocaleString([], { dateStyle: "full", timeStyle: "short" })} will be cancelled, and the time will become available to someone else.`} confirmLabel="Yes, cancel appointment" pending={loading} onCancel={() => setConfirmingCancellation(false)} onConfirm={() => void cancel()} />
   </section>;
 }
 

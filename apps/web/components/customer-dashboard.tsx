@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ContactLinks } from "./contact-links";
 import { AppointmentDetailsFields, emptyAppointmentDetails, type BookingAppointmentDetails } from "./appointment-details-fields";
+import { ConfirmationDialog } from "./confirmation-dialog";
 
 type Appointment = { id: string; status: string; adminNotes: string; clientNotes: string; createdAt: string; startsAt: string; endsAt: string; serviceId: string; serviceName: string; appointmentMode: string; appointmentPhone: string | null; appointmentStreetAddress: string | null; appointmentUnit: string | null; appointmentCity: string | null; appointmentPostalCode: string | null; appointmentCountry: string | null };
 type Service = { id: string; name: string; description: string; durationMinutes: number; priceCents: number };
@@ -29,7 +30,6 @@ export function CustomerDashboard({ firstName, bookingsEnabled, launchOfferEnabl
     setMessage(response.ok ? "Your notes were saved." : "Could not save your notes."); if (response.ok) await load();
   }
   async function cancelAppointment(id: string) {
-    if (!window.confirm("Cancel this appointment? The time will become available to other clients.")) return;
     const response = await fetch(`/api/account/appointments/${id}`, { method: "DELETE" });
     const body = await response.json(); setMessage(response.ok ? "Your appointment was cancelled." : body.error ?? "Could not cancel the appointment.");
     if (response.ok) {
@@ -142,7 +142,16 @@ function CustomerProfile({ onMessage }: { onMessage: (message: string) => void }
 
 function UpcomingAppointment({ appointment, save, cancel, onChanged, onMessage }: { appointment: Appointment; save: (id: string, notes: string) => Promise<void>; cancel: (id: string) => Promise<void>; onChanged: () => Promise<void>; onMessage: (message: string) => void }) {
   const [notes, setNotes] = useState(appointment.clientNotes);
-  return <article><AppointmentHeading appointment={appointment} /><AppointmentMeetingDetails appointment={appointment} />{appointment.adminNotes && <div className="shared-notes"><strong>Notes from Digital Handyman</strong><p>{appointment.adminNotes}</p></div>}<label>Your notes<textarea rows={4} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Anything you want me to know before our appointment" /></label><button onClick={() => save(appointment.id, notes)}>Save notes</button><div className="appointment-change-actions"><AppointmentRescheduler appointment={appointment} onChanged={onChanged} onMessage={onMessage} /><button className="danger-button" onClick={() => cancel(appointment.id)}>Cancel appointment</button></div></article>;
+  const [confirmingCancellation, setConfirmingCancellation] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  async function confirmCancellation() {
+    setCancelling(true);
+    await cancel(appointment.id);
+    setCancelling(false);
+    setConfirmingCancellation(false);
+  }
+  const appointmentTime = new Date(appointment.startsAt).toLocaleString([], { dateStyle: "full", timeStyle: "short" });
+  return <article><AppointmentHeading appointment={appointment} /><AppointmentMeetingDetails appointment={appointment} />{appointment.adminNotes && <div className="shared-notes"><strong>Notes from Digital Handyman</strong><p>{appointment.adminNotes}</p></div>}<label>Your notes<textarea rows={4} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Anything you want me to know before our appointment" /></label><button onClick={() => save(appointment.id, notes)}>Save notes</button><div className="appointment-change-actions"><AppointmentRescheduler appointment={appointment} onChanged={onChanged} onMessage={onMessage} /><button className="danger-button" onClick={() => setConfirmingCancellation(true)}>Cancel appointment</button></div><ConfirmationDialog open={confirmingCancellation} title="Cancel this appointment?" description={`Your ${appointment.serviceName} appointment on ${appointmentTime} will be cancelled, and the time will become available to someone else.`} confirmLabel="Yes, cancel appointment" pending={cancelling} onCancel={() => setConfirmingCancellation(false)} onConfirm={() => void confirmCancellation()} /></article>;
 }
 
 function AppointmentMeetingDetails({ appointment }: { appointment: Appointment }) {
