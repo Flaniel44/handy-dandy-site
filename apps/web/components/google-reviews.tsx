@@ -46,10 +46,6 @@ function Stars({ rating }: { rating: number }) {
 export function GoogleReviews() {
   const [data, setData] = useState<ReviewsResponse>(EMPTY_REVIEWS);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [carouselVisible, setCarouselVisible] = useState(false);
-  const [interactionPaused, setInteractionPaused] = useState(false);
-  const [userPaused, setUserPaused] = useState(false);
-  const carouselRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
@@ -66,24 +62,12 @@ export function GoogleReviews() {
   }, []);
 
   useEffect(() => {
-    const carousel = carouselRef.current;
-    if (!carousel || data.reviews.length < 2) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setCarouselVisible(entry.isIntersecting && entry.intersectionRatio >= 0.35),
-      { threshold: [0, 0.35, 1] },
-    );
-    observer.observe(carousel);
-    return () => observer.disconnect();
-  }, [data.reviews.length]);
-
-  useEffect(() => {
-    if (!carouselVisible || interactionPaused || userPaused || data.reviews.length < 2) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (data.reviews.length < 2) return;
     const timer = window.setInterval(() => {
       setActiveIndex((index) => (index + 1) % data.reviews.length);
-    }, 3000);
+    }, 5000);
     return () => window.clearInterval(timer);
-  }, [activeIndex, carouselVisible, data.reviews.length, interactionPaused, userPaused]);
+  }, [data.reviews.length]);
 
   const safeIndex = data.reviews.length ? activeIndex % data.reviews.length : 0;
   const review = data.reviews[safeIndex];
@@ -109,16 +93,7 @@ export function GoogleReviews() {
       </div>
 
       {review ? (
-        <div
-          ref={carouselRef}
-          className="reviews-carousel"
-          onMouseEnter={() => setInteractionPaused(true)}
-          onMouseLeave={() => setInteractionPaused(false)}
-          onFocusCapture={() => setInteractionPaused(true)}
-          onBlurCapture={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setInteractionPaused(false);
-          }}
-        >
+        <div className="reviews-carousel">
           <div
             className="reviews-carousel-stage"
             aria-live="polite"
@@ -201,15 +176,6 @@ export function GoogleReviews() {
                 ))}
               </div>
               <button type="button" onClick={next} aria-label="Next review">→</button>
-              <button
-                type="button"
-                className="reviews-autoplay-toggle"
-                onClick={() => setUserPaused((paused) => !paused)}
-                aria-label={userPaused ? "Resume automatic review rotation" : "Pause automatic review rotation"}
-                aria-pressed={userPaused}
-              >
-                <span aria-hidden="true">{userPaused ? "▶" : "Ⅱ"}</span>
-              </button>
             </div>
           )}
           <p className="reviews-order-note">Reviews supplied by Google Maps and ordered by relevance.</p>
