@@ -10,6 +10,7 @@ import { hasDatabaseErrorCode } from "../../../../../lib/db/errors";
 import { appointments, bookingSlots, businessSettings, services } from "../../../../../lib/db/schema";
 import { sendAppointmentCancelled, sendAppointmentRescheduled } from "../../../../../lib/email";
 import { deleteGoogleEvent, markCalendarSyncFailure, updateGoogleEventForAppointment } from "../../../../../lib/google-calendar";
+import { appointmentCalendarUrl } from "../../../../../lib/appointment-calendar";
 
 const rescheduleSchema = z.object({ date: z.iso.date(), startsAt: z.iso.datetime({ offset: true }) });
 
@@ -61,7 +62,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     console.error("Unable to reschedule appointment", error);
     return Response.json({ error: "We could not reschedule the appointment." }, { status: 500 });
   }
-  try { await sendAppointmentRescheduled(session.email, session.firstName, current.serviceName, current.startsAt, startsAt, `${appUrl()}/account`); }
+  try { await sendAppointmentRescheduled(session.email, session.firstName, current.serviceName, current.startsAt, startsAt, `${appUrl()}/account`, appointmentCalendarUrl(id)); }
   catch (error) { console.error("Appointment rescheduled but email failed", error); }
   try { await updateGoogleEventForAppointment(id); }
   catch (error) { await markCalendarSyncFailure(id, error); console.error("Appointment rescheduled but Google Calendar sync failed", error); }

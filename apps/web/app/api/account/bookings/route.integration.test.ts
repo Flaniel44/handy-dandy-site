@@ -46,18 +46,18 @@ describe("POST /api/account/bookings", () => {
     const response = await createAccountBooking(new Request("http://localhost/api/account/bookings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ serviceId: SERVICE_ID, ...slot, clientNotes: "Please review my setup." }),
+      body: JSON.stringify({ serviceId: SERVICE_ID, ...slot, clientNotes: "Please review my setup.", appointmentMode: "in_person", appointmentPhone: "", appointmentStreetAddress: "123 Main Street", appointmentUnit: "4", appointmentCity: "Ottawa", appointmentPostalCode: "K1A 0B1", appointmentCountry: "Canada" }),
     }));
 
     expect(response.status).toBe(202);
     const body = await response.json() as { appointmentId: string; status: string };
     expect(body.status).toBe("pending_approval");
-    const [saved] = await testSql<{ status: string; state: string; source: string; client_notes: string }[]>`
-      SELECT a.status, bs.state, a.source, a.client_notes
+    const [saved] = await testSql<{ status: string; state: string; source: string; client_notes: string; appointment_mode: string; appointment_street_address: string }[]>`
+      SELECT a.status, bs.state, a.source, a.client_notes, a.appointment_mode, a.appointment_street_address
       FROM appointments a JOIN booking_slots bs ON bs.id = a.slot_id
       WHERE a.id = ${body.appointmentId}
     `;
-    expect(saved).toEqual({ status: "pending_approval", state: "confirmed", source: "account", client_notes: "Please review my setup." });
+    expect(saved).toEqual({ status: "pending_approval", state: "confirmed", source: "account", client_notes: "Please review my setup.", appointment_mode: "in_person", appointment_street_address: "123 Main Street" });
     expect(sendBookingRequestReceived).toHaveBeenCalledWith(
       "client@example.com", "Client", "Smart-home consultation", expect.any(Date), "http://localhost:3000/account",
     );

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { AppointmentDetailsFields, emptyAppointmentDetails } from "./appointment-details-fields";
 
 type Service = { id: string; name: string; description: string; durationMinutes: number; priceCents: number };
 type Slot = { startsAt: string; endsAt: string; label: string };
@@ -10,6 +11,7 @@ export function BookingForm({ bookingsEnabled, launchOfferEnabled = false }: { b
   const [currentWeek] = useState(startOfWeek); const [week, setWeek] = useState(startOfWeek);
   const [availability, setAvailability] = useState<Record<string, Slot[]>>({});
   const [timezone, setTimezone] = useState("");
+  const [appointmentDetails, setAppointmentDetails] = useState(emptyAppointmentDetails);
   const [selected, setSelected] = useState<{ date: string; slot: Slot }>();
   const [loading, setLoading] = useState(bookingsEnabled); const [error, setError] = useState(""); const [confirmation, setConfirmation] = useState<{ email: string; expiresAt: string }>();
   const dates = Array.from({ length: 7 }, (_, index) => addDays(week, index));
@@ -43,6 +45,7 @@ export function BookingForm({ bookingsEnabled, launchOfferEnabled = false }: { b
     const response = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
       serviceId, date: selected.date, startsAt: selected.slot.startsAt,
       name: form.get("name"), email: form.get("email"), notes: form.get("notes"),
+      ...appointmentDetails,
     }) });
     const body = await response.json(); setLoading(false);
     if (!response.ok) return setError(body.error ?? "We could not create the appointment.");
@@ -64,6 +67,7 @@ export function BookingForm({ bookingsEnabled, launchOfferEnabled = false }: { b
 
     <div className="booking-step"><span>03</span><div><h2>Your details</h2><p>No account is required.</p></div></div>
     <div className="field-grid"><label>Name<input name="name" autoComplete="name" minLength={2} required /></label><label>Email<input name="email" type="email" autoComplete="email" required /></label></div>
+    <AppointmentDetailsFields value={appointmentDetails} onChange={setAppointmentDetails} />
     <label>Notes<textarea name="notes" rows={5} maxLength={2000} placeholder="What would you like help with?" /></label>
     {error && <p className="form-error" role="alert">{error}</p>}
     <button className="booking-submit" type="submit" disabled={!selected || loading}>{loading ? "Loading availability…" : selected ? `Book ${selected.slot.label}` : "Choose a time"}</button>

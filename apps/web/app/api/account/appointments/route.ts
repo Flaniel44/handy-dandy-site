@@ -14,6 +14,10 @@ export async function GET() {
   const rows = await getDb().select({
     id: appointments.id, status: appointments.status, adminNotes: appointments.notes, clientNotes: appointments.clientNotes,
     startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt, serviceId: services.id, serviceName: services.name,
+    appointmentMode: appointments.appointmentMode, appointmentPhone: appointments.appointmentPhone,
+    appointmentStreetAddress: appointments.appointmentStreetAddress, appointmentUnit: appointments.appointmentUnit,
+    appointmentCity: appointments.appointmentCity, appointmentPostalCode: appointments.appointmentPostalCode,
+    appointmentCountry: appointments.appointmentCountry,
   }).from(appointments).innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(services, eq(services.id, bookingSlots.serviceId))
     .where(eq(appointments.customerId, session.customerId)).orderBy(desc(bookingSlots.startsAt));

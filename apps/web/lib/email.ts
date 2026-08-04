@@ -14,6 +14,13 @@ type AdminAppointmentDetails = {
   city: string | null;
   postalCode: string | null;
   country: string | null;
+  appointmentMode: string;
+  appointmentPhone: string | null;
+  appointmentStreetAddress: string | null;
+  appointmentUnit: string | null;
+  appointmentCity: string | null;
+  appointmentPostalCode: string | null;
+  appointmentCountry: string | null;
   serviceName: string;
   startsAt: Date;
   endsAt: Date;
@@ -71,16 +78,18 @@ export async function sendPasswordChangedEmail(to: string, firstName: string) {
   });
 }
 
-export async function sendBookingConfirmation(to: string, name: string, serviceName: string, startsAt: Date, manageUrl?: string) {
+export async function sendBookingConfirmation(to: string, name: string, serviceName: string, startsAt: Date, manageUrl?: string, calendarUrl?: string) {
   const formatted = new Intl.DateTimeFormat("en-CA", { dateStyle: "full", timeStyle: "short", timeZone: process.env.BUSINESS_TIMEZONE ?? "America/Toronto" }).format(startsAt);
   const demosUrl = `${(process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "")}/demos`;
   const manageText = manageUrl ? `\n\nNeed to make a change? Reschedule or cancel here:\n${manageUrl}` : "";
   const manageHtml = manageUrl ? `<p><a href="${escapeHtml(manageUrl)}">Reschedule or cancel this appointment</a></p>` : "";
+  const calendarText = calendarUrl ? `\n\nAdd this appointment to your calendar:\n${calendarUrl}` : "";
+  const calendarHtml = calendarUrl ? `<p><a href="${escapeHtml(calendarUrl)}" style="display:inline-block;padding:11px 16px;border:1px solid #8279e5;color:#332b6a;text-decoration:none;border-radius:6px;font-weight:700">Add to your calendar</a></p>` : "";
   await sendTransactionalEmail({
     to,
     subject: "Your Digital Handyman appointment is confirmed",
-    text: `Hi ${name},\n\nYour ${serviceName} appointment is confirmed for ${formatted}.${manageText}\n\nReply to this email if you need help.\n\nTake a look at some examples of what's possible!\n${demosUrl}`,
-    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment is confirmed for:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p>${manageHtml}<p>Reply to this email if you need help.</p><p style="margin-top:28px"><a href="${escapeHtml(demosUrl)}">Take a look at some examples of what's possible!</a></p>`,
+    text: `Hi ${name},\n\nYour ${serviceName} appointment is confirmed for ${formatted}.${manageText}${calendarText}\n\nReply to this email if you need help.\n\nTake a look at some examples of what's possible!\n${demosUrl}`,
+    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment is confirmed for:</p><p style="font-size:18px"><strong>${escapeHtml(formatted)}</strong></p>${calendarHtml}${manageHtml}<p>Reply to this email if you need help.</p><p style="margin-top:28px"><a href="${escapeHtml(demosUrl)}">Take a look at some examples of what's possible!</a></p>`,
   });
 }
 
@@ -148,13 +157,13 @@ export async function sendAdminAppointmentCancelled(details: AdminAppointmentDet
   await sendAdminAppointmentUpdate("cancelled", details);
 }
 
-export async function sendAppointmentRescheduled(to: string, name: string, serviceName: string, previousStartsAt: Date, startsAt: Date, manageUrl?: string) {
+export async function sendAppointmentRescheduled(to: string, name: string, serviceName: string, previousStartsAt: Date, startsAt: Date, manageUrl?: string, calendarUrl?: string) {
   const previousFormatted = formatAppointmentTime(previousStartsAt);
   const formatted = formatAppointmentTime(startsAt);
   await sendTransactionalEmail({
     to, subject: "Your Digital Handyman appointment was rescheduled",
-    text: `Hi ${name},\n\nYour ${serviceName} appointment was moved from ${previousFormatted} to ${formatted}.${manageUrl ? `\n\nMake another change:\n${manageUrl}` : ""}\n\nReply to this email if you need help.`,
-    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment was rescheduled.</p><p><span style="text-decoration:line-through">${escapeHtml(previousFormatted)}</span><br><strong style="font-size:18px">${escapeHtml(formatted)}</strong></p>${manageUrl ? `<p><a href="${escapeHtml(manageUrl)}">Reschedule or cancel this appointment</a></p>` : ""}<p>Reply to this email if you need help.</p>`,
+    text: `Hi ${name},\n\nYour ${serviceName} appointment was moved from ${previousFormatted} to ${formatted}.${manageUrl ? `\n\nMake another change:\n${manageUrl}` : ""}${calendarUrl ? `\n\nAdd the updated appointment to your calendar:\n${calendarUrl}` : ""}\n\nReply to this email if you need help.`,
+    html: `<p>Hi ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(serviceName)}</strong> appointment was rescheduled.</p><p><span style="text-decoration:line-through">${escapeHtml(previousFormatted)}</span><br><strong style="font-size:18px">${escapeHtml(formatted)}</strong></p>${calendarUrl ? `<p><a href="${escapeHtml(calendarUrl)}">Add the updated appointment to your calendar</a></p>` : ""}${manageUrl ? `<p><a href="${escapeHtml(manageUrl)}">Reschedule or cancel this appointment</a></p>` : ""}<p>Reply to this email if you need help.</p>`,
   });
 }
 
@@ -196,6 +205,7 @@ async function sendAdminAppointmentUpdate(action: "booked" | "cancelled", detail
   const startsAt = formatAppointmentTime(details.startsAt);
   const endsAt = new Intl.DateTimeFormat("en-CA", { timeStyle: "short", timeZone: process.env.BUSINESS_TIMEZONE ?? "America/Toronto" }).format(details.endsAt);
   const address = formatCustomerAddress(details);
+  const appointmentAddress = formatAppointmentAddress(details);
   const pendingApproval = action === "booked" && details.status === "pending_approval";
   const heading = action === "cancelled" ? "Client cancelled appointment" : pendingApproval ? "New appointment request awaiting approval" : "New appointment booked";
   const reviewDestination = `/admin?appointment=${encodeURIComponent(details.appointmentId)}#appointment-${details.appointmentId}`;
@@ -205,6 +215,9 @@ async function sendAdminAppointmentUpdate(action: "booked" | "cancelled", detail
     ["Email", details.customerEmail],
     ["Phone", details.customerPhone || "Not provided"],
     ["Address", address || "Not provided"],
+    ["Appointment format", details.appointmentMode === "in_person" ? "In person" : "By phone"],
+    ["Appointment phone", details.appointmentMode === "phone" ? details.appointmentPhone || "Not provided" : "Not applicable"],
+    ["Appointment address", details.appointmentMode === "in_person" ? appointmentAddress || "Not provided" : "Not applicable"],
     ["Service", details.serviceName],
     ["When", `${startsAt} to ${endsAt}`],
     ["Client notes", details.clientNotes || "None provided"],
@@ -225,6 +238,12 @@ function formatCustomerAddress(details: AdminAppointmentDetails) {
   const street = [details.streetAddress, details.unit && `Unit ${details.unit}`].filter(Boolean).join(", ");
   const locality = [details.city, details.postalCode].filter(Boolean).join(" ");
   return [street, locality, details.country].filter(Boolean).join(", ");
+}
+
+function formatAppointmentAddress(details: AdminAppointmentDetails) {
+  const street = [details.appointmentStreetAddress, details.appointmentUnit && `Unit ${details.appointmentUnit}`].filter(Boolean).join(", ");
+  const locality = [details.appointmentCity, details.appointmentPostalCode].filter(Boolean).join(" ");
+  return [street, locality, details.appointmentCountry].filter(Boolean).join(", ");
 }
 
 function escapeHtml(value: string) {

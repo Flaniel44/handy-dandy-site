@@ -6,6 +6,7 @@ import { DateTime } from "luxon";
 
 import { getDb } from "./db";
 import { appointments, bookingSlots, businessSettings, customers, googleCalendarConnections, googleCalendarEventOverrides, services } from "./db/schema";
+import { appointmentModeLabel, formatAppointmentAddress, type AppointmentDetails } from "./appointment-details";
 
 const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
 
@@ -123,6 +124,10 @@ export async function createGoogleEventForAppointment(appointmentId: string) {
     serviceName: services.name, startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt,
     status: appointments.status, customerName: customers.name, customerEmail: customers.email,
     clientNotes: appointments.clientNotes, adminNotes: appointments.notes,
+    appointmentMode: appointments.appointmentMode, appointmentPhone: appointments.appointmentPhone,
+    appointmentStreetAddress: appointments.appointmentStreetAddress, appointmentUnit: appointments.appointmentUnit,
+    appointmentCity: appointments.appointmentCity, appointmentPostalCode: appointments.appointmentPostalCode,
+    appointmentCountry: appointments.appointmentCountry,
   }).from(appointments)
     .innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(services, eq(services.id, bookingSlots.serviceId))
@@ -137,7 +142,8 @@ export async function createGoogleEventForAppointment(appointmentId: string) {
     method: "POST",
     body: JSON.stringify({
       summary: `${row.status === "pending_approval" ? "APPROVAL NEEDED — " : ""}Digital Handyman: ${row.serviceName} — ${row.customerName}`,
-      description: [`Client: ${row.customerName} <${row.customerEmail}>`, row.clientNotes && `Client notes: ${row.clientNotes}`, row.adminNotes && `Admin notes: ${row.adminNotes}`, ...approvalLinks].filter(Boolean).join("\n\n"),
+      description: googleAppointmentDescription(row, approvalLinks),
+      location: googleAppointmentLocation(row),
       status: row.status === "pending_approval" ? "tentative" : "confirmed",
       start: { dateTime: row.startsAt.toISOString() }, end: { dateTime: row.endsAt.toISOString() },
       extendedProperties: { private: { handyDandyAppointmentId: appointmentId } },
@@ -156,6 +162,10 @@ export async function updateGoogleEventForAppointment(appointmentId: string) {
     startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt,
     serviceName: services.name, customerName: customers.name, customerEmail: customers.email,
     clientNotes: appointments.clientNotes, adminNotes: appointments.notes,
+    appointmentMode: appointments.appointmentMode, appointmentPhone: appointments.appointmentPhone,
+    appointmentStreetAddress: appointments.appointmentStreetAddress, appointmentUnit: appointments.appointmentUnit,
+    appointmentCity: appointments.appointmentCity, appointmentPostalCode: appointments.appointmentPostalCode,
+    appointmentCountry: appointments.appointmentCountry,
   }).from(appointments)
     .innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(services, eq(services.id, bookingSlots.serviceId))
@@ -171,7 +181,8 @@ export async function updateGoogleEventForAppointment(appointmentId: string) {
     method: "PATCH", cache: "no-store", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       summary: `${row.status === "pending_approval" ? "APPROVAL NEEDED — " : ""}Digital Handyman: ${row.serviceName} — ${row.customerName}`,
-      description: [`Client: ${row.customerName} <${row.customerEmail}>`, row.clientNotes && `Client notes: ${row.clientNotes}`, row.adminNotes && `Admin notes: ${row.adminNotes}`, ...approvalLinks].filter(Boolean).join("\n\n"),
+      description: googleAppointmentDescription(row, approvalLinks),
+      location: googleAppointmentLocation(row),
       status: row.status === "pending_approval" ? "tentative" : "confirmed",
       start: { dateTime: row.startsAt.toISOString() }, end: { dateTime: row.endsAt.toISOString() },
     }),
@@ -237,6 +248,22 @@ function appUrl() {
 function adminReviewUrl(appointmentId: string, action: "approve" | "decline") {
   const destination = `/admin?appointment=${encodeURIComponent(appointmentId)}&action=${action}#appointment-${appointmentId}`;
   return `${appUrl()}/login?next=${encodeURIComponent(destination)}`;
+}
+
+function googleAppointmentDescription(row: AppointmentDetails & { customerName: string; customerEmail: string; clientNotes: string; adminNotes: string }, approvalLinks: string[]) {
+  return [
+    `Client: ${row.customerName} <${row.customerEmail}>`,
+    `Appointment format: ${appointmentModeLabel(row.appointmentMode)}`,
+    row.appointmentMode === "phone" && `Phone: ${row.appointmentPhone || "Not provided"}`,
+    row.appointmentMode === "in_person" && `Address: ${formatAppointmentAddress(row) || "Not provided"}`,
+    row.clientNotes && `Client notes: ${row.clientNotes}`,
+    row.adminNotes && `Admin notes: ${row.adminNotes}`,
+    ...approvalLinks,
+  ].filter(Boolean).join("\n\n");
+}
+
+function googleAppointmentLocation(row: AppointmentDetails) {
+  return row.appointmentMode === "in_person" ? formatAppointmentAddress(row) : "Phone appointment";
 }
 
 async function markSync(appointmentId: string, status: "synced" | "failed", error?: unknown) {

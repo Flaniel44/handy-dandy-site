@@ -12,6 +12,7 @@ import { createGuestManagementToken, getGuestManagedAppointment, guestManagement
 import { deleteGoogleEvent, markCalendarSyncFailure, updateGoogleEventForAppointment } from "../../../../lib/google-calendar";
 import { publicUrl } from "../../../../lib/public-url";
 import { checkRateLimit, rateLimitResponse } from "../../../../lib/rate-limit";
+import { appointmentCalendarUrl } from "../../../../lib/appointment-calendar";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,13 @@ export async function GET(request: Request) {
       clientNotes: current.clientNotes,
       customerName: current.customerName,
       customerEmail: current.customerEmail,
+      appointmentMode: current.appointmentMode,
+      appointmentPhone: current.appointmentPhone,
+      appointmentStreetAddress: current.appointmentStreetAddress,
+      appointmentUnit: current.appointmentUnit,
+      appointmentCity: current.appointmentCity,
+      appointmentPostalCode: current.appointmentPostalCode,
+      appointmentCountry: current.appointmentCountry,
       canManage: canManage(current),
     },
   }, { headers: { "Cache-Control": "private, no-store" } });
@@ -81,7 +89,7 @@ export async function PATCH(request: Request) {
   }
 
   const manageUrl = publicUrl(request, `/book/manage?token=${encodeURIComponent(nextToken.token)}`).toString();
-  try { await sendAppointmentRescheduled(current.customerEmail, current.customerName, current.serviceName, current.startsAt, startsAt, manageUrl); }
+  try { await sendAppointmentRescheduled(current.customerEmail, current.customerName, current.serviceName, current.startsAt, startsAt, manageUrl, appointmentCalendarUrl(current.appointmentId)); }
   catch (error) { console.error("Guest appointment rescheduled but email failed", error); }
   try { await updateGoogleEventForAppointment(current.appointmentId); }
   catch (error) { await markCalendarSyncFailure(current.appointmentId, error); console.error("Guest appointment rescheduled but Google Calendar sync failed", error); }

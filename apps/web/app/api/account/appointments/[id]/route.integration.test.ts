@@ -46,6 +46,7 @@ let cancelAppointment: typeof import("./route").DELETE;
 let rescheduleAppointment: typeof import("./route").PATCH;
 
 beforeAll(async () => {
+  process.env.ADMIN_SESSION_SECRET = "integration-test-session-secret-at-least-32-characters";
   testSql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   ({ DELETE: cancelAppointment, PATCH: rescheduleAppointment } = await import("./route"));
 });

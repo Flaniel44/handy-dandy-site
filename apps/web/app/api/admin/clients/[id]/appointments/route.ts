@@ -16,6 +16,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     cancellationDiscountPercent: appointments.cancellationDiscountPercent, source: appointments.source,
     startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt, customerName: customers.name,
     customerEmail: customers.email, customerPhone: customers.phone, serviceName: services.name,
+    appointmentMode: appointments.appointmentMode, appointmentPhone: appointments.appointmentPhone,
+    appointmentStreetAddress: appointments.appointmentStreetAddress, appointmentUnit: appointments.appointmentUnit,
+    appointmentCity: appointments.appointmentCity, appointmentPostalCode: appointments.appointmentPostalCode,
+    appointmentCountry: appointments.appointmentCountry,
   }).from(appointments)
     .innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(customers, eq(customers.id, appointments.customerId))

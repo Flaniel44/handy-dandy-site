@@ -120,15 +120,22 @@ describe("Google Calendar integration", () => {
   it("creates, updates, and deletes the Google event attached to an appointment", async () => {
     await connect();
     const appointment = await seedAppointment("confirmed");
+    await testSql`
+      UPDATE appointments SET appointment_mode = 'in_person', appointment_street_address = '123 Main Street', appointment_unit = '4B', appointment_city = 'Ottawa', appointment_postal_code = 'K1A 0B1', appointment_country = 'Canada'
+      WHERE id = ${appointment.id}
+    `;
 
     await calendar.createGoogleEventForAppointment(appointment.id);
     let [saved] = await appointmentSyncState(appointment.id);
     expect(saved).toMatchObject({ google_event_id: "created-google-event", calendar_sync_status: "synced" });
     const createRequest = calendarRequest("POST");
-    const createBody = JSON.parse(String(createRequest?.[1]?.body)) as { summary: string; status: string; extendedProperties: { private: { handyDandyAppointmentId: string } } };
+    const createBody = JSON.parse(String(createRequest?.[1]?.body)) as { summary: string; status: string; description: string; location: string; extendedProperties: { private: { handyDandyAppointmentId: string } } };
     expect(createBody.summary).toContain("Smart-home consultation");
     expect(createBody.summary).toContain("Calendar Customer");
     expect(createBody.status).toBe("confirmed");
+    expect(createBody.description).toContain("Appointment format: In person");
+    expect(createBody.description).toContain("Address: 123 Main Street, Unit 4B, Ottawa K1A 0B1, Canada");
+    expect(createBody.location).toBe("123 Main Street, Unit 4B, Ottawa K1A 0B1, Canada");
     expect(createBody.extendedProperties.private.handyDandyAppointmentId).toBe(appointment.id);
 
     const movedStart = futureDay().plus({ days: 1 }).set({ hour: 14 });

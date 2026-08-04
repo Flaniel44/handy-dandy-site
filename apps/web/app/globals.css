@@ -372,6 +372,16 @@ a { color: inherit; }
 .booking-card input:focus, .booking-card select:focus, .booking-card textarea:focus { outline: 2px solid #8279e5; outline-offset: 2px; }
 .service-summary { margin-top: 12px; font-size: .88rem; }
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+.field-grid .wide { grid-column: 1 / -1; }
+.appointment-format-fields { display: grid; gap: 18px; margin: 24px 0 18px; padding: 0; border: 0; }
+.appointment-format-fields legend { margin-bottom: 12px; color: var(--ink); font-size: 1rem; font-weight: 800; }
+.appointment-format-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.appointment-format-options label { display: flex; grid-template-columns: auto 1fr; align-items: flex-start; gap: 11px; padding: 14px; border: 1px solid #3a4468; border-radius: 8px; background: #0c1020; cursor: pointer; }
+.appointment-format-options label:has(input:checked) { border-color: #8279e5; background: #211f3e; box-shadow: 0 0 0 1px #8279e5; }
+.appointment-format-options input { width: auto; margin-top: 3px; accent-color: #8279e5; }
+.appointment-format-options span { display: grid; gap: 4px; }
+.appointment-format-options small, .appointment-address-fields label > small { color: var(--muted); font-weight: 500; letter-spacing: 0; line-height: 1.4; }
+.appointment-address-fields { margin-bottom: 0; }
 .slot-grid { min-height: 52px; display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 10px; margin-top: 18px; }
 .slot-grid > p { grid-column: 1 / -1; color: var(--muted); }
 .slot { padding: 12px; border: 1px solid #3a4468; border-radius: 7px; background: #171d31; color: var(--ink); cursor: pointer; font: inherit; }
@@ -415,7 +425,8 @@ a { color: inherit; }
   .review-card { min-height: 340px; }
   .landing-contact a { min-width: 54px; font-size: .68rem; }
   .landing-contact a span { width: 46px; height: 46px; }
-  .field-grid { grid-template-columns: 1fr; }
+  .field-grid, .appointment-format-options { grid-template-columns: 1fr; }
+  .field-grid .wide { grid-column: auto; }
   .booking-card { padding: 24px 18px; }
   .booking-header { margin-bottom: 70px; }
 }
@@ -627,7 +638,7 @@ a { color: inherit; }
 .scheduler-panel { padding: 18px; }
 .scheduler-content { padding: 24px 6px 4px; }
 .scheduler-content > label, .scheduler-confirm label { display: grid; gap: 8px; color: #d8d6cf; font-size: .82rem; font-weight: 700; }
-.scheduler-content select, .scheduler-confirm textarea { width: 100%; padding: 11px 12px; border: 1px solid #3a4468; border-radius: 6px; background: #0b0f1c; color: var(--ink); font: inherit; }
+.scheduler-content select, .scheduler-confirm textarea, .scheduler-confirm input:not([type="radio"]) { width: 100%; padding: 11px 12px; border: 1px solid #3a4468; border-radius: 6px; background: #0b0f1c; color: var(--ink); font: inherit; }
 .week-controls { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 12px; margin: 24px 0 16px; text-align: center; }
 .week-controls button { height: 40px; border: 1px solid #4a5580; border-radius: 6px; background: #242c48; color: var(--ink); cursor: pointer; font-size: 1.2rem; }
 .week-controls button:disabled { cursor: not-allowed; opacity: .3; }
@@ -639,7 +650,10 @@ a { color: inherit; }
 .weekly-availability section button { padding: 8px 4px; border: 1px solid #3a4468; border-radius: 5px; background: #171d31; color: var(--ink); cursor: pointer; font-size: .78rem; }
 .weekly-availability section button.is-selected { border-color: #f59842; background: #3f2d25; }
 .scheduler-confirm { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 14px; margin-top: 18px; }
+.scheduler-confirm .appointment-format-fields { grid-column: 1 / -1; width: 100%; margin-top: 0; }
 .scheduler-confirm > button { padding: 12px 18px; border: 0; border-radius: 6px; background: var(--ink); color: var(--night); cursor: pointer; font: inherit; font-weight: 800; }
+.appointment-meeting-details { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 12px 0 16px; color: var(--muted); font-size: .86rem; line-height: 1.5; }
+.appointment-meeting-details strong { color: #d8d6cf; }
 
 @media (max-width: 620px) {
   input, select, textarea { font-size: 16px !important; }

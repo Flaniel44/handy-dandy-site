@@ -3,8 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ContactLinks } from "./contact-links";
+import { AppointmentDetailsFields, emptyAppointmentDetails, type BookingAppointmentDetails } from "./appointment-details-fields";
 
-type Appointment = { id: string; status: string; adminNotes: string; clientNotes: string; startsAt: string; endsAt: string; serviceId: string; serviceName: string };
+type Appointment = { id: string; status: string; adminNotes: string; clientNotes: string; startsAt: string; endsAt: string; serviceId: string; serviceName: string; appointmentMode: string; appointmentPhone: string | null; appointmentStreetAddress: string | null; appointmentUnit: string | null; appointmentCity: string | null; appointmentPostalCode: string | null; appointmentCountry: string | null };
 type Service = { id: string; name: string; description: string; durationMinutes: number; priceCents: number };
 type Slot = { startsAt: string; endsAt: string; label: string };
 type Profile = { firstName: string; lastName: string; email: string; phone: string; streetAddress: string; unit: string; city: string; postalCode: string; country: string };
@@ -55,14 +56,27 @@ function AccountScheduler({ onBooked, onMessage, launchOfferEnabled }: { onBooke
   const [currentWeek] = useState(startOfWeek); const [week, setWeek] = useState(startOfWeek);
   const [availability, setAvailability] = useState<Record<string, Slot[]>>({});
   const [timezone, setTimezone] = useState("");
+  const [appointmentDetails, setAppointmentDetails] = useState<BookingAppointmentDetails>(emptyAppointmentDetails);
   const [selected, setSelected] = useState<{ date: string; slot: Slot }>(); const [notes, setNotes] = useState(""); const [loading, setLoading] = useState(false);
   const dates = Array.from({ length: 7 }, (_, index) => addDays(week, index));
   const service = services.find((item) => item.id === serviceId);
 
   useEffect(() => {
     if (!open || services.length) return;
-    fetch("/api/services").then((response) => response.json()).then((body) => { setServices(body.services ?? []); setServiceId(body.services?.[0]?.id ?? ""); });
-  }, [open, services.length]);
+    Promise.all([fetch("/api/services"), fetch("/api/account/profile")]).then(async ([servicesResponse, profileResponse]) => {
+      const [servicesBody, profileBody] = await Promise.all([servicesResponse.json(), profileResponse.json()]);
+      setServices(servicesBody.services ?? []); setServiceId(servicesBody.services?.[0]?.id ?? "");
+      if (profileResponse.ok && profileBody.profile) setAppointmentDetails((current) => ({
+        ...current,
+        appointmentPhone: profileBody.profile.phone ?? "",
+        appointmentStreetAddress: profileBody.profile.streetAddress ?? "",
+        appointmentUnit: profileBody.profile.unit ?? "",
+        appointmentCity: profileBody.profile.city ?? "",
+        appointmentPostalCode: profileBody.profile.postalCode ?? "",
+        appointmentCountry: profileBody.profile.country || "Canada",
+      }));
+    }).catch(() => onMessage("Could not load the appointment form."));
+  }, [open, services.length, onMessage]);
 
   useEffect(() => {
     if (!open || !serviceId) return;
@@ -80,8 +94,11 @@ function AccountScheduler({ onBooked, onMessage, launchOfferEnabled }: { onBooke
 
   function changeWeek(amount: number) { setWeek((value) => addDays(value, amount * 7)); setSelected(undefined); setLoading(true); }
   async function book() {
-    if (!selected) return; setLoading(true);
-    const response = await fetch("/api/account/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ serviceId, date: selected.date, startsAt: selected.slot.startsAt, clientNotes: notes }) });
+    if (!selected) return;
+    if (appointmentDetails.appointmentMode === "phone" && appointmentDetails.appointmentPhone.length < 7) return onMessage("Enter the phone number you would like me to call.");
+    if (appointmentDetails.appointmentMode === "in_person" && (!appointmentDetails.appointmentStreetAddress || !appointmentDetails.appointmentCity || !appointmentDetails.appointmentPostalCode || !appointmentDetails.appointmentCountry)) return onMessage("Enter the complete address for the in-person appointment.");
+    setLoading(true);
+    const response = await fetch("/api/account/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ serviceId, date: selected.date, startsAt: selected.slot.startsAt, clientNotes: notes, ...appointmentDetails }) });
     const body = await response.json(); setLoading(false);
     if (!response.ok) return onMessage(body.error ?? "Could not create the appointment.");
     onMessage("Your appointment request was sent for approval."); setOpen(false); setSelected(undefined); setNotes(""); await onBooked();
@@ -93,7 +110,7 @@ function AccountScheduler({ onBooked, onMessage, launchOfferEnabled }: { onBooke
     <p className="service-summary">{service ? `${service.description} · ${service.durationMinutes} minutes · ${service.priceCents === 0 ? "Free" : `$${(service.priceCents / 100).toFixed(2)}`} · ` : ""}Times use {timezone || "the business timezone"}.</p>
     <div className="week-controls"><button disabled={week.getTime() <= currentWeek.getTime()} onClick={() => changeWeek(-1)} aria-label="Previous week">←</button><strong>{dates[0].toLocaleDateString([], { month: "short", day: "numeric" })} – {dates[6].toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}</strong><button onClick={() => changeWeek(1)} aria-label="Next week">→</button></div>
     <div className="weekly-availability" aria-busy={loading}>{dates.map((date) => { const dateText = formatDateInput(date); const slots = availability[dateText] ?? []; return <section key={dateText}><header><strong>{date.toLocaleDateString([], { weekday: "short" })}</strong><span>{date.toLocaleDateString([], { month: "short", day: "numeric" })}</span></header><div>{slots.length ? slots.map((slot) => <button className={selected?.slot.startsAt === slot.startsAt ? "is-selected" : ""} key={slot.startsAt} onClick={() => setSelected({ date: dateText, slot })}>{slot.label}</button>) : <small>No times</small>}</div></section>; })}</div>
-    {selected && <div className="scheduler-confirm"><label>Notes for this appointment<textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} /></label><button disabled={loading} onClick={book}>{loading ? "Scheduling…" : `Confirm ${selected.slot.label}`}</button></div>}
+    {selected && <div className="scheduler-confirm"><AppointmentDetailsFields value={appointmentDetails} onChange={setAppointmentDetails} /><label>Notes for this appointment<textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} /></label><button disabled={loading} onClick={book}>{loading ? "Scheduling…" : `Confirm ${selected.slot.label}`}</button></div>}
   </div>}</section>;
 }
 
@@ -125,7 +142,12 @@ function CustomerProfile({ onMessage }: { onMessage: (message: string) => void }
 
 function UpcomingAppointment({ appointment, save, cancel, onChanged, onMessage }: { appointment: Appointment; save: (id: string, notes: string) => Promise<void>; cancel: (id: string) => Promise<void>; onChanged: () => Promise<void>; onMessage: (message: string) => void }) {
   const [notes, setNotes] = useState(appointment.clientNotes);
-  return <article><AppointmentHeading appointment={appointment} />{appointment.adminNotes && <div className="shared-notes"><strong>Notes from Digital Handyman</strong><p>{appointment.adminNotes}</p></div>}<label>Your notes<textarea rows={4} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Anything you want me to know before our appointment" /></label><button onClick={() => save(appointment.id, notes)}>Save notes</button><div className="appointment-change-actions"><AppointmentRescheduler appointment={appointment} onChanged={onChanged} onMessage={onMessage} /><button className="danger-button" onClick={() => cancel(appointment.id)}>Cancel appointment</button></div></article>;
+  return <article><AppointmentHeading appointment={appointment} /><AppointmentMeetingDetails appointment={appointment} />{appointment.adminNotes && <div className="shared-notes"><strong>Notes from Digital Handyman</strong><p>{appointment.adminNotes}</p></div>}<label>Your notes<textarea rows={4} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Anything you want me to know before our appointment" /></label><button onClick={() => save(appointment.id, notes)}>Save notes</button><div className="appointment-change-actions"><AppointmentRescheduler appointment={appointment} onChanged={onChanged} onMessage={onMessage} /><button className="danger-button" onClick={() => cancel(appointment.id)}>Cancel appointment</button></div></article>;
+}
+
+function AppointmentMeetingDetails({ appointment }: { appointment: Appointment }) {
+  const address = [[appointment.appointmentStreetAddress, appointment.appointmentUnit && `Unit ${appointment.appointmentUnit}`].filter(Boolean).join(", "), [appointment.appointmentCity, appointment.appointmentPostalCode].filter(Boolean).join(" "), appointment.appointmentCountry].filter(Boolean).join(", ");
+  return <p className="appointment-meeting-details"><strong>{appointment.appointmentMode === "in_person" ? "In person" : "By phone"}</strong><span>{appointment.appointmentMode === "in_person" ? address : appointment.appointmentPhone}</span></p>;
 }
 
 function AppointmentRescheduler({ appointment, onChanged, onMessage }: { appointment: Appointment; onChanged: () => Promise<void>; onMessage: (message: string) => void }) {

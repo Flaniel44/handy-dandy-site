@@ -108,7 +108,7 @@ describe("transactional email delivery", () => {
 
   it("sends booking confirmations with configured sender fields and escaped customer content", async () => {
     const startsAt = new Date("2026-08-03T17:00:00.000Z");
-    await email.sendBookingConfirmation("ada@example.com", "Ada <Admin>", "Lights & Music", startsAt);
+    await email.sendBookingConfirmation("ada@example.com", "Ada <Admin>", "Lights & Music", startsAt, undefined, "https://digitalhandydan.ca/api/appointments/123/calendar?token=signed");
 
     const [url, init] = fetchMock.mock.calls[0]!;
     expect(url).toBe("https://api.resend.com/emails");
@@ -127,6 +127,8 @@ describe("transactional email delivery", () => {
     expect(body.text).toContain("Take a look at some examples of what's possible!");
     expect(body.text).toContain("https://whatisthis.place/demos");
     expect(body.html).toContain('href="https://whatisthis.place/demos"');
+    expect(body.text).toContain("Add this appointment to your calendar");
+    expect(body.html).toContain("Add to your calendar");
   });
 
   it("sends guest verification links without confirming the appointment prematurely", async () => {
@@ -246,6 +248,13 @@ describe("transactional email delivery", () => {
       city: "Ottawa",
       postalCode: "K1A 0B1",
       country: "Canada",
+      appointmentMode: "phone",
+      appointmentPhone: "3435961813",
+      appointmentStreetAddress: null,
+      appointmentUnit: null,
+      appointmentCity: null,
+      appointmentPostalCode: null,
+      appointmentCountry: null,
       serviceName: "Smart-home consultation",
       startsAt: new Date("2026-08-03T17:00:00.000Z"),
       endsAt: new Date("2026-08-03T18:00:00.000Z"),

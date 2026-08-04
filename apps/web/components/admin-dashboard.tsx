@@ -7,7 +7,7 @@ type Hours = { weekday: number; startsAtLocal: string; endsAtLocal: string };
 type Block = { id: string; startsAt: string; endsAt: string; reason: string };
 type Client = { id: string; name: string; email: string; phone?: string; appointmentCount: number };
 type ClientPagination = { page: number; pageSize: number; total: number; totalPages: number };
-type Appointment = { id: string; status: string; notes: string; cancellationDiscountPercent: number | null; startsAt: string; endsAt: string; customerName: string; customerEmail: string; customerPhone?: string; serviceName: string; source: string };
+type Appointment = { id: string; status: string; notes: string; cancellationDiscountPercent: number | null; startsAt: string; endsAt: string; customerName: string; customerEmail: string; customerPhone?: string; serviceName: string; source: string; appointmentMode: string; appointmentPhone: string | null; appointmentStreetAddress: string | null; appointmentUnit: string | null; appointmentCity: string | null; appointmentPostalCode: string | null; appointmentCountry: string | null };
 type Service = { id: string; name: string; description: string; durationMinutes: number; priceCents: number; active: boolean; sortOrder: number };
 type BookingPolicies = { timezone: string; slotIntervalMinutes: number; minimumNoticeMinutes: number; bookingWindowDays: number; appointmentBufferMinutes: number; cancellationNoticeMinutes: number };
 type AuditEntry = { id: string; actorId: string | null; action: string; entityType: string; entityId: string; details: Record<string, unknown>; createdAt: string };
@@ -367,7 +367,13 @@ function AppointmentEditor({ appointment, save, showCustomer = true, reviewActio
   const [discountPercent, setDiscountPercent] = useState(appointment.cancellationDiscountPercent?.toString() ?? "");
   const [declining, setDeclining] = useState(reviewAction === "decline");
   const pending = appointment.status === "pending_approval";
+  const appointmentAddress = [
+    [appointment.appointmentStreetAddress, appointment.appointmentUnit && `Unit ${appointment.appointmentUnit}`].filter(Boolean).join(", "),
+    [appointment.appointmentCity, appointment.appointmentPostalCode].filter(Boolean).join(" "),
+    appointment.appointmentCountry,
+  ].filter(Boolean).join(", ");
   return <article id={`appointment-${appointment.id}`} className={pending ? "is-awaiting-approval" : ""}><div className="appointment-summary"><div>{showCustomer && <strong>{appointment.customerName}</strong>}<span>{appointment.serviceName} · {formatDate(appointment.startsAt)}</span>{showCustomer && <a href={`mailto:${appointment.customerEmail}`}>{appointment.customerEmail}</a>}</div><small>{pending ? "Awaiting approval" : appointment.source}</small></div>
+    <p className="appointment-meeting-details"><strong>{appointment.appointmentMode === "in_person" ? "In person" : "By phone"}</strong><span>{appointment.appointmentMode === "in_person" ? appointmentAddress || "Address not provided" : appointment.appointmentPhone || appointment.customerPhone || "Phone not provided"}</span></p>
     {pending ? <div className="appointment-approval-controls">
       {!declining && <><button className="approve-appointment" onClick={() => save(appointment.id, notes, "confirmed")}>Approve appointment</button><button className="decline-appointment" onClick={() => setDeclining(true)}>Decline</button></>}
       {declining && <div className="appointment-decline-form"><label>Optional rescheduling discount (%)<input type="number" min="1" max="100" step="1" inputMode="numeric" value={discountPercent} onChange={(event) => setDiscountPercent(event.target.value)} placeholder="For example, 20" /></label><label>Message to the client<textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} placeholder="Explain why the appointment cannot be accepted" /></label><button className="decline-appointment" onClick={() => save(appointment.id, notes, "cancelled", discountPercent ? Number(discountPercent) : undefined)}>Send decline</button><button onClick={() => setDeclining(false)}>Keep request</button></div>}

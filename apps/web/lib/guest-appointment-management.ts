@@ -38,6 +38,13 @@ export async function getGuestManagedAppointment(token: string) {
     endsAt: bookingSlots.endsAt,
     customerName: customers.name,
     customerEmail: customers.email,
+    appointmentMode: appointments.appointmentMode,
+    appointmentPhone: appointments.appointmentPhone,
+    appointmentStreetAddress: appointments.appointmentStreetAddress,
+    appointmentUnit: appointments.appointmentUnit,
+    appointmentCity: appointments.appointmentCity,
+    appointmentPostalCode: appointments.appointmentPostalCode,
+    appointmentCountry: appointments.appointmentCountry,
     cancellationNoticeMinutes: businessSettings.cancellationNoticeMinutes,
   }).from(guestAppointmentManagementTokens)
     .innerJoin(appointments, eq(appointments.id, guestAppointmentManagementTokens.appointmentId))

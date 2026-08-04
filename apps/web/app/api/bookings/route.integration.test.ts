@@ -41,12 +41,28 @@ afterAll(async () => {
 });
 
 describe("POST /api/bookings", () => {
+  it("requires contact details for the selected appointment format", async () => {
+    const slot = nextBookableSlot(9);
+    const shortPhone = await postBooking(bookingRequest(slot, { name: "Phone Guest", email: "phone@example.com", appointmentPhone: "123" }));
+    const missingAddress = await postBooking(bookingRequest(slot, { name: "Visit Guest", email: "visit@example.com", appointmentMode: "in_person", appointmentPhone: "" }));
+    expect(shortPhone.status).toBe(400);
+    expect(missingAddress.status).toBe(400);
+    expect(await confirmationCount()).toBe(0);
+  });
+
   it("holds a guest slot until its email token is explicitly confirmed", async () => {
     const slot = nextBookableSlot(9);
     const response = await postBooking(bookingRequest(slot, {
       name: "Ada Lovelace",
       email: "ADA@EXAMPLE.COM",
       notes: "Please check the living-room lights.",
+      appointmentMode: "in_person",
+      appointmentPhone: "",
+      appointmentStreetAddress: "123 Main Street",
+      appointmentUnit: "4B",
+      appointmentCity: "Ottawa",
+      appointmentPostalCode: "K1A 0B1",
+      appointmentCountry: "Canada",
     }));
 
     expect(response.status).toBe(202);
@@ -59,8 +75,10 @@ describe("POST /api/bookings", () => {
       name: string;
       state: string;
       client_notes: string;
+      appointment_mode: string;
+      appointment_street_address: string;
     }[]>`
-      SELECT gbc.email, gbc.name, bs.state, gbc.client_notes
+      SELECT gbc.email, gbc.name, bs.state, gbc.client_notes, gbc.appointment_mode, gbc.appointment_street_address
       FROM guest_booking_confirmations gbc
       JOIN booking_slots bs ON bs.id = gbc.slot_id
     `;
@@ -69,6 +87,8 @@ describe("POST /api/bookings", () => {
       name: "Ada Lovelace",
       state: "held",
       client_notes: "Please check the living-room lights.",
+      appointment_mode: "in_person",
+      appointment_street_address: "123 Main Street",
     });
     expect(await appointmentCount()).toBe(0);
     expect(sendGuestBookingVerification).toHaveBeenCalledOnce();
@@ -88,8 +108,10 @@ describe("POST /api/bookings", () => {
       state: string;
       client_notes: string;
       appointment_id: string;
+      appointment_mode: string;
+      appointment_street_address: string;
     }[]>`
-      SELECT c.email, c.name, a.status, bs.state, a.client_notes, a.id AS appointment_id
+      SELECT c.email, c.name, a.status, bs.state, a.client_notes, a.appointment_mode, a.appointment_street_address, a.id AS appointment_id
       FROM appointments a
       JOIN customers c ON c.id = a.customer_id
       JOIN booking_slots bs ON bs.id = a.slot_id
@@ -100,6 +122,8 @@ describe("POST /api/bookings", () => {
       status: "pending_approval",
       state: "confirmed",
       client_notes: "Please check the living-room lights.",
+      appointment_mode: "in_person",
+      appointment_street_address: "123 Main Street",
     });
     expect(sendBookingRequestReceived).toHaveBeenCalledOnce();
     expect(sendBookingRequestReceived.mock.calls[0]?.[4]).toMatch(/^http:\/\/localhost\/book\/manage\?token=/);
@@ -251,11 +275,11 @@ function nextBookableSlot(hour: number) {
 
 function bookingRequest(
   slot: { date: string; startsAt: string },
-  customer: { name: string; email: string; notes?: string },
+  customer: { name: string; email: string; notes?: string; appointmentMode?: "phone" | "in_person"; appointmentPhone?: string; appointmentStreetAddress?: string; appointmentUnit?: string; appointmentCity?: string; appointmentPostalCode?: string; appointmentCountry?: string },
 ) {
   return new Request("http://localhost/api/bookings", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ serviceId: SERVICE_ID, ...slot, notes: "", ...customer }),
+    body: JSON.stringify({ serviceId: SERVICE_ID, ...slot, notes: "", appointmentMode: "phone", appointmentPhone: "3435961813", ...customer }),
   });
 }

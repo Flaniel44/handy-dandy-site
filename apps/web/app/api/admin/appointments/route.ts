@@ -10,6 +10,7 @@ import { appointments, bookingSlots, businessSettings, customers, services } fro
 import { sendBookingConfirmation } from "../../../../lib/email";
 import { releaseExpiredGuestBookingHolds } from "../../../../lib/guest-booking-confirmation";
 import { createGoogleEventForAppointment, markCalendarSyncFailure } from "../../../../lib/google-calendar";
+import { appointmentCalendarUrl } from "../../../../lib/appointment-calendar";
 
 const manualAppointmentSchema = z.object({
   serviceId: z.uuid(), startsAtLocal: z.string().min(1), name: z.string().trim().min(2).max(120),
@@ -25,6 +26,10 @@ export async function GET() {
     cancellationDiscountPercent: appointments.cancellationDiscountPercent, source: appointments.source,
     startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt, customerName: customers.name,
     customerEmail: customers.email, customerPhone: customers.phone, serviceName: services.name,
+    appointmentMode: appointments.appointmentMode, appointmentPhone: appointments.appointmentPhone,
+    appointmentStreetAddress: appointments.appointmentStreetAddress, appointmentUnit: appointments.appointmentUnit,
+    appointmentCity: appointments.appointmentCity, appointmentPostalCode: appointments.appointmentPostalCode,
+    appointmentCountry: appointments.appointmentCountry,
   }).from(appointments)
     .innerJoin(bookingSlots, eq(bookingSlots.id, appointments.slotId))
     .innerJoin(customers, eq(customers.id, appointments.customerId))
@@ -60,11 +65,12 @@ export async function POST(request: Request) {
       }).returning({ id: bookingSlots.id });
       const [appointment] = await tx.insert(appointments).values({
         slotId: slot.id, customerId: customer.id, status: "confirmed", notes: parsed.data.notes, source: "phone",
+        appointmentMode: "phone", appointmentPhone: parsed.data.phone || null,
       }).returning({ id: appointments.id });
       return appointment;
     });
     try {
-      await sendBookingConfirmation(parsed.data.email, parsed.data.name, service.name, startsAt.toJSDate());
+      await sendBookingConfirmation(parsed.data.email, parsed.data.name, service.name, startsAt.toJSDate(), undefined, appointmentCalendarUrl(result.id));
     } catch (emailError) {
       console.error("Manual appointment created but confirmation email failed", emailError);
     }

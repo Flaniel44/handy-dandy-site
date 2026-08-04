@@ -12,6 +12,7 @@ import {
   GUEST_BOOKING_HOLD_MINUTES,
 } from "../../../lib/guest-booking-confirmation";
 import { checkRateLimit, rateLimitResponse } from "../../../lib/rate-limit";
+import { appointmentDetailsForStorage, appointmentDetailsSchema } from "../../../lib/appointment-details";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ const bookingSchema = z.object({
   name: z.string().trim().min(2).max(120),
   email: z.email().transform((email) => email.trim().toLowerCase()),
   notes: z.string().trim().max(2000).default(""),
-});
+}).and(appointmentDetailsSchema);
 
 export async function POST(request: Request) {
   if (!areNewBookingsEnabled()) return bookingsClosedResponse();
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
         name: parsed.data.name,
         email: parsed.data.email,
         clientNotes: parsed.data.notes,
+        ...appointmentDetailsForStorage(parsed.data),
         expiresAt,
       });
 

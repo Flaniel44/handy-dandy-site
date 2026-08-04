@@ -93,6 +93,13 @@ export async function POST(request: Request) {
         status: "pending_approval",
         source: "guest",
         clientNotes: confirmation.clientNotes,
+        appointmentMode: confirmation.appointmentMode,
+        appointmentPhone: confirmation.appointmentPhone,
+        appointmentStreetAddress: confirmation.appointmentStreetAddress,
+        appointmentUnit: confirmation.appointmentUnit,
+        appointmentCity: confirmation.appointmentCity,
+        appointmentPostalCode: confirmation.appointmentPostalCode,
+        appointmentCountry: confirmation.appointmentCountry,
       }).returning({ id: appointments.id });
 
       await tx.insert(guestAppointmentManagementTokens).values({

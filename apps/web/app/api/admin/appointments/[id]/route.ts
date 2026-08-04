@@ -8,6 +8,7 @@ import { getDb } from "../../../../../lib/db";
 import { appointments, bookingSlots, customers, services } from "../../../../../lib/db/schema";
 import { sendAppointmentCancelled, sendBookingConfirmation } from "../../../../../lib/email";
 import { deleteGoogleEvent, markCalendarSyncFailure, updateGoogleEventForAppointment } from "../../../../../lib/google-calendar";
+import { appointmentCalendarUrl } from "../../../../../lib/appointment-calendar";
 
 const updateSchema = z.object({
   notes: z.string().trim().max(2000).optional(),
@@ -73,6 +74,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         existing.serviceName,
         existing.startsAt,
         existing.source === "account" ? `${appUrl()}/account` : undefined,
+        appointmentCalendarUrl(id.data),
       );
     } catch (emailError) {
       console.error("Appointment approved but confirmation email failed", emailError);

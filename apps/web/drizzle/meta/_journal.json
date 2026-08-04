@@ -127,6 +127,13 @@
       "when": 1785888000000,
       "tag": "0017_booking_approval",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1785974400000,
+      "tag": "0018_appointment_details",
+      "breakpoints": true
     }
   ]
 }

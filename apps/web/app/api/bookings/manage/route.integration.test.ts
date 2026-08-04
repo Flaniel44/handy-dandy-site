@@ -36,6 +36,7 @@ let rescheduleManagedAppointment: typeof import("./route").PATCH;
 let cancelManagedAppointment: typeof import("./route").DELETE;
 
 beforeAll(async () => {
+  process.env.ADMIN_SESSION_SECRET = "integration-test-session-secret-at-least-32-characters";
   testSql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   ({ GET: getManagedAppointment, PATCH: rescheduleManagedAppointment, DELETE: cancelManagedAppointment } = await import("./route"));
 });
@@ -77,6 +78,7 @@ describe("guest appointment management", () => {
     expect(integrations.sendAppointmentRescheduled).toHaveBeenCalledWith(
       "guest@example.com", "Guest Customer", "Smart-home consultation", new Date(original.startsAt), new Date(replacement.startsAt),
       expect.stringContaining(`/book/manage?token=${nextToken}`),
+      expect.stringContaining(`/api/appointments/${seeded.appointmentId}/calendar?token=`),
     );
     expect(integrations.updateGoogleEventForAppointment).toHaveBeenCalledWith(seeded.appointmentId);
 

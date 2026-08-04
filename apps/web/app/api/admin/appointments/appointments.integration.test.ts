@@ -35,6 +35,7 @@ let createAppointment: typeof import("./route").POST;
 let updateAppointment: typeof import("./[id]/route").PATCH;
 
 beforeAll(async () => {
+  process.env.ADMIN_SESSION_SECRET = "integration-test-session-secret-at-least-32-characters";
   testSql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   ({ GET: listAppointments, POST: createAppointment } = await import("./route"));
   ({ PATCH: updateAppointment } = await import("./[id]/route"));
@@ -104,7 +105,8 @@ describe("manual phone appointments", () => {
     expect(saved.starts_at.toISOString()).toBe(startsAt.toUTC().toISO());
     expect(saved.ends_at.getTime() - saved.starts_at.getTime()).toBe(60 * 60 * 1000);
     expect(integrations.sendBookingConfirmation).toHaveBeenCalledWith(
-      "phone@example.com", "Phone Customer", "Smart-home consultation", saved.starts_at,
+      "phone@example.com", "Phone Customer", "Smart-home consultation", saved.starts_at, undefined,
+      expect.stringContaining(`/api/appointments/${body.id}/calendar?token=`),
     );
     expect(integrations.createGoogleEventForAppointment).toHaveBeenCalledWith(body.id);
   });
@@ -222,6 +224,7 @@ describe("admin appointment status and notes", () => {
     expect(saved).toMatchObject({ status: "confirmed", state: "confirmed" });
     expect(integrations.sendBookingConfirmation).toHaveBeenCalledWith(
       "approval-customer@example.com", "Approval Customer", "Smart-home consultation", expect.any(Date), undefined,
+      expect.stringContaining(`/api/appointments/${appointment.id}/calendar?token=`),
     );
     expect(integrations.updateGoogleEventForAppointment).toHaveBeenCalledWith(appointment.id);
     expect(integrations.sendAppointmentCancelled).not.toHaveBeenCalled();

@@ -9,11 +9,12 @@ import { appointments, bookingSlots } from "../../../../lib/db/schema";
 import { sendBookingRequestReceived } from "../../../../lib/email";
 import { createGoogleEventForAppointment, markCalendarSyncFailure } from "../../../../lib/google-calendar";
 import { checkRateLimit, rateLimitResponse } from "../../../../lib/rate-limit";
+import { appointmentDetailsForStorage, appointmentDetailsSchema } from "../../../../lib/appointment-details";
 
 const schema = z.object({
   serviceId: z.uuid(), date: z.iso.date(), startsAt: z.iso.datetime({ offset: true }),
   clientNotes: z.string().trim().max(2000).default(""),
-});
+}).and(appointmentDetailsSchema);
 
 export async function POST(request: Request) {
   if (!areNewBookingsEnabled()) return bookingsClosedResponse();
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
       }).returning({ id: bookingSlots.id });
       const [created] = await tx.insert(appointments).values({
         slotId: slot.id, customerId: session.customerId, status: "pending_approval", source: "account", clientNotes: parsed.data.clientNotes,
+        ...appointmentDetailsForStorage(parsed.data),
       }).returning({ id: appointments.id });
       return created;
     });
