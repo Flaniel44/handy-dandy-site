@@ -54,6 +54,7 @@ export function CustomerDashboard({ firstName, bookingsEnabled, launchOfferEnabl
 function AccountScheduler({ onBooked, onMessage, launchOfferEnabled }: { onBooked: () => Promise<void>; onMessage: (message: string) => void; launchOfferEnabled: boolean }) {
   const [open, setOpen] = useState(false); const [services, setServices] = useState<Service[]>([]); const [serviceId, setServiceId] = useState("");
   const [currentWeek] = useState(startOfWeek); const [week, setWeek] = useState(startOfWeek);
+  const [initialWeekReady, setInitialWeekReady] = useState(false);
   const [availability, setAvailability] = useState<Record<string, Slot[]>>({});
   const [timezone, setTimezone] = useState("");
   const [appointmentDetails, setAppointmentDetails] = useState<BookingAppointmentDetails>(emptyAppointmentDetails);
@@ -81,6 +82,25 @@ function AccountScheduler({ onBooked, onMessage, launchOfferEnabled }: { onBooke
   useEffect(() => {
     if (!open || !serviceId) return;
     const controller = new AbortController();
+    fetch(`/api/availability/next?serviceId=${encodeURIComponent(serviceId)}`, { cache: "no-store", signal: controller.signal })
+      .then(async (response) => {
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error ?? "Availability is temporarily unavailable.");
+        setTimezone(body.timezone ?? "");
+        setWeek(body.date ? startOfWeek(new Date(`${body.date}T12:00:00`)) : currentWeek);
+        if (!body.date) onMessage("No appointment times are currently available within the booking window.");
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") { setWeek(currentWeek); onMessage(error.message ?? "Availability is temporarily unavailable."); }
+      })
+      .finally(() => { if (!controller.signal.aborted) setInitialWeekReady(true); });
+    return () => controller.abort();
+  }, [currentWeek, onMessage, open, serviceId]);
+
+  useEffect(() => {
+    if (!open || !serviceId) return;
+    if (!initialWeekReady) return;
+    const controller = new AbortController();
     Promise.all(Array.from({ length: 7 }, async (_, index) => {
       const dateText = formatDateInput(addDays(week, index));
       const response = await fetch(`/api/availability?date=${dateText}&serviceId=${serviceId}`, { signal: controller.signal });
@@ -90,7 +110,7 @@ function AccountScheduler({ onBooked, onMessage, launchOfferEnabled }: { onBooke
       if (error.name !== "AbortError") { setAvailability({}); onMessage(error.message ?? "Availability is temporarily unavailable."); }
     }).finally(() => setLoading(false));
     return () => controller.abort();
-  }, [open, serviceId, week, onMessage]);
+  }, [initialWeekReady, open, serviceId, week, onMessage]);
 
   function changeWeek(amount: number) { setWeek((value) => addDays(value, amount * 7)); setSelected(undefined); setLoading(true); }
   async function book() {
@@ -104,9 +124,9 @@ function AccountScheduler({ onBooked, onMessage, launchOfferEnabled }: { onBooke
     onMessage("Your appointment request was sent for approval."); setOpen(false); setSelected(undefined); setNotes(""); await onBooked();
   }
 
-  return <section className="account-panel scheduler-panel"><button className="scheduler-toggle" onClick={() => { setOpen((value) => !value); setLoading(!open); }}>{open ? "Close appointment scheduler" : "Schedule new appointment"}</button>{open && <div className="scheduler-content">
+  return <section className="account-panel scheduler-panel"><button className="scheduler-toggle" onClick={() => { if (!open) { setInitialWeekReady(false); setWeek(currentWeek); setAvailability({}); setSelected(undefined); } setOpen((value) => !value); setLoading(!open); }}>{open ? "Close appointment scheduler" : "Schedule new appointment"}</button>{open && <div className="scheduler-content">
     {launchOfferEnabled && <aside className="launch-offer-note"><strong>Launch offer: your service is free.</strong><span>Honest feedback is welcome afterward, but a review is never required.</span></aside>}
-    <label>Service<select value={serviceId} onChange={(event) => { setServiceId(event.target.value); setSelected(undefined); setLoading(true); }}>{services.map((item) => <option key={item.id} value={item.id}>{item.name}{item.priceCents === 0 ? " — Free" : ""}</option>)}</select></label>
+    <label>Service<select value={serviceId} onChange={(event) => { setInitialWeekReady(false); setServiceId(event.target.value); setAvailability({}); setSelected(undefined); setLoading(true); }}>{services.map((item) => <option key={item.id} value={item.id}>{item.name}{item.priceCents === 0 ? " — Free" : ""}</option>)}</select></label>
     <p className="service-summary">{service ? `${service.description} · ${service.durationMinutes} minutes · ${service.priceCents === 0 ? "Free" : `$${(service.priceCents / 100).toFixed(2)}`} · ` : ""}Times use {timezone || "the business timezone"}.</p>
     <div className="week-controls"><button disabled={week.getTime() <= currentWeek.getTime()} onClick={() => changeWeek(-1)} aria-label="Previous week">←</button><strong>{dates[0].toLocaleDateString([], { month: "short", day: "numeric" })} – {dates[6].toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}</strong><button onClick={() => changeWeek(1)} aria-label="Next week">→</button></div>
     <div className="weekly-availability" aria-busy={loading}>{dates.map((date) => { const dateText = formatDateInput(date); const slots = availability[dateText] ?? []; return <section key={dateText}><header><strong>{date.toLocaleDateString([], { weekday: "short" })}</strong><span>{date.toLocaleDateString([], { month: "short", day: "numeric" })}</span></header><div>{slots.length ? slots.map((slot) => <button className={selected?.slot.startsAt === slot.startsAt ? "is-selected" : ""} key={slot.startsAt} onClick={() => setSelected({ date: dateText, slot })}>{slot.label}</button>) : <small>No times</small>}</div></section>; })}</div>
@@ -197,6 +217,6 @@ function AppointmentRescheduler({ appointment, onChanged, onMessage }: { appoint
 }
 function AppointmentHeading({ appointment }: { appointment: Appointment }) { return <header><div><strong>{appointment.serviceName}</strong><time>{new Date(appointment.startsAt).toLocaleString([], { dateStyle: "full", timeStyle: "short" })}</time><small>Booked on {new Date(appointment.createdAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</small></div><span>{appointment.status === "pending_approval" ? "awaiting approval" : appointment.status.replace("_", " ")}</span></header>; }
 function sortByNewestBooking(first: Appointment, second: Appointment) { return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(); }
-function startOfWeek() { const value = new Date(); value.setHours(0, 0, 0, 0); value.setDate(value.getDate() - ((value.getDay() + 6) % 7)); return value; }
+function startOfWeek(initial = new Date()) { const value = new Date(initial); value.setHours(0, 0, 0, 0); value.setDate(value.getDate() - ((value.getDay() + 6) % 7)); return value; }
 function addDays(date: Date, amount: number) { const value = new Date(date); value.setDate(value.getDate() + amount); return value; }
 function formatDateInput(date: Date) { return date.toLocaleDateString("en-CA"); }

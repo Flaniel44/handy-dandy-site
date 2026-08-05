@@ -85,3 +85,73 @@ export async function getAvailabilityForDate(date: string, serviceId: string) {
 
   return { service, settings, slots };
 }
+
+export async function getNextAvailableDate(serviceId: string) {
+  await releaseExpiredGuestBookingHolds();
+  const db = getDb();
+  const [service] = await db.select().from(services).where(and(eq(services.id, serviceId), eq(services.active, true))).limit(1);
+  if (!service) return null;
+
+  const [settings] = await db.select().from(businessSettings).where(eq(businessSettings.id, service.businessId)).limit(1);
+  if (!settings) return null;
+
+  const today = DateTime.now().setZone(settings.timezone).startOf("day");
+  const finalDay = today.plus({ days: settings.bookingWindowDays });
+  const rangeStart = today.toUTC();
+  const rangeEnd = finalDay.plus({ days: 1 }).toUTC();
+  const now = new Date();
+
+  const [hours, blocks, reserved, googleBusy] = await Promise.all([
+    db.select().from(weeklyHours).where(eq(weeklyHours.businessId, settings.id)),
+    db.select({ startsAt: manualBlocks.startsAt, endsAt: manualBlocks.endsAt }).from(manualBlocks).where(and(
+      eq(manualBlocks.businessId, settings.id),
+      lt(manualBlocks.startsAt, rangeEnd.toJSDate()),
+      gt(manualBlocks.endsAt, rangeStart.toJSDate()),
+    )),
+    db.select({ startsAt: bookingSlots.startsAt, endsAt: bookingSlots.endsAt }).from(bookingSlots).where(and(
+      lt(bookingSlots.startsAt, rangeEnd.toJSDate()),
+      gt(bookingSlots.endsAt, rangeStart.minus({ minutes: settings.appointmentBufferMinutes }).toJSDate()),
+      or(
+        eq(bookingSlots.state, "confirmed"),
+        and(eq(bookingSlots.state, "held"), gt(bookingSlots.expiresAt, now)),
+      ),
+    )),
+    getGoogleBusyRanges(
+      rangeStart.minus({ minutes: settings.appointmentBufferMinutes }).toJSDate(),
+      rangeEnd.plus({ minutes: settings.appointmentBufferMinutes }).toJSDate(),
+    ),
+  ]);
+
+  const busyRanges = [
+    ...blocks,
+    ...reserved.map((range) => ({
+      startsAt: range.startsAt,
+      endsAt: new Date(range.endsAt.getTime() + settings.appointmentBufferMinutes * 60_000),
+    })),
+    ...googleBusy.map((range) => ({
+      startsAt: new Date(range.startsAt.getTime() - settings.appointmentBufferMinutes * 60_000),
+      endsAt: new Date(range.endsAt.getTime() + settings.appointmentBufferMinutes * 60_000),
+    })),
+  ].map((range) => ({ startsAt: range.startsAt.toISOString(), endsAt: range.endsAt.toISOString() }));
+  const availabilityHours = hours.map((hoursRow) => ({
+    weekday: hoursRow.weekday as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+    startsAtLocal: hoursRow.startsAtLocal,
+    endsAtLocal: hoursRow.endsAtLocal,
+  }));
+
+  for (let day = today; day <= finalDay; day = day.plus({ days: 1 })) {
+    const date = day.toISODate()!;
+    const slots = calculateAvailability({
+      date,
+      timezone: settings.timezone,
+      durationMinutes: service.durationMinutes,
+      intervalMinutes: settings.slotIntervalMinutes,
+      minimumNoticeMinutes: settings.minimumNoticeMinutes,
+      weeklyHours: availabilityHours,
+      busyRanges,
+    });
+    if (slots.length) return { date, timezone: settings.timezone };
+  }
+
+  return { date: null, timezone: settings.timezone };
+}

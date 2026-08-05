@@ -21,6 +21,7 @@ let getBlocks: typeof import("./blocks/route").GET;
 let createBlock: typeof import("./blocks/route").POST;
 let deleteBlock: typeof import("./blocks/[id]/route").DELETE;
 let getAvailabilityForDate: typeof import("../../../lib/availability").getAvailabilityForDate;
+let getNextAvailableDate: typeof import("../../../lib/availability").getNextAvailableDate;
 let getBookingPolicies: typeof import("./booking-policies/route").GET;
 let putBookingPolicies: typeof import("./booking-policies/route").PUT;
 let getAuditLog: typeof import("./audit-log/route").GET;
@@ -32,7 +33,7 @@ beforeAll(async () => {
   ({ DELETE: deleteBlock } = await import("./blocks/[id]/route"));
   ({ GET: getBookingPolicies, PUT: putBookingPolicies } = await import("./booking-policies/route"));
   ({ GET: getAuditLog } = await import("./audit-log/route"));
-  ({ getAvailabilityForDate } = await import("../../../lib/availability"));
+  ({ getAvailabilityForDate, getNextAvailableDate } = await import("../../../lib/availability"));
 });
 
 beforeEach(async () => {
@@ -209,6 +210,24 @@ describe("admin scheduling controls", () => {
 
     await putBookingPolicies(jsonRequest("/api/admin/booking-policies", policyData({ minimumNoticeMinutes: 43_200 }), "PUT"));
     expect((await getAvailabilityForDate(day.toISODate()!, SERVICE_ID))?.slots).toEqual([]);
+  });
+
+  it("finds the first available date across blocked weeks with one Google Calendar lookup", async () => {
+    const today = DateTime.now().setZone("America/Toronto").startOf("day");
+    const firstFreeDay = today.plus({ days: 10 });
+    await testSql`DELETE FROM weekly_hours`;
+    for (let weekday = 0; weekday < 7; weekday += 1) {
+      await testSql`INSERT INTO weekly_hours (business_id, weekday, starts_at_local, ends_at_local)
+        VALUES ('11111111-1111-4111-8111-111111111111', ${weekday}, '09:00', '10:00')`;
+    }
+    await testSql`UPDATE business_settings SET minimum_notice_minutes = 0, booking_window_days = 30`;
+    await testSql`INSERT INTO manual_blocks (business_id, starts_at, ends_at, reason)
+      VALUES ('11111111-1111-4111-8111-111111111111', ${today.toUTC().toJSDate()}, ${firstFreeDay.toUTC().toJSDate()}, 'Extended vacation')`;
+
+    const result = await getNextAvailableDate(SERVICE_ID);
+
+    expect(result).toEqual({ date: firstFreeDay.toISODate(), timezone: "America/Toronto" });
+    expect(googleCalendar.getGoogleBusyRanges).toHaveBeenCalledOnce();
   });
 });
 

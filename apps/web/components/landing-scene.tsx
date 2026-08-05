@@ -676,7 +676,6 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
     let grabX = points.at(-1)!.x;
     let grabY = points.at(-1)!.y;
     let settledFrames = 0;
-    let mousePull = false;
     let cameraFrame: number | undefined;
     let idleNudgeTimer: number | undefined;
 
@@ -926,8 +925,9 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
     const onPointerDown = (event: PointerEvent) => {
       const end = points.at(-1)!;
       pullStartX = event.clientX; pullStartY = event.clientY; pullStartedAt = performance.now(); pullDistance = 0; grabbed = true;
-      mousePull = event.pointerType === "mouse";
-      grabX = end.x; grabY = end.y + (mousePull ? 18 * svgScale() : 0);
+      // Give taps the same visible mechanical pull as mouse presses. Further
+      // touch movement adds to this initial travel for the drag-to-pull gesture.
+      grabX = end.x; grabY = end.y + 18 * svgScale();
       suppressTouchClick = event.pointerType !== "mouse";
       chain.setPointerCapture(event.pointerId); startRope();
     };
@@ -939,7 +939,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       const downwardTravel = Math.max(0, event.clientY - pullStartY);
       pullDistance = Math.min(86, downwardTravel * .78);
       grabX = restingPoints.at(-1)!.x + (event.clientX - pullStartX) * scale * .65;
-      grabY = restingPoints.at(-1)!.y + (mousePull ? 18 + pullDistance : pullDistance) * scale;
+      grabY = restingPoints.at(-1)!.y + (18 + pullDistance) * scale;
     };
 
     const releasePullChain = (event: PointerEvent) => {
@@ -951,7 +951,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       const isTouchTap = event.pointerType !== "mouse" && totalTravel <= 14 && pressDuration <= 550;
       const isIntentionalTouchPull = event.pointerType !== "mouse" && pullDistance >= 42;
       const shouldToggle = event.type === "pointerup" && (isTouchTap || isIntentionalTouchPull);
-      grabbed = false; mousePull = false; pullStartX = undefined; pullStartY = undefined; pullStartedAt = undefined;
+      grabbed = false; pullStartX = undefined; pullStartY = undefined; pullStartedAt = undefined;
       if (chain.hasPointerCapture(event.pointerId)) chain.releasePointerCapture(event.pointerId);
       startRope();
       if (shouldToggle) setPowered(!root.classList.contains("lit"));

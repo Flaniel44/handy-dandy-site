@@ -9,6 +9,7 @@ type Slot = { startsAt: string; endsAt: string; label: string };
 export function BookingForm({ bookingsEnabled, launchOfferEnabled = false }: { bookingsEnabled: boolean; launchOfferEnabled?: boolean }) {
   const [services, setServices] = useState<Service[]>([]); const [serviceId, setServiceId] = useState("");
   const [currentWeek] = useState(startOfWeek); const [week, setWeek] = useState(startOfWeek);
+  const [initialWeekReady, setInitialWeekReady] = useState(false);
   const [availability, setAvailability] = useState<Record<string, Slot[]>>({});
   const [timezone, setTimezone] = useState("");
   const [appointmentDetails, setAppointmentDetails] = useState(emptyAppointmentDetails);
@@ -25,8 +26,26 @@ export function BookingForm({ bookingsEnabled, launchOfferEnabled = false }: { b
   }, [bookingsEnabled]);
 
   useEffect(() => {
+    if (!bookingsEnabled || !serviceId) return;
+    const controller = new AbortController();
+    fetch(`/api/availability/next?serviceId=${encodeURIComponent(serviceId)}`, { cache: "no-store", signal: controller.signal })
+      .then(async (response) => {
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error ?? "Availability is temporarily unavailable.");
+        setTimezone(body.timezone ?? "");
+        setWeek(body.date ? startOfWeek(new Date(`${body.date}T12:00:00`)) : currentWeek);
+        if (!body.date) setError("No appointment times are currently available within the booking window.");
+      })
+      .catch((reason) => {
+        if (reason.name !== "AbortError") { setWeek(currentWeek); setError(reason.message ?? "Availability is temporarily unavailable."); }
+      })
+      .finally(() => { if (!controller.signal.aborted) setInitialWeekReady(true); });
+    return () => controller.abort();
+  }, [bookingsEnabled, currentWeek, serviceId]);
+
+  useEffect(() => {
     if (!bookingsEnabled) return;
-    if (!serviceId) return;
+    if (!serviceId || !initialWeekReady) return;
     const controller = new AbortController();
     Promise.all(Array.from({ length: 7 }, async (_, index) => {
       const dateText = formatDateInput(addDays(week, index));
@@ -37,7 +56,7 @@ export function BookingForm({ bookingsEnabled, launchOfferEnabled = false }: { b
       if (reason.name !== "AbortError") { setAvailability({}); setError(reason.message ?? "Availability is temporarily unavailable."); }
     }).finally(() => setLoading(false));
     return () => controller.abort();
-  }, [bookingsEnabled, serviceId, week]);
+  }, [bookingsEnabled, initialWeekReady, serviceId, week]);
 
   function changeWeek(amount: number) { setWeek((value) => addDays(value, amount * 7)); setSelected(undefined); setLoading(true); setError(""); }
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -58,10 +77,10 @@ export function BookingForm({ bookingsEnabled, launchOfferEnabled = false }: { b
   return <form className="booking-card" onSubmit={submit}>
     {launchOfferEnabled && <aside className="launch-offer-note"><strong>Launch offer: your service is free.</strong><span>If I help you, honest feedback is always appreciated—but a review is never required.</span></aside>}
     <div className="booking-step"><span>01</span><div><h2>Consultation</h2><p>Select the service you need.</p></div></div>
-    <label>Service<select value={serviceId} onChange={(event) => { setServiceId(event.target.value); setSelected(undefined); setLoading(true); }}>{services.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+    <label>Service<select value={serviceId} onChange={(event) => { setInitialWeekReady(false); setServiceId(event.target.value); setAvailability({}); setSelected(undefined); setLoading(true); setError(""); }}>{services.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
     {service && <p className="service-summary">{service.description} · {service.durationMinutes} minutes · {service.priceCents === 0 ? "Free" : `$${(service.priceCents / 100).toFixed(2)}`}</p>}
 
-    <div className="booking-step"><span>02</span><div><h2>Choose a time</h2><p>Browse one week at a time. Times use {timezone || "the business timezone"}.</p></div></div>
+    <div className="booking-step"><span>02</span><div><h2>Choose a time</h2><p>We start at the earliest week with an available appointment. Times use {timezone || "the business timezone"}.</p></div></div>
     <div className="week-controls"><button type="button" disabled={week.getTime() <= currentWeek.getTime()} onClick={() => changeWeek(-1)} aria-label="Previous week">←</button><strong>{dates[0].toLocaleDateString([], { month: "short", day: "numeric" })} – {dates[6].toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}</strong><button type="button" onClick={() => changeWeek(1)} aria-label="Next week">→</button></div>
     <div className="weekly-availability" aria-busy={loading}>{dates.map((date) => { const dateText = formatDateInput(date); const slots = availability[dateText] ?? []; return <section key={dateText}><header><strong>{date.toLocaleDateString([], { weekday: "short" })}</strong><span>{date.toLocaleDateString([], { month: "short", day: "numeric" })}</span></header><div>{slots.length ? slots.map((slot) => <button type="button" className={selected?.slot.startsAt === slot.startsAt ? "is-selected" : ""} key={slot.startsAt} onClick={() => setSelected({ date: dateText, slot })}>{slot.label}</button>) : <small>No times</small>}</div></section>; })}</div>
 
@@ -74,6 +93,6 @@ export function BookingForm({ bookingsEnabled, launchOfferEnabled = false }: { b
   </form>;
 }
 
-function startOfWeek() { const value = new Date(); value.setHours(0, 0, 0, 0); value.setDate(value.getDate() - ((value.getDay() + 6) % 7)); return value; }
+function startOfWeek(initial = new Date()) { const value = new Date(initial); value.setHours(0, 0, 0, 0); value.setDate(value.getDate() - ((value.getDay() + 6) % 7)); return value; }
 function addDays(date: Date, amount: number) { const value = new Date(date); value.setDate(value.getDate() + amount); return value; }
 function formatDateInput(date: Date) { return date.toLocaleDateString("en-CA"); }
