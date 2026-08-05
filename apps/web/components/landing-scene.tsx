@@ -659,6 +659,13 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
     let settledFrames = 0;
     let mousePull = false;
     let cameraFrame: number | undefined;
+    let idleNudgeTimer: number | undefined;
+
+    const clearIdleNudge = () => {
+      if (idleNudgeTimer === undefined) return;
+      window.clearTimeout(idleNudgeTimer);
+      idleNudgeTimer = undefined;
+    };
 
     const animateCameras = (time: number) => {
       cameraTrackers.forEach((tracker) => {
@@ -788,12 +795,14 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
         ropeFrame = undefined;
         previousRopeTime = undefined;
         ropeAccumulator = 0;
+        scheduleIdleNudge();
         return;
       }
       ropeFrame = window.requestAnimationFrame(simulateRope);
     };
 
     const startRope = () => {
+      clearIdleNudge();
       if (ropeFrame !== undefined) return;
       settledFrames = 0;
       previousRopeTime = undefined;
@@ -801,13 +810,30 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       ropeFrame = window.requestAnimationFrame(simulateRope);
     };
 
+    const nudgeRope = (direction = 1) => {
+      if (grabbed) return;
+      points.forEach((point, index) => {
+        if (index === 0) return;
+        point.oldX -= direction * 6 * (index / (points.length - 1));
+      });
+      startRope();
+    };
+
+    function scheduleIdleNudge() {
+      clearIdleNudge();
+      idleNudgeTimer = window.setTimeout(() => {
+        idleNudgeTimer = undefined;
+        if (grabbed || document.hidden) {
+          scheduleIdleNudge();
+          return;
+        }
+        nudgeRope(Math.random() < .5 ? -1 : 1);
+      }, 12_000 + Math.random() * 8_000);
+    }
+
     // A small initial impulse lets the joint simulation open with a natural,
     // decaying sway instead of a perfectly static chain.
-    points.forEach((point, index) => {
-      if (index === 0) return;
-      point.oldX -= 6 * (index / (points.length - 1));
-    });
-    startRope();
+    nudgeRope();
 
     const onScenePointerMove = (event: PointerEvent) => {
       if (event.pointerType === "mouse") {
@@ -1029,6 +1055,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       document.body.classList.remove("landing-lights-off");
       window.clearInterval(ambientTimer);
       if (ropeFrame !== undefined) window.cancelAnimationFrame(ropeFrame);
+      clearIdleNudge();
       if (readyTimer) window.clearTimeout(readyTimer);
       if (hintTimer) window.clearTimeout(hintTimer);
       if (cameraFrame !== undefined) window.cancelAnimationFrame(cameraFrame);
