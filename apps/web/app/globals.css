@@ -60,6 +60,13 @@ a { color: inherit; }
 .site-home-link { position: fixed; z-index: 100; top: 18px; left: clamp(16px, 3vw, 38px); padding: 9px 11px; border: 1px solid #303752aa; border-radius: 8px; background: #0b0d16dd; backdrop-filter: blur(10px); color: #f4a04f; font-size: .76rem; font-weight: 800; letter-spacing: .12em; text-decoration: none; text-transform: uppercase; }
 .site-home-link:hover { border-color: #8279e5; color: var(--ink); }
 .landing-scene-shell { width: min(100%, 760px); }
+.chain-spotlight { opacity: 1; transition: opacity .55s ease; }
+.chain-spotlight-cone { fill: url(#chainSpotlightFade); filter: blur(4px); }
+.chain-spotlight-pool { fill: #ffe2ad; opacity: .12; filter: url(#windowGlowBlur); }
+.scene-root.lit .chain-spotlight { opacity: 0; }
+.scene-root:not(.lit) [data-action="toggle-light"] {
+  filter: brightness(1.18) drop-shadow(0 0 4px #ffe0aa55);
+}
 .landing-launch-badge {
   width: max-content;
   max-width: 100%;
@@ -73,9 +80,13 @@ a { color: inherit; }
   font-size: clamp(.65rem, 1.8vw, .76rem);
   font-weight: 800;
   letter-spacing: .09em;
+  opacity: .52;
+  filter: brightness(.72) saturate(.65);
   text-align: center;
   text-transform: uppercase;
+  transition: opacity .5s ease, filter .5s ease;
 }
+.scene-root.lit .landing-launch-badge { opacity: 1; filter: none; }
 .landing-brand-sign {
   position: relative;
   margin: 0 0 clamp(10px, 2vw, 18px);

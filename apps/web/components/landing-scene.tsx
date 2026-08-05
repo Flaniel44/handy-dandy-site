@@ -425,6 +425,25 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       `;
       sceneSvg.append(chainHint);
     }
+    let chainSpotlight = sceneSvg?.querySelector<SVGGElement>(".chain-spotlight");
+    if (sceneSvg && !chainSpotlight) {
+      chainSpotlight = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      chainSpotlight.setAttribute("class", "chain-spotlight");
+      chainSpotlight.setAttribute("pointer-events", "none");
+      chainSpotlight.setAttribute("aria-hidden", "true");
+      chainSpotlight.innerHTML = `
+        <defs>
+          <linearGradient id="chainSpotlightFade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffe6bc" stop-opacity=".14" />
+            <stop offset="58%" stop-color="#ffd79a" stop-opacity=".075" />
+            <stop offset="100%" stop-color="#ffd79a" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <path class="chain-spotlight-cone" d="M332 0 L348 0 L410 168 L270 168 Z" />
+        <ellipse class="chain-spotlight-pool" cx="340" cy="103" rx="40" ry="24" />
+      `;
+      sceneSvg.insertBefore(chainSpotlight, chain);
+    }
     const trackingCameras = Array.from(root.querySelectorAll<SVGGElement>(".tracking-camera"));
     trackingCameras.forEach((camera) => {
       const aim = camera.querySelector<SVGGElement>(".camera-aim");
@@ -1060,6 +1079,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       if (hintTimer) window.clearTimeout(hintTimer);
       if (cameraFrame !== undefined) window.cancelAnimationFrame(cameraFrame);
       if (sleeperWakeTimer !== undefined) window.clearTimeout(sleeperWakeTimer);
+      chainSpotlight?.remove();
       chainHint?.remove();
       reviewJump?.remove();
     };
