@@ -137,7 +137,7 @@ export async function createGoogleEventForAppointment(appointmentId: string) {
   const accessToken = await getAccessToken(connection.encryptedRefreshToken);
   const adminLinks = adminAppointmentLinks(appointmentId, row.status);
   const isMeet = row.appointmentMode === "google_meet";
-  const params = new URLSearchParams({ conferenceDataVersion: "1", sendUpdates: row.status === "confirmed" && isMeet ? "all" : "none" });
+  const params = new URLSearchParams({ conferenceDataVersion: "1", sendUpdates: row.status === "confirmed" ? "all" : "none" });
   const response = await googleFetch(`/calendars/${encodeURIComponent(connection.calendarId)}/events?${params}`, accessToken, {
     method: "POST",
     body: JSON.stringify({
@@ -148,7 +148,7 @@ export async function createGoogleEventForAppointment(appointmentId: string) {
       start: { dateTime: row.startsAt.toISOString() }, end: { dateTime: row.endsAt.toISOString() },
       extendedProperties: { private: { handyDandyAppointmentId: appointmentId } },
       ...(isMeet ? { conferenceData: { createRequest: { requestId: randomUUID(), conferenceSolutionKey: { type: "hangoutsMeet" } } } } : {}),
-      ...(row.status === "confirmed" && isMeet ? { attendees: [{ email: row.customerEmail }] } : {}),
+      ...(row.status === "confirmed" ? { attendees: [{ email: row.customerEmail }] } : {}),
     }),
   });
   const event = await response.json() as { id?: string };
@@ -177,8 +177,7 @@ export async function updateGoogleEventForAppointment(appointmentId: string) {
   if (!row.eventId) return createGoogleEventForAppointment(appointmentId);
   const accessToken = await getAccessToken(connection.encryptedRefreshToken);
   const adminLinks = adminAppointmentLinks(appointmentId, row.status);
-  const isMeet = row.appointmentMode === "google_meet";
-  const params = new URLSearchParams({ conferenceDataVersion: "1", sendUpdates: row.status === "confirmed" && isMeet ? "all" : "none" });
+  const params = new URLSearchParams({ conferenceDataVersion: "1", sendUpdates: row.status === "confirmed" ? "all" : "none" });
   const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(connection.calendarId)}/events/${encodeURIComponent(row.eventId)}?${params}`, {
     method: "PATCH", cache: "no-store", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -187,7 +186,7 @@ export async function updateGoogleEventForAppointment(appointmentId: string) {
       location: googleAppointmentLocation(row),
       status: row.status === "pending_approval" ? "tentative" : "confirmed",
       start: { dateTime: row.startsAt.toISOString() }, end: { dateTime: row.endsAt.toISOString() },
-      ...(isMeet ? { attendees: row.status === "confirmed" ? [{ email: row.customerEmail }] : [] } : {}),
+      attendees: row.status === "confirmed" ? [{ email: row.customerEmail }] : [],
     }),
   });
   if (response.status === 404 || response.status === 410) {

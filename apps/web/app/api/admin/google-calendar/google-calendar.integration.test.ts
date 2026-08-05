@@ -131,7 +131,7 @@ describe("Google Calendar integration", () => {
     let [saved] = await appointmentSyncState(appointment.id);
     expect(saved).toMatchObject({ google_event_id: "created-google-event", calendar_sync_status: "synced" });
     const createRequest = calendarRequest("POST");
-    const createBody = JSON.parse(String(createRequest?.[1]?.body)) as { summary: string; status: string; description: string; location: string; extendedProperties: { private: { handyDandyAppointmentId: string } } };
+    const createBody = JSON.parse(String(createRequest?.[1]?.body)) as { summary: string; status: string; description: string; location: string; attendees: Array<{ email: string }>; extendedProperties: { private: { handyDandyAppointmentId: string } } };
     expect(createBody.summary).toContain("Smart-home consultation");
     expect(createBody.summary).toContain("Calendar Customer");
     expect(createBody.status).toBe("confirmed");
@@ -139,7 +139,9 @@ describe("Google Calendar integration", () => {
     expect(createBody.description).toContain("Address: 123 Main Street, Unit 4B, Ottawa K1A 0B1, Canada");
     expect(createBody.description).toContain(`Manage appointment (add notes or cancel): http://localhost:3000/login?next=${encodeURIComponent(`/admin?appointment=${appointment.id}#appointment-${appointment.id}`)}`);
     expect(createBody.location).toBe("123 Main Street, Unit 4B, Ottawa K1A 0B1, Canada");
+    expect(createBody.attendees).toEqual([{ email: "calendar-0@example.com" }]);
     expect(createBody.extendedProperties.private.handyDandyAppointmentId).toBe(appointment.id);
+    expect(String(createRequest?.[0])).toContain("sendUpdates=all");
 
     const movedStart = futureDay().plus({ days: 1 }).set({ hour: 14 });
     await testSql`
@@ -147,13 +149,16 @@ describe("Google Calendar integration", () => {
       WHERE id = ${appointment.slotId}
     `;
     await calendar.updateGoogleEventForAppointment(appointment.id);
-    const updateBody = JSON.parse(String(calendarRequest("PATCH")?.[1]?.body)) as { start: { dateTime: string } };
+    const updateRequest = calendarRequest("PATCH");
+    const updateBody = JSON.parse(String(updateRequest?.[1]?.body)) as { start: { dateTime: string }; attendees: Array<{ email: string }> };
     expect(updateBody.start.dateTime).toBe(movedStart.toUTC().toISO());
+    expect(updateBody.attendees).toEqual([{ email: "calendar-0@example.com" }]);
+    expect(String(updateRequest?.[0])).toContain("sendUpdates=all");
 
     await calendar.deleteGoogleEvent("created-google-event", appointment.id);
     [saved] = await appointmentSyncState(appointment.id);
     expect(saved).toMatchObject({ google_event_id: null, calendar_sync_status: "synced" });
-    expect(calendarRequest("DELETE")).toBeTruthy();
+    expect(String(calendarRequest("DELETE")?.[0])).toContain("sendUpdates=all");
   });
 
   it("creates pending requests as tentative events with admin approval links", async () => {
