@@ -419,30 +419,11 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       chainHint.setAttribute("class", "chain-hint");
       chainHint.setAttribute("aria-hidden", "true");
       chainHint.innerHTML = `
-        <text x="390" y="67" transform="rotate(-5 390 67)">(pull me)</text>
-        <path d="M389 75 C374 77 359 85 350 101" />
-        <path d="M350 101 L351 91 M350 101 L360 97" />
+        <text x="424" y="20" transform="rotate(-5 424 20)">(pull me)</text>
+        <path d="M423 28 C405 30 380 36 363 43" />
+        <path d="M363 43 L367 34 M363 43 L373 41" />
       `;
       sceneSvg.append(chainHint);
-    }
-    let chainSpotlight = sceneSvg?.querySelector<SVGGElement>(".chain-spotlight");
-    if (sceneSvg && !chainSpotlight) {
-      chainSpotlight = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      chainSpotlight.setAttribute("class", "chain-spotlight");
-      chainSpotlight.setAttribute("pointer-events", "none");
-      chainSpotlight.setAttribute("aria-hidden", "true");
-      chainSpotlight.innerHTML = `
-        <defs>
-          <linearGradient id="chainSpotlightFade" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#ffe6bc" stop-opacity=".14" />
-            <stop offset="58%" stop-color="#ffd79a" stop-opacity=".075" />
-            <stop offset="100%" stop-color="#ffd79a" stop-opacity="0" />
-          </linearGradient>
-        </defs>
-        <path class="chain-spotlight-cone" d="M332 0 L348 0 L410 168 L270 168 Z" />
-        <ellipse class="chain-spotlight-pool" cx="340" cy="103" rx="40" ry="24" />
-      `;
-      sceneSvg.insertBefore(chainSpotlight, chain);
     }
     const trackingCameras = Array.from(root.querySelectorAll<SVGGElement>(".tracking-camera"));
     trackingCameras.forEach((camera) => {
@@ -524,6 +505,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
 
     let readyTimer: number | undefined;
     let hintTimer: number | undefined;
+    const ropeControls: { restart?: () => void } = {};
     if (!restored) hintTimer = window.setTimeout(() => root.classList.add("chain-hint-visible"), 10_000);
     const setPowered = (powered: boolean) => {
       root.classList.toggle("lit", powered);
@@ -540,6 +522,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
         readyTimer = window.setTimeout(() => root.classList.add("ambient-ready"), 1900);
       } else if (!powered) {
         root.classList.remove("session-restored", "ambient-ready", "sign-powered");
+        ropeControls.restart?.();
       }
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ powered, expiresAt: Date.now() + POWER_STATE_TTL_MS }));
@@ -676,6 +659,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
     let grabX = points.at(-1)!.x;
     let grabY = points.at(-1)!.y;
     let settledFrames = 0;
+    let ambientSwingPhase = 0;
     let cameraFrame: number | undefined;
     let idleNudgeTimer: number | undefined;
 
@@ -760,6 +744,11 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
 
     const stepRopePhysics = () => {
       let energy = 0;
+      const ambientSwinging = !grabbed && !root.classList.contains("lit");
+      // Drive near the rope's natural pendulum frequency so the motion stays
+      // visible after damping and constraint passes have done their work.
+      ambientSwingPhase += .038;
+      const ambientDrive = ambientSwinging ? Math.sin(ambientSwingPhase) * .035 : 0;
       for (let index = 1; index < points.length; index += 1) {
         const point = points[index];
         if (grabbed && index === points.length - 1) {
@@ -769,7 +758,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
         const velocityX = (point.x - point.oldX) * .986;
         const velocityY = (point.y - point.oldY) * .986;
         point.oldX = point.x; point.oldY = point.y;
-        point.x += velocityX;
+        point.x += velocityX + ambientDrive * (index / (points.length - 1));
         point.y += velocityY + .25;
         energy += Math.abs(velocityX) + Math.abs(velocityY);
       }
@@ -806,7 +795,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       }
 
       renderRope();
-      if (settledFrames > 24) {
+      if (settledFrames > 24 && root.classList.contains("lit")) {
         points.forEach((point, index) => Object.assign(point, { ...restingPoints[index], oldX: restingPoints[index].x, oldY: restingPoints[index].y }));
         renderRope();
         settledFrames = 0;
@@ -827,6 +816,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       ropeAccumulator = 0;
       ropeFrame = window.requestAnimationFrame(simulateRope);
     };
+    ropeControls.restart = startRope;
 
     const nudgeRope = (direction = 1) => {
       if (grabbed) return;
@@ -1079,7 +1069,6 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       if (hintTimer) window.clearTimeout(hintTimer);
       if (cameraFrame !== undefined) window.cancelAnimationFrame(cameraFrame);
       if (sleeperWakeTimer !== undefined) window.clearTimeout(sleeperWakeTimer);
-      chainSpotlight?.remove();
       chainHint?.remove();
       reviewJump?.remove();
     };
