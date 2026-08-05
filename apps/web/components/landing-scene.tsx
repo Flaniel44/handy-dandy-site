@@ -505,7 +505,6 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
 
     let readyTimer: number | undefined;
     let hintTimer: number | undefined;
-    const ropeControls: { restart?: () => void } = {};
     if (!restored) hintTimer = window.setTimeout(() => root.classList.add("chain-hint-visible"), 10_000);
     const setPowered = (powered: boolean) => {
       root.classList.toggle("lit", powered);
@@ -522,7 +521,6 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
         readyTimer = window.setTimeout(() => root.classList.add("ambient-ready"), 1900);
       } else if (!powered) {
         root.classList.remove("session-restored", "ambient-ready", "sign-powered");
-        ropeControls.restart?.();
       }
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ powered, expiresAt: Date.now() + POWER_STATE_TTL_MS }));
@@ -658,16 +656,8 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
     let grabbed = false;
     let grabX = points.at(-1)!.x;
     let grabY = points.at(-1)!.y;
-    let settledFrames = 0;
     let ambientSwingPhase = 0;
     let cameraFrame: number | undefined;
-    let idleNudgeTimer: number | undefined;
-
-    const clearIdleNudge = () => {
-      if (idleNudgeTimer === undefined) return;
-      window.clearTimeout(idleNudgeTimer);
-      idleNudgeTimer = undefined;
-    };
 
     const animateCameras = (time: number) => {
       cameraTrackers.forEach((tracker) => {
@@ -743,8 +733,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
     };
 
     const stepRopePhysics = () => {
-      let energy = 0;
-      const ambientSwinging = !grabbed && !root.classList.contains("lit");
+      const ambientSwinging = !grabbed;
       // Drive near the rope's natural pendulum frequency so the motion stays
       // visible after damping and constraint passes have done their work.
       ambientSwingPhase += .038;
@@ -760,7 +749,6 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
         point.oldX = point.x; point.oldY = point.y;
         point.x += velocityX + ambientDrive * (index / (points.length - 1));
         point.y += velocityY + .25;
-        energy += Math.abs(velocityX) + Math.abs(velocityY);
       }
       for (let iteration = 0; iteration < 7; iteration += 1) {
         points[0].x = restingPoints[0].x; points[0].y = restingPoints[0].y;
@@ -777,7 +765,6 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
         }
         if (grabbed) { points.at(-1)!.x = grabX; points.at(-1)!.y = grabY; }
       }
-      return energy;
     };
 
     const physicsStepMs = 1000 / 60;
@@ -788,35 +775,21 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
 
       let steps = 0;
       while (ropeAccumulator >= physicsStepMs && steps < 6) {
-        const energy = stepRopePhysics();
-        settledFrames = !grabbed && energy < .012 ? settledFrames + 1 : 0;
+        stepRopePhysics();
         ropeAccumulator -= physicsStepMs;
         steps += 1;
       }
 
       renderRope();
-      if (settledFrames > 24 && root.classList.contains("lit")) {
-        points.forEach((point, index) => Object.assign(point, { ...restingPoints[index], oldX: restingPoints[index].x, oldY: restingPoints[index].y }));
-        renderRope();
-        settledFrames = 0;
-        ropeFrame = undefined;
-        previousRopeTime = undefined;
-        ropeAccumulator = 0;
-        scheduleIdleNudge();
-        return;
-      }
       ropeFrame = window.requestAnimationFrame(simulateRope);
     };
 
     const startRope = () => {
-      clearIdleNudge();
       if (ropeFrame !== undefined) return;
-      settledFrames = 0;
       previousRopeTime = undefined;
       ropeAccumulator = 0;
       ropeFrame = window.requestAnimationFrame(simulateRope);
     };
-    ropeControls.restart = startRope;
 
     const nudgeRope = (direction = 1) => {
       if (grabbed) return;
@@ -826,18 +799,6 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       });
       startRope();
     };
-
-    function scheduleIdleNudge() {
-      clearIdleNudge();
-      idleNudgeTimer = window.setTimeout(() => {
-        idleNudgeTimer = undefined;
-        if (grabbed || document.hidden) {
-          scheduleIdleNudge();
-          return;
-        }
-        nudgeRope(Math.random() < .5 ? -1 : 1);
-      }, 12_000 + Math.random() * 8_000);
-    }
 
     // A small initial impulse lets the joint simulation open with a natural,
     // decaying sway instead of a perfectly static chain.
@@ -1064,7 +1025,6 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       document.body.classList.remove("landing-lights-off");
       window.clearInterval(ambientTimer);
       if (ropeFrame !== undefined) window.cancelAnimationFrame(ropeFrame);
-      clearIdleNudge();
       if (readyTimer) window.clearTimeout(readyTimer);
       if (hintTimer) window.clearTimeout(hintTimer);
       if (cameraFrame !== undefined) window.cancelAnimationFrame(cameraFrame);
