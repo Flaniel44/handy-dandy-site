@@ -1158,12 +1158,22 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
         /* Demo-inspired material illustration treatment for the interactive house. */
         .scene-root .stage {
           border: 1px solid #303752;
+          isolation: isolate;
           background:
             linear-gradient(#8279e50d 1px, transparent 1px),
             linear-gradient(90deg, #8279e50d 1px, transparent 1px),
             radial-gradient(circle at 50% 72%, #5c55aa24 0, transparent 42%),
             linear-gradient(145deg, #111526 0%, #0b0d16 72%) !important;
           background-size: 28px 28px, 28px 28px, auto, auto !important;
+        }
+        .scene-root .stage > svg {
+          position: relative;
+          z-index: 6;
+          overflow: visible;
+        }
+        .scene-root .captions {
+          position: relative;
+          z-index: 2;
         }
         .scene-root .landing-stage-logo {
           position: absolute;
