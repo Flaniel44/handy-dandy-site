@@ -15,6 +15,7 @@ export function SiteSessionNav() {
   return <>
     {pathname !== "/" && <Link className="site-home-link" href="/" aria-label="Back to Digital HandyDan home">← Digital HandyDan</Link>}
     <nav className="site-session-nav" aria-label="Account navigation">
+      {(pathname === "/" || pathname === "/demos") && <Link className="site-nav-book" href="/book">Book an appointment</Link>}
       {user ? <><Link href={user.role === "admin" ? "/admin" : "/account"}>Hi, {user.firstName}</Link><button onClick={logout}>Sign out</button></> : user === null ? <Link href="/login">Sign in</Link> : null}
     </nav>
   </>;

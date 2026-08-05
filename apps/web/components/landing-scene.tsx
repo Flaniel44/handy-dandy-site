@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { ContactLinks } from "./contact-links";
 import { GoogleReviews } from "./google-reviews";
+import { LandingMarketingSections } from "./landing-marketing-sections";
 import { landingSceneMarkup } from "./landing-scene-markup";
 import { prepareRouteTransition } from "./route-transition";
 
@@ -74,6 +75,16 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
     const root = container?.querySelector<HTMLElement>("#scene-root");
     const chain = root?.querySelector<SVGGElement>("[data-action='toggle-light']");
     if (!container || !root || !chain) return;
+
+    const stage = root.querySelector<HTMLElement>(".stage");
+    let stageLogo = stage?.querySelector<HTMLImageElement>(".landing-stage-logo");
+    if (stage && !stageLogo) {
+      stageLogo = document.createElement("img");
+      stageLogo.className = "landing-stage-logo";
+      stageLogo.src = "/apple-icon.png";
+      stageLogo.alt = "Digital HandyDan logo";
+      stage.prepend(stageLogo);
+    }
 
     const houseScene = root.querySelector<SVGGElement>(".house-scene");
     if (houseScene && !houseScene.querySelector(".robot-vacuum-runner")) {
@@ -244,6 +255,8 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
 
     const demosButton = root.querySelector<HTMLButtonElement>("[data-action='demos']");
     if (demosButton) demosButton.textContent = "What's Possible?";
+    const bookButton = root.querySelector<HTMLButtonElement>("[data-action='book']");
+    if (bookButton) bookButton.textContent = "Book an appointment";
     const businessName = root.querySelector<HTMLElement>(".name-ph");
     if (businessName) businessName.textContent = "Digital HandyDan";
     const actions = root.querySelector<HTMLElement>(".cta-row");
@@ -1029,6 +1042,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       if (hintTimer) window.clearTimeout(hintTimer);
       if (cameraFrame !== undefined) window.cancelAnimationFrame(cameraFrame);
       if (sleeperWakeTimer !== undefined) window.clearTimeout(sleeperWakeTimer);
+      stageLogo?.remove();
       chainHint?.remove();
       reviewJump?.remove();
     };
@@ -1050,6 +1064,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
           }}
         />
       </section>
+      <LandingMarketingSections />
       <GoogleReviews />
       <footer className="landing-footer">
         <ContactLinks className="landing-contact" title="Let’s get connected" />
@@ -1060,13 +1075,37 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
         .scene-root .stage {
           border: 1px solid #303752;
           background:
+            linear-gradient(#8279e50d 1px, transparent 1px),
+            linear-gradient(90deg, #8279e50d 1px, transparent 1px),
             radial-gradient(circle at 50% 72%, #5c55aa24 0, transparent 42%),
             linear-gradient(145deg, #111526 0%, #0b0d16 72%) !important;
+          background-size: 28px 28px, 28px 28px, auto, auto !important;
+        }
+        .scene-root .landing-stage-logo {
+          position: absolute;
+          z-index: 4;
+          left: 14px;
+          bottom: 14px;
+          width: clamp(42px, 8vw, 58px);
+          height: auto;
+          border: 1px solid #8279e555;
+          border-radius: 10px;
+          box-shadow: 0 0 18px #6259c344;
+          opacity: .72;
+          pointer-events: none;
+          transition: opacity .5s ease, filter .5s ease;
+        }
+        .scene-root.lit .landing-stage-logo {
+          opacity: .94;
+          filter: brightness(1.08);
         }
         .scene-root.lit .stage {
           background:
+            linear-gradient(#9189f016 1px, transparent 1px),
+            linear-gradient(90deg, #9189f016 1px, transparent 1px),
             radial-gradient(circle at 50% 68%, #6f67c83d 0, transparent 46%),
             linear-gradient(145deg, #1a2037 0%, #101426 72%) !important;
+          background-size: 28px 28px, 28px 28px, auto, auto !important;
         }
         .scene-root .house-scene {
           filter: drop-shadow(0 12px 12px #0007);

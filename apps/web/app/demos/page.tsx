@@ -256,33 +256,6 @@ const serviceQuestions = [
   },
 ];
 
-const workingTogetherSteps = [
-  {
-    title: "We talk about your needs",
-    description: "You tell me what feels inconvenient, confusing, or unreliable.",
-  },
-  {
-    title: "I review what you already own",
-    description: "We may be able to reuse more of your existing technology than you expect.",
-  },
-  {
-    title: "You receive a practical plan",
-    description: "I recommend improvements based on your priorities and budget.",
-  },
-  {
-    title: "Everything is configured and tested",
-    description: "Devices and automations are tested under real everyday conditions.",
-  },
-  {
-    title: "You learn how it works",
-    description: "You receive straightforward guidance and documentation, not a system only its installer understands.",
-  },
-  {
-    title: "Your system stays maintainable",
-    description: "Low-battery warnings, device-health monitoring, backups, and optional ongoing support help prevent small problems from becoming frustrating ones.",
-  },
-];
-
 function QuestionTitle({ title, emphasis }: { title: string; emphasis: string }) {
   const emphasisStart = title.indexOf(emphasis);
   if (emphasisStart === -1) return title;
@@ -323,12 +296,6 @@ export default function DemosPage() {
               <a href="#help-at-any-stage">
                 <span>05</span>
                 Help at any stage
-              </a>
-            </li>
-            <li>
-              <a href="#working-with-me">
-                <span>06</span>
-                What working with me looks like
               </a>
             </li>
           </ol>
@@ -385,24 +352,6 @@ export default function DemosPage() {
             </article>
           ))}
         </div>
-      </section>
-
-      <section className="working-together" id="working-with-me" aria-labelledby="working-together-title">
-        <div className="possibility-section-heading">
-          <p className="eyebrow">A clear, personal process</p>
-          <h2 id="working-together-title">What working with me looks like.</h2>
-        </div>
-        <ol className="working-together-grid">
-          {workingTogetherSteps.map((step, index) => (
-            <li key={step.title}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <div>
-                <h3>{step.title}</h3>
-                <p>{step.description}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
       </section>
 
       <section className="possibilities-cta">
