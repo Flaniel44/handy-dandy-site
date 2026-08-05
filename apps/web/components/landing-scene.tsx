@@ -652,23 +652,49 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
     const actionFrom = (target: EventTarget | null) =>
       target instanceof Element ? target.closest<HTMLElement>("[data-action]")?.dataset.action : undefined;
 
+    const chainExtensionBeadCount = 7;
+    const firstOriginalBead = chain.querySelector<SVGCircleElement>(":scope > circle:not([data-chain-extension-bead])");
+    if (firstOriginalBead && !chain.querySelector(":scope > circle[data-chain-extension-bead]")) {
+      for (let index = 0; index < chainExtensionBeadCount; index += 1) {
+        const bead = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        bead.setAttribute("data-chain-extension-bead", "true");
+        bead.setAttribute("cx", "340");
+        bead.setAttribute("cy", String(-117 + index * 11));
+        bead.setAttribute("r", "3.5");
+        bead.setAttribute("fill", "#a9adb8");
+        chain.insertBefore(bead, firstOriginalBead);
+      }
+    }
     const beads = Array.from(chain.querySelectorAll<SVGCircleElement>(":scope > circle"));
     const handle = chain.querySelector<SVGRectElement>(":scope > rect:not([data-chain-hit-area])");
+    const retractedChainStartY = -40 - chainExtensionBeadCount * 11;
     const points = [
       ...beads.map((_, index) => {
         const x = 340;
-        const y = -40 + index * 11;
+        const y = retractedChainStartY + index * 11;
         return { x, y, oldX: x, oldY: y };
       }),
       { x: 340, y: 103, oldX: 340, oldY: 103 },
     ];
     const restingPoints = points.map((point) => ({ x: point.x, y: point.y }));
     const segmentLengths = points.slice(1).map((point, index) => Math.hypot(point.x - points[index].x, point.y - points[index].y));
+    const retractedAnchorY = restingPoints[0].y;
+    const extendedAnchorY = -40;
+    let currentAnchorY = root.classList.contains("lit") ? retractedAnchorY : extendedAnchorY;
+    const initialChainOffset = currentAnchorY - retractedAnchorY;
+    if (initialChainOffset !== 0) {
+      points.forEach((point) => {
+        point.y += initialChainOffset;
+        point.oldY += initialChainOffset;
+      });
+    }
     let pullStartX: number | undefined;
     let pullStartY: number | undefined;
+    let pullBaseX: number | undefined;
+    let pullBaseY: number | undefined;
     let pullStartedAt: number | undefined;
     let pullDistance = 0;
-    let suppressTouchClick = false;
+    let suppressChainClick = false;
     let previousPointerX: number | undefined;
     let ropeFrame: number | undefined;
     let previousRopeTime: number | undefined;
@@ -747,6 +773,12 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       const end = points.at(-1)!;
       const previous = points.at(-2)!;
       const angle = Math.atan2(end.y - previous.y, end.x - previous.x) * 180 / Math.PI - 90;
+      const powered = root.classList.contains("lit");
+      const hitAreaHalfWidth = powered ? 37 : 56;
+      const hitAreaBottomPadding = powered ? 30 : 90;
+      hitArea?.setAttribute("x", String(340 - hitAreaHalfWidth));
+      hitArea?.setAttribute("width", String(hitAreaHalfWidth * 2));
+      hitArea?.setAttribute("height", Math.max(175, end.y + hitAreaBottomPadding - (-45)).toFixed(2));
       handle.setAttribute("x", (end.x - 7).toFixed(2));
       handle.setAttribute("y", (end.y - 11).toFixed(2));
       handle.setAttribute("transform", `rotate(${angle} ${end.x} ${end.y})`);
@@ -754,6 +786,8 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
 
     const stepRopePhysics = () => {
       const ambientSwinging = !grabbed;
+      const targetAnchorY = root.classList.contains("lit") ? retractedAnchorY : extendedAnchorY;
+      currentAnchorY += (targetAnchorY - currentAnchorY) * .055;
       // Drive near the rope's natural pendulum frequency so the motion stays
       // visible after damping and constraint passes have done their work.
       ambientSwingPhase += .038;
@@ -771,7 +805,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
         point.y += velocityY + .25;
       }
       for (let iteration = 0; iteration < 7; iteration += 1) {
-        points[0].x = restingPoints[0].x; points[0].y = restingPoints[0].y;
+        points[0].x = restingPoints[0].x; points[0].y = currentAnchorY;
         for (let index = 0; index < segmentLengths.length; index += 1) {
           const first = points[index]; const second = points[index + 1];
           const dx = second.x - first.x; const dy = second.y - first.y;
@@ -896,10 +930,11 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
     const onPointerDown = (event: PointerEvent) => {
       const end = points.at(-1)!;
       pullStartX = event.clientX; pullStartY = event.clientY; pullStartedAt = performance.now(); pullDistance = 0; grabbed = true;
+      pullBaseX = end.x; pullBaseY = end.y;
       // Give taps the same visible mechanical pull as mouse presses. Further
       // touch movement adds to this initial travel for the drag-to-pull gesture.
       grabX = end.x; grabY = end.y + 18 * svgScale();
-      suppressTouchClick = event.pointerType !== "mouse";
+      suppressChainClick = event.pointerType !== "mouse";
       chain.setPointerCapture(event.pointerId); startRope();
     };
 
@@ -909,8 +944,8 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       const scale = svgScale();
       const downwardTravel = Math.max(0, event.clientY - pullStartY);
       pullDistance = Math.min(86, downwardTravel * .78);
-      grabX = restingPoints.at(-1)!.x + (event.clientX - pullStartX) * scale * .65;
-      grabY = restingPoints.at(-1)!.y + (18 + pullDistance) * scale;
+      grabX = (pullBaseX ?? restingPoints.at(-1)!.x) + (event.clientX - pullStartX) * scale * .65;
+      grabY = (pullBaseY ?? restingPoints.at(-1)!.y) + (18 + pullDistance) * scale;
     };
 
     const releasePullChain = (event: PointerEvent) => {
@@ -919,13 +954,16 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
         ? Number.POSITIVE_INFINITY
         : Math.hypot(event.clientX - pullStartX, event.clientY - pullStartY);
       const pressDuration = pullStartedAt === undefined ? Number.POSITIVE_INFINITY : performance.now() - pullStartedAt;
-      const isTouchTap = event.pointerType !== "mouse" && totalTravel <= 14 && pressDuration <= 550;
+      const isShortPress = totalTravel <= 14 && pressDuration <= 550;
       const isIntentionalTouchPull = event.pointerType !== "mouse" && pullDistance >= 42;
-      const shouldToggle = event.type === "pointerup" && (isTouchTap || isIntentionalTouchPull);
-      grabbed = false; pullStartX = undefined; pullStartY = undefined; pullStartedAt = undefined;
+      const shouldToggle = event.type === "pointerup" && (isShortPress || isIntentionalTouchPull);
+      grabbed = false; pullStartX = undefined; pullStartY = undefined; pullBaseX = undefined; pullBaseY = undefined; pullStartedAt = undefined;
       if (chain.hasPointerCapture(event.pointerId)) chain.releasePointerCapture(event.pointerId);
       startRope();
-      if (shouldToggle) setPowered(!root.classList.contains("lit"));
+      if (shouldToggle) {
+        suppressChainClick = true;
+        setPowered(!root.classList.contains("lit"));
+      }
     };
 
     const onClick = (event: MouseEvent) => {
@@ -935,8 +973,8 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       if (toggleShowerFrom(event.target)) return;
       if (toggleDeviceFrom(event.target)) return;
       const action = actionFrom(event.target);
-      if (action === "toggle-light" && suppressTouchClick) {
-        suppressTouchClick = false;
+      if (action === "toggle-light" && suppressChainClick) {
+        suppressChainClick = false;
         return;
       }
       if (action) activate(action);
