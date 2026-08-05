@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
+import { readDemoUnitPreference, setDemoUnitPreference } from "../lib/demo-unit";
 import { ContactLinks } from "./contact-links";
 import { GoogleReviews } from "./google-reviews";
 import { LandingMarketingSections, LandingQuestionCta } from "./landing-marketing-sections";
@@ -83,8 +84,43 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       stageLogo.className = "landing-stage-logo";
       stageLogo.src = "/apple-icon.png";
       stageLogo.alt = "Digital HandyDan logo";
+      stageLogo.draggable = false;
       stage.prepend(stageLogo);
     }
+
+    let demoUnitHoldTimer: number | undefined;
+    let demoUnitNoticeTimer: number | undefined;
+    const cancelDemoUnitHold = () => window.clearTimeout(demoUnitHoldTimer);
+    const showDemoUnitNotice = (enabled: boolean) => {
+      if (!stage) return;
+      stage.querySelector(".demo-unit-notice")?.remove();
+      const notice = document.createElement("div");
+      notice.className = "demo-unit-notice";
+      notice.textContent = enabled ? "Demo unit mode enabled" : "Demo unit mode disabled";
+      stage.append(notice);
+      window.clearTimeout(demoUnitNoticeTimer);
+      demoUnitNoticeTimer = window.setTimeout(() => notice.remove(), 2800);
+    };
+    const toggleDemoUnitMode = () => {
+      const enabled = !readDemoUnitPreference();
+      setDemoUnitPreference(enabled);
+      if (enabled) {
+        bookingPathRef.current = "/book";
+        container.querySelector("[data-action='admin']")?.remove();
+        void fetch("/api/auth/logout", { method: "POST" });
+      }
+      showDemoUnitNotice(enabled);
+    };
+    const startDemoUnitHold = (event: PointerEvent) => {
+      event.preventDefault();
+      cancelDemoUnitHold();
+      demoUnitHoldTimer = window.setTimeout(toggleDemoUnitMode, 5000);
+    };
+    stageLogo?.addEventListener("pointerdown", startDemoUnitHold);
+    stageLogo?.addEventListener("pointerup", cancelDemoUnitHold);
+    stageLogo?.addEventListener("pointercancel", cancelDemoUnitHold);
+    stageLogo?.addEventListener("pointerleave", cancelDemoUnitHold);
+    stageLogo?.addEventListener("contextmenu", (event) => event.preventDefault());
 
     const houseScene = root.querySelector<SVGGElement>(".house-scene");
     if (houseScene && !houseScene.querySelector(".robot-vacuum-runner")) {
@@ -1087,6 +1123,8 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       if (hintTimer) window.clearTimeout(hintTimer);
       if (cameraFrame !== undefined) window.cancelAnimationFrame(cameraFrame);
       if (sleeperWakeTimer !== undefined) window.clearTimeout(sleeperWakeTimer);
+      window.clearTimeout(demoUnitHoldTimer);
+      window.clearTimeout(demoUnitNoticeTimer);
       stageLogo?.remove();
       chainHint?.remove();
       reviewJump?.remove();
@@ -1138,12 +1176,34 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
           border-radius: 10px;
           box-shadow: 0 0 18px #6259c344;
           opacity: .72;
-          pointer-events: none;
+          cursor: default;
+          pointer-events: auto;
+          touch-action: none;
+          user-select: none;
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
           transition: opacity .5s ease, filter .5s ease;
         }
         .scene-root.lit .landing-stage-logo {
           opacity: .94;
           filter: brightness(1.08);
+        }
+        .scene-root .demo-unit-notice {
+          position: absolute;
+          z-index: 12;
+          left: 50%;
+          bottom: 18px;
+          translate: -50% 0;
+          padding: 9px 13px;
+          border: 1px solid #8279e588;
+          border-radius: 8px;
+          background: #0b0d16ed;
+          box-shadow: 0 0 24px #6259c355;
+          color: #f3eee6;
+          font-size: .78rem;
+          font-weight: 700;
+          white-space: nowrap;
+          pointer-events: none;
         }
         .scene-root.lit .stage {
           background:
