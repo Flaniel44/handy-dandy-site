@@ -50,11 +50,16 @@ export function LandingMarketingSections() {
         </nav>
       </section>
 
-      <section className="possibilities-cta landing-question-cta">
-        <p className="eyebrow">Have a question of your own?</p>
-        <h2>Let&apos;s make your home work the way you want it to.</h2>
-        <Link className="primary-button" href="/book">Book a consultation</Link>
-      </section>
     </div>
+  );
+}
+
+export function LandingQuestionCta() {
+  return (
+    <section className="possibilities-cta landing-question-cta">
+      <p className="eyebrow">Have a question of your own?</p>
+      <h2>Let&apos;s make your home work the way you want it to.</h2>
+      <Link className="primary-button" href="/book">Book a consultation</Link>
+    </section>
   );
 }

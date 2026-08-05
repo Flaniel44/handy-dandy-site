@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { ContactLinks } from "./contact-links";
 import { GoogleReviews } from "./google-reviews";
-import { LandingMarketingSections } from "./landing-marketing-sections";
+import { LandingMarketingSections, LandingQuestionCta } from "./landing-marketing-sections";
 import { landingSceneMarkup } from "./landing-scene-markup";
 import { prepareRouteTransition } from "./route-transition";
 
@@ -434,7 +434,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       chainHint.innerHTML = `
         <text x="424" y="20" transform="rotate(-5 424 20)">(pull me)</text>
         <path d="M423 28 C405 30 380 36 363 43" />
-        <path d="M363 43 L367 34 M363 43 L373 41" />
+        <path d="M363 43 L370 34 M363 43 L374 45" />
       `;
       sceneSvg.append(chainHint);
     }
@@ -518,7 +518,12 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
 
     let readyTimer: number | undefined;
     let hintTimer: number | undefined;
-    if (!restored) hintTimer = window.setTimeout(() => root.classList.add("chain-hint-visible"), 10_000);
+    const scheduleChainHint = () => {
+      window.clearTimeout(hintTimer);
+      root.classList.remove("chain-hint-visible");
+      hintTimer = window.setTimeout(() => root.classList.add("chain-hint-visible"), 10_000);
+    };
+    if (!restored) scheduleChainHint();
     const setPowered = (powered: boolean) => {
       root.classList.toggle("lit", powered);
       document.body.classList.toggle("landing-lights-off", !powered);
@@ -527,6 +532,8 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       if (powered) {
         window.clearTimeout(hintTimer);
         root.classList.remove("chain-hint-visible");
+      } else {
+        scheduleChainHint();
       }
       if (powered && !root.classList.contains("session-restored")) {
         root.classList.remove("ambient-ready");
@@ -1066,6 +1073,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       </section>
       <LandingMarketingSections />
       <GoogleReviews />
+      <LandingQuestionCta />
       <footer className="landing-footer">
         <ContactLinks className="landing-contact" title="Let’s get connected" />
         <p>© {new Date().getFullYear()} Digital HandyDan</p>
