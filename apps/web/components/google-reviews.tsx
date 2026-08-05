@@ -46,6 +46,7 @@ function Stars({ rating }: { rating: number }) {
 export function GoogleReviews() {
   const [data, setData] = useState<ReviewsResponse>(EMPTY_REVIEWS);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [manualPauseToken, setManualPauseToken] = useState(0);
   const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
@@ -63,18 +64,23 @@ export function GoogleReviews() {
 
   useEffect(() => {
     if (data.reviews.length < 2) return;
-    const timer = window.setInterval(() => {
+    const timer = window.setTimeout(() => {
       setActiveIndex((index) => (index + 1) % data.reviews.length);
-    }, 10_000);
-    return () => window.clearInterval(timer);
-  }, [data.reviews.length]);
+      setManualPauseToken(0);
+    }, manualPauseToken ? 60_000 : 10_000);
+    return () => window.clearTimeout(timer);
+  }, [activeIndex, data.reviews.length, manualPauseToken]);
 
   const safeIndex = data.reviews.length ? activeIndex % data.reviews.length : 0;
   const review = data.reviews[safeIndex];
   const previousIndex = data.reviews.length ? (safeIndex - 1 + data.reviews.length) % data.reviews.length : 0;
   const nextIndex = data.reviews.length ? (safeIndex + 1) % data.reviews.length : 0;
-  const previous = () => setActiveIndex((safeIndex - 1 + data.reviews.length) % data.reviews.length);
-  const next = () => setActiveIndex((safeIndex + 1) % data.reviews.length);
+  const selectReview = (index: number) => {
+    setActiveIndex(index);
+    setManualPauseToken((token) => token + 1);
+  };
+  const previous = () => selectReview((safeIndex - 1 + data.reviews.length) % data.reviews.length);
+  const next = () => selectReview((safeIndex + 1) % data.reviews.length);
 
   return (
     <section id="google-reviews" className="landing-reviews" aria-labelledby="google-reviews-title">
@@ -151,7 +157,7 @@ export function GoogleReviews() {
                     <button
                       className="review-card-select"
                       type="button"
-                      onClick={() => setActiveIndex(index)}
+                      onClick={() => selectReview(index)}
                       aria-label={`${isPrevious ? "Show previous" : "Show next"} review by ${item.authorName}`}
                     />
                   )}
@@ -169,7 +175,7 @@ export function GoogleReviews() {
                     key={item.id}
                     type="button"
                     className={index === safeIndex ? "is-active" : ""}
-                    onClick={() => setActiveIndex(index)}
+                    onClick={() => selectReview(index)}
                     aria-label={`Show review ${index + 1}`}
                     aria-current={index === safeIndex ? "true" : undefined}
                   />

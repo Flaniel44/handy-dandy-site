@@ -3,9 +3,9 @@ import Link from "next/link";
 import { ViewportSvgAnimation } from "../../components/viewport-svg-animation";
 
 const demoAnimationSources: Record<string, string> = {
-  "01": "/demos/whole-home-entertainment.svg",
+  "01": "/demos/arrival-automation.svg",
   "02": "/demos/motion-lights.svg",
-  "03": "/demos/arrival-automation.svg",
+  "03": "/demos/whole-home-entertainment.svg",
   "04": "/demos/day-night-modes.svg",
   "05": "/demos/physical-controls.svg",
   "06": "/demos/baby-monitoring.svg",
@@ -51,7 +51,7 @@ const possibilitySections = [
         number: "04",
         title: "Can my home react to my arrival and departure?",
         emphasis: "arrival and departure",
-        description: "Yes. Your home can prepare for your arrival, then turn off selected lights and devices after everyone has left.",
+        description: "Yes. As you approach, your home can open a compatible garage door, turn on entry lights, adjust the temperature, start music, and bring selected rooms to life. Once everyone leaves, it can lock compatible doors, close the garage, switch off forgotten devices, set back the thermostat, arm cameras, and alert you if something was left open—all according to the routines and safeguards you choose.",
         mediaLabel: "Arrival and departure automation",
       },
     ],
@@ -204,9 +204,9 @@ const orderedPossibilitySections = [
     number: "01",
     title: "Everyday Comfort / Home Theater",
     items: orderedItems([
-      ["15", "01"],
+      ["04", "01"],
       ["01", "02"],
-      ["04", "03"],
+      ["15", "03"],
       ["03", "04"],
       ["05", "05"],
     ]),
