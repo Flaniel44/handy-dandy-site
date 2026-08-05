@@ -14,12 +14,26 @@ const contentSecurityPolicy = [
   "form-action 'self'",
   "frame-ancestors 'none'",
 ].join("; ");
+const noIndexRoutes = [
+  "/account/:path*",
+  "/admin/:path*",
+  "/login",
+  "/create-account",
+  "/forgot-password",
+  "/reset-password",
+  "/book/confirm",
+  "/book/confirmation",
+  "/book/manage",
+];
 
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   async headers() {
-    return [{
+    return [...noIndexRoutes.map((source) => ({
+      source,
+      headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
+    })), {
       source: "/(.*)",
       headers: [
         { key: "X-Content-Type-Options", value: "nosniff" },

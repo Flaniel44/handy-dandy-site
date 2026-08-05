@@ -1,6 +1,19 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
+import { JsonLd } from "../../components/json-ld";
 import { ViewportSvgAnimation } from "../../components/viewport-svg-animation";
+
+export const metadata: Metadata = {
+  title: "Smart-home automation ideas and examples",
+  description: "Explore practical smart-home ideas for lighting, security, entertainment, energy monitoring, dashboards, local control, and everyday comfort.",
+  alternates: { canonical: "/demos" },
+  openGraph: {
+    title: "What can a smart home do? | Digital HandyDan",
+    description: "See practical examples of useful, private, and approachable home automation.",
+    url: "/demos",
+  },
+};
 
 const demoAnimationSources: Record<string, string> = {
   "01": "/demos/arrival-automation.svg",
@@ -245,6 +258,16 @@ const orderedPossibilitySections = [
   },
 ];
 
+const faqStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: orderedPossibilitySections.flatMap((section) => section.items.map((item) => ({
+    "@type": "Question",
+    name: item.title,
+    acceptedAnswer: { "@type": "Answer", text: item.description },
+  }))),
+};
+
 const serviceQuestions = [
   {
     title: "Can I start small and expand later?",
@@ -272,6 +295,7 @@ function QuestionTitle({ title, emphasis }: { title: string; emphasis: string })
 export default function DemosPage() {
   return (
     <main className="possibilities-page">
+      <JsonLd data={faqStructuredData} />
       <header className="possibilities-hero">
         <div className="possibilities-hero-copy">
           <p className="eyebrow">You ask. We make it possible.</p>
