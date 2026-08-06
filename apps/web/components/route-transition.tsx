@@ -8,9 +8,17 @@ type RouteTransitionDirection = "forward" | "back";
 const DIRECTION_KEY = "digital-handydan-route-direction";
 const SOURCE_KEY = "digital-handydan-route-source";
 let activeScrollFrame: number | undefined;
+let restoreScrollBehavior: (() => void) | undefined;
+
+function stopActiveSectionScroll() {
+  if (activeScrollFrame !== undefined) window.cancelAnimationFrame(activeScrollFrame);
+  activeScrollFrame = undefined;
+  restoreScrollBehavior?.();
+  restoreScrollBehavior = undefined;
+}
 
 function scrollToSection(section: HTMLElement) {
-  if (activeScrollFrame !== undefined) window.cancelAnimationFrame(activeScrollFrame);
+  stopActiveSectionScroll();
 
   const scroller = document.scrollingElement;
   if (!(scroller instanceof HTMLElement)) {
@@ -26,19 +34,23 @@ function scrollToSection(section: HTMLElement) {
   const distance = endPosition - startPosition;
   const duration = Math.min(950, Math.max(600, Math.abs(distance) * 0.42));
   const startedAt = window.performance.now();
+  const previousInlineScrollBehavior = scroller.style.scrollBehavior;
+  scroller.style.scrollBehavior = "auto";
+  restoreScrollBehavior = () => {
+    scroller.style.scrollBehavior = previousInlineScrollBehavior;
+  };
 
   const animate = (currentTime: number) => {
     const progress = Math.min(1, (currentTime - startedAt) / duration);
-    const easedProgress =
-      progress < 0.5
-        ? 4 * progress * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+    const easedProgress = 1 - Math.pow(1 - progress, 3);
     scroller.scrollTop = startPosition + distance * easedProgress;
 
     if (progress < 1) {
       activeScrollFrame = window.requestAnimationFrame(animate);
     } else {
       activeScrollFrame = undefined;
+      restoreScrollBehavior?.();
+      restoreScrollBehavior = undefined;
     }
   };
 
