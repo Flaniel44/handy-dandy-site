@@ -549,8 +549,13 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       // The scene remains usable when browser storage is unavailable.
     }
 
+    const landingPage = container.closest<HTMLElement>(".landing-page");
+    const syncPoweredContent = (powered: boolean) => {
+      landingPage?.classList.toggle("landing-content-hidden", !powered);
+    };
+
     if (restored) root.classList.add("lit", "session-restored", "ambient-ready", "sign-powered");
-    document.body.classList.toggle("landing-lights-off", !restored);
+    syncPoweredContent(restored);
 
     let readyTimer: number | undefined;
     let hintTimer: number | undefined;
@@ -562,7 +567,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
     if (!restored) scheduleChainHint();
     const setPowered = (powered: boolean) => {
       root.classList.toggle("lit", powered);
-      document.body.classList.toggle("landing-lights-off", !powered);
+      syncPoweredContent(powered);
       chain.setAttribute("aria-label", powered ? "Turn the house lights off" : "Turn the house lights on");
       window.clearTimeout(readyTimer);
       if (powered) {
@@ -1116,7 +1121,6 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
       chain.removeEventListener("pointerup", releasePullChain);
       chain.removeEventListener("pointercancel", releasePullChain);
       mobileScene.removeEventListener("change", syncSceneViewport);
-      document.body.classList.remove("landing-lights-off");
       window.clearInterval(ambientTimer);
       if (ropeFrame !== undefined) window.cancelAnimationFrame(ropeFrame);
       if (readyTimer) window.clearTimeout(readyTimer);
@@ -1132,7 +1136,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
   });
 
   return (
-    <main className="landing-page">
+    <main className="landing-page landing-content-hidden">
       <section className="landing-hero" aria-label="Digital HandyDan">
         <div
           ref={containerRef}
@@ -1147,14 +1151,19 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
           }}
         />
       </section>
-      <LandingMarketingSections />
-      <GoogleReviews />
-      <LandingQuestionCta />
-      <footer className="landing-footer">
-        <ContactLinks className="landing-contact" title="Let’s get connected" />
-        <p>© {new Date().getFullYear()} Digital HandyDan</p>
-      </footer>
+      <div className="landing-powered-content">
+        <LandingMarketingSections />
+        <GoogleReviews />
+        <LandingQuestionCta />
+        <footer className="landing-footer">
+          <ContactLinks className="landing-contact" title="Let’s get connected" />
+          <p>© {new Date().getFullYear()} Digital HandyDan</p>
+        </footer>
+      </div>
       <style>{`
+        .landing-page.landing-content-hidden .landing-powered-content {
+          display: none;
+        }
         /* Demo-inspired material illustration treatment for the interactive house. */
         .scene-root .stage {
           border: 1px solid #303752;
