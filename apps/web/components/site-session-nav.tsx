@@ -49,6 +49,8 @@ export function SiteSessionNav() {
 
   async function logout() { await fetch("/api/auth/logout", { method: "POST" }); setUser(null); router.replace("/"); router.refresh(); }
 
+  if (pathname === "/open-house") return null;
+
   return <>
     {pathname !== "/" && <Link className="site-home-link" href="/" aria-label="Back to Digital HandyDan home">← Digital HandyDan</Link>}
     <nav className="site-session-nav" aria-label="Account navigation">

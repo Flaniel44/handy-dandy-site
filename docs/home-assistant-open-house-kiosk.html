@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Digital HandyDan</title>
+    <style>
+      html, body, iframe { width: 100%; height: 100%; margin: 0; border: 0; }
+      html, body { overflow: hidden; background: #0b0d16; }
+      iframe { display: block; height: 100vh; height: 100dvh; }
+    </style>
+  </head>
+  <body>
+    <iframe
+      id="digital-handydan"
+      title="Digital HandyDan open house demo"
+      src="https://digitalhandydan.ca/open-house?demoUnit=1"
+      allow="fullscreen"
+    ></iframe>
+    <script>
+      const ON_WEBHOOK = "/api/webhook/REPLACE_WITH_ON_WEBHOOK_ID";
+      const OFF_WEBHOOK = "/api/webhook/REPLACE_WITH_OFF_WEBHOOK_ID";
+      const website = document.getElementById("digital-handydan");
+      let lastPowerState;
+
+      window.addEventListener("message", async (event) => {
+        if (event.origin !== "https://digitalhandydan.ca") return;
+        if (event.source !== website.contentWindow) return;
+        if (event.data?.type !== "digital-handydan:power-state") return;
+        if (typeof event.data.powered !== "boolean") return;
+        if (event.data.powered === lastPowerState) return;
+
+        lastPowerState = event.data.powered;
+        const webhook = event.data.powered ? ON_WEBHOOK : OFF_WEBHOOK;
+        try {
+          await fetch(webhook, { method: "POST", cache: "no-store", credentials: "omit" });
+        } catch {
+          // Keep the website usable if Home Assistant cannot reach the bulb.
+        }
+      });
+    </script>
+  </body>
+</html>

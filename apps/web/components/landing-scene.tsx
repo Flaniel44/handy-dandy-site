@@ -49,7 +49,12 @@ const DEVICE_CONFIG = [
   },
 ] as const;
 
-export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnabled?: boolean }) {
+type LandingSceneProps = {
+  launchOfferEnabled?: boolean;
+  openHouseBridgeEnabled?: boolean;
+};
+
+export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnabled = false }: LandingSceneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bookingPathRef = useRef("/book");
   const router = useRouter();
@@ -553,9 +558,14 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
     const syncPoweredContent = (powered: boolean) => {
       landingPage?.classList.toggle("landing-content-hidden", !powered);
     };
+    const syncOpenHouseLight = (powered: boolean) => {
+      if (!openHouseBridgeEnabled || window.parent === window) return;
+      window.parent.postMessage({ type: "digital-handydan:power-state", powered }, "*");
+    };
 
     if (restored) root.classList.add("lit", "session-restored", "ambient-ready", "sign-powered");
     syncPoweredContent(restored);
+    syncOpenHouseLight(restored);
 
     let readyTimer: number | undefined;
     let hintTimer: number | undefined;
@@ -568,6 +578,7 @@ export function LandingScene({ launchOfferEnabled = false }: { launchOfferEnable
     const setPowered = (powered: boolean) => {
       root.classList.toggle("lit", powered);
       syncPoweredContent(powered);
+      syncOpenHouseLight(powered);
       chain.setAttribute("aria-label", powered ? "Turn the house lights off" : "Turn the house lights on");
       window.clearTimeout(readyTimer);
       if (powered) {
