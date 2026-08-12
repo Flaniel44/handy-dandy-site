@@ -215,7 +215,7 @@ const orderedPossibilitySections = [
   {
     id: "everyday-comfort",
     number: "01",
-    title: "Everyday Comfort / Home Theater",
+    title: "Everyday Comfort / Home Theatre",
     items: orderedItems([
       ["04", "01"],
       ["01", "02"],

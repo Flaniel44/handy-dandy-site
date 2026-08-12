@@ -1,16 +1,16 @@
 import Link from "next/link";
 
 const workingTogetherSteps = [
-  { title: "We talk about your needs", description: "You tell me what feels inconvenient, confusing, or unreliable." },
-  { title: "I review what you already own", description: "We may be able to reuse more of your existing technology than you expect." },
-  { title: "You receive a practical plan", description: "I recommend improvements based on your priorities and budget." },
+  { title: "We discuss your aspirations and frustrations", description: "You tell me what you would love your home to do, along with anything that currently feels inconvenient or unreliable." },
+  { title: "I review what you already own", description: "We may be able to reuse more of your existing technology than you think!" },
+  { title: "We work on a practical plan", description: "Together, we choose improvements that fit your priorities and budget." },
   { title: "Everything is configured and tested", description: "Devices and automations are tested under real everyday conditions." },
-  { title: "You learn how it works", description: "You receive straightforward guidance and documentation, not a system only its installer understands." },
+  { title: "I guide you on how to use everything", description: "You receive straightforward guidance and documentation, so your system always feels approachable." },
   { title: "Your system stays maintainable", description: "Low-battery warnings, device-health monitoring, backups, and optional ongoing support help prevent small problems from becoming frustrating ones." },
 ];
 
 const offeringTopics = [
-  { number: "01", title: "Everyday Comfort / Home Theater", href: "/demos#everyday-comfort" },
+  { number: "01", title: "Everyday Comfort / Home Theatre", href: "/demos#everyday-comfort" },
   { number: "02", title: "Security and Monitoring", href: "/demos#security-and-monitoring" },
   { number: "03", title: "One simple, flexible system", href: "/demos#one-simple-system" },
   { number: "04", title: "Creative possibilities", href: "/demos#creative-possibilities" },
@@ -35,7 +35,7 @@ export function LandingMarketingSections() {
         </ol>
       </section>
 
-      <section className="landing-offerings" aria-labelledby="landing-offerings-title">
+      <section className="landing-offerings" id="home-possibilities" aria-labelledby="landing-offerings-title">
         <div className="possibility-section-heading">
           <p className="eyebrow">Our offerings</p>
           <h2 id="landing-offerings-title">Explore what your home could do.</h2>

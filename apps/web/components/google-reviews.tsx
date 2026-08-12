@@ -89,13 +89,19 @@ export function GoogleReviews() {
           <p className="eyebrow">Google Reviews</p>
           <h2 id="google-reviews-title">Kind words from clients.</h2>
         </div>
-        {data.rating !== null && (
-          <div className="reviews-summary">
-            <strong>{data.rating.toFixed(1)}</strong>
-            <Stars rating={data.rating} />
-            <span>{data.reviewCount} {data.reviewCount === 1 ? "review" : "reviews"}</span>
-          </div>
-        )}
+        <div className="reviews-heading-meta">
+          {data.rating !== null && (
+            <div className="reviews-summary">
+              <strong>{data.rating.toFixed(1)}</strong>
+              <Stars rating={data.rating} />
+              <span>{data.reviewCount} {data.reviewCount === 1 ? "review" : "reviews"}</span>
+            </div>
+          )}
+          <a className="reviews-google-link" href={data.reviewsUrl} target="_blank" rel="noreferrer">
+            View on <span translate="no">Google Maps</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
       </div>
 
       {review ? (
@@ -193,11 +199,6 @@ export function GoogleReviews() {
           <p>Digital HandyDan is just getting started. Be one of the first to share your experience.</p>
         </div>
       )}
-
-      <a className="reviews-google-link" href={data.reviewsUrl} target="_blank" rel="noreferrer">
-        View Digital HandyDan on <span translate="no">Google Maps</span>
-        <span aria-hidden="true">↗</span>
-      </a>
     </section>
   );
 }
