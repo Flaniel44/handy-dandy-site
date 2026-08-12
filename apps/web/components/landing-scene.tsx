@@ -1006,9 +1006,9 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
         ? Number.POSITIVE_INFINITY
         : Math.hypot(event.clientX - pullStartX, event.clientY - pullStartY);
       const pressDuration = pullStartedAt === undefined ? Number.POSITIVE_INFINITY : performance.now() - pullStartedAt;
-      const isShortPress = totalTravel <= 14 && pressDuration <= 550;
-      const isIntentionalTouchPull = event.pointerType !== "mouse" && pullDistance >= 42;
-      const shouldToggle = event.type === "pointerup" && (isShortPress || isIntentionalTouchPull);
+      const isTap = totalTravel <= 18 && pressDuration <= 700;
+      const isIntentionalPull = pullDistance >= 30;
+      const shouldToggle = event.type === "pointerup" && (isTap || isIntentionalPull);
       grabbed = false; pullStartX = undefined; pullStartY = undefined; pullBaseX = undefined; pullBaseY = undefined; pullStartedAt = undefined;
       if (chain.hasPointerCapture(event.pointerId)) chain.releasePointerCapture(event.pointerId);
       startRope();
@@ -1593,7 +1593,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
         .scene-root .chain-hint text {
           fill: #d7d1c5;
           font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
-          font-size: 17px;
+          font-size: 23px;
           font-weight: 600;
           letter-spacing: .02em;
         }
