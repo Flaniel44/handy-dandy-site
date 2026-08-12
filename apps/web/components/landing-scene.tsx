@@ -511,6 +511,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       trackingStartedAt: 0,
       snapshotTaken: false,
       flashUntil: 0,
+      touchTrackingUntil: 0,
       phase: index * Math.PI * .75,
     }));
     const mobileScene = window.matchMedia("(max-width: 620px)");
@@ -760,6 +761,14 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     const animateCameras = (time: number) => {
       cameraTrackers.forEach((tracker) => {
         if (!tracker.aim) return;
+        if (tracker.touchTrackingUntil > 0 && time >= tracker.touchTrackingUntil) {
+          tracker.isTracking = false;
+          tracker.trackingStartedAt = 0;
+          tracker.snapshotTaken = false;
+          tracker.flashUntil = 0;
+          tracker.touchTrackingUntil = 0;
+          tracker.camera.classList.remove("camera-touch-tracking");
+        }
         const desiredAngle = tracker.isTracking
           ? tracker.targetAngle
           : Math.sin(time / 1500 + tracker.phase) * 12;
@@ -910,41 +919,52 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     // decaying sway instead of a perfectly static chain.
     nudgeRope();
 
-    const onScenePointerMove = (event: PointerEvent) => {
-      if (event.pointerType === "mouse") {
-        cameraTrackers.forEach((tracker) => {
-          const { camera } = tracker;
-          const matrix = camera.getScreenCTM();
-          if (!matrix || !tracker.aim) return;
-          // A pointer's hotspot is at the arrow tip, not its visual centre.
-          const target = new DOMPoint(event.clientX + 6, event.clientY + 8).matrixTransform(matrix.inverse());
-          const targetAngle = Math.atan2(target.y - 13, target.x - 12) * 180 / Math.PI;
-          const insideVisionCone = target.x > 12 && targetAngle >= -50 && targetAngle <= 50;
-          if (insideVisionCone) {
-            if (!tracker.isTracking) {
-              tracker.isTracking = true;
-              tracker.trackingStartedAt = performance.now();
-              tracker.snapshotTaken = false;
-              tracker.flashUntil = 0;
-              tracker.camera.classList.add("camera-tracking");
-              tracker.reticle?.classList.remove("snapshot-captured");
-            }
-            tracker.targetAngle = Math.max(-38, Math.min(42, targetAngle));
-            tracker.pointerX = target.x;
-            tracker.pointerY = target.y;
-            tracker.reticle?.setAttribute(
-              "transform",
-              `translate(${target.x.toFixed(2)} ${target.y.toFixed(2)})`,
-            );
-          } else {
-            tracker.isTracking = false;
-            tracker.trackingStartedAt = 0;
+    const aimCamerasAtPointer = (event: PointerEvent, touchPreview = false) => {
+      cameraTrackers.forEach((tracker) => {
+        const { camera } = tracker;
+        const matrix = camera.getScreenCTM();
+        if (!matrix || !tracker.aim) return;
+        // A pointer's hotspot is at the arrow tip, not its visual centre.
+        const target = new DOMPoint(
+          event.clientX + (touchPreview ? 0 : 6),
+          event.clientY + (touchPreview ? 0 : 8),
+        ).matrixTransform(matrix.inverse());
+        const targetAngle = Math.atan2(target.y - 13, target.x - 12) * 180 / Math.PI;
+        const insideVisionCone = target.x > 12 && targetAngle >= -50 && targetAngle <= 50;
+        if (insideVisionCone) {
+          if (!tracker.isTracking) {
+            tracker.isTracking = true;
+            tracker.trackingStartedAt = performance.now();
             tracker.snapshotTaken = false;
             tracker.flashUntil = 0;
-            tracker.camera.classList.remove("camera-tracking");
             tracker.reticle?.classList.remove("snapshot-captured");
           }
-        });
+          tracker.touchTrackingUntil = touchPreview ? performance.now() + 1400 : 0;
+          tracker.camera.classList.toggle("camera-touch-tracking", touchPreview);
+          tracker.camera.classList.toggle("camera-tracking", !touchPreview);
+          tracker.targetAngle = Math.max(-38, Math.min(42, targetAngle));
+          tracker.pointerX = target.x;
+          tracker.pointerY = target.y;
+          tracker.reticle?.setAttribute(
+            "transform",
+            `translate(${target.x.toFixed(2)} ${target.y.toFixed(2)})`,
+          );
+        } else {
+          tracker.isTracking = false;
+          tracker.trackingStartedAt = 0;
+          tracker.snapshotTaken = false;
+          tracker.flashUntil = 0;
+          tracker.touchTrackingUntil = 0;
+          tracker.camera.classList.remove("camera-tracking");
+          tracker.camera.classList.remove("camera-touch-tracking");
+          tracker.reticle?.classList.remove("snapshot-captured");
+        }
+      });
+    };
+
+    const onScenePointerMove = (event: PointerEvent) => {
+      if (event.pointerType === "mouse") {
+        aimCamerasAtPointer(event);
       }
       if (grabbed) return;
       const svg = chain.ownerSVGElement;
@@ -967,7 +987,12 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       previousPointerX = event.clientX;
     };
 
-    const onScenePointerDown = (event: PointerEvent) => { previousPointerX = event.clientX; };
+    const onScenePointerDown = (event: PointerEvent) => {
+      previousPointerX = event.clientX;
+      if (root.classList.contains("lit") && event.pointerType !== "mouse" && !(event.target instanceof Element && event.target.closest("[data-action='toggle-light']"))) {
+        aimCamerasAtPointer(event, true);
+      }
+    };
     const onScenePointerEnd = () => { previousPointerX = undefined; };
 
     const resetCameraAim = () => cameraTrackers.forEach((tracker) => {
@@ -975,7 +1000,9 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       tracker.trackingStartedAt = 0;
       tracker.snapshotTaken = false;
       tracker.flashUntil = 0;
+      tracker.touchTrackingUntil = 0;
       tracker.camera.classList.remove("camera-tracking");
+      tracker.camera.classList.remove("camera-touch-tracking");
       tracker.reticle?.classList.remove("snapshot-captured");
     });
 
@@ -1332,7 +1359,8 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
           opacity: 0;
           transition: opacity .18s ease;
         }
-        .scene-root .tracking-camera.camera-tracking .camera-vision-cone {
+        .scene-root .tracking-camera.camera-tracking .camera-vision-cone,
+        .scene-root .tracking-camera.camera-touch-tracking .camera-vision-cone {
           opacity: .2;
         }
         .scene-root .camera-snapshot-reticle {
