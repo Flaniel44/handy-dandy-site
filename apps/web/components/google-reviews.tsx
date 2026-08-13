@@ -172,25 +172,27 @@ export function GoogleReviews() {
             })}
           </div>
 
-          {data.reviews.length > 1 && (
-            <div className="reviews-carousel-controls">
-              <button type="button" onClick={previous} aria-label="Previous review">←</button>
-              <div aria-label={`Review ${safeIndex + 1} of ${data.reviews.length}`}>
-                {data.reviews.map((item, index) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={index === safeIndex ? "is-active" : ""}
-                    onClick={() => selectReview(index)}
-                    aria-label={`Show review ${index + 1}`}
-                    aria-current={index === safeIndex ? "true" : undefined}
-                  />
-                ))}
+          <footer className="reviews-carousel-footer">
+            {data.reviews.length > 1 && (
+              <div className="reviews-carousel-controls">
+                <button type="button" onClick={previous} aria-label="Previous review">←</button>
+                <div aria-label={`Review ${safeIndex + 1} of ${data.reviews.length}`}>
+                  {data.reviews.map((item, index) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={index === safeIndex ? "is-active" : ""}
+                      onClick={() => selectReview(index)}
+                      aria-label={`Show review ${index + 1}`}
+                      aria-current={index === safeIndex ? "true" : undefined}
+                    />
+                  ))}
+                </div>
+                <button type="button" onClick={next} aria-label="Next review">→</button>
               </div>
-              <button type="button" onClick={next} aria-label="Next review">→</button>
-            </div>
-          )}
-          <p className="reviews-order-note">Reviews supplied by Google Maps and ordered by relevance.</p>
+            )}
+            <p className="reviews-order-note">Reviews supplied by Google Maps and ordered by relevance.</p>
+          </footer>
         </div>
       ) : (
         <div className="reviews-empty">

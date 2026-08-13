@@ -33,6 +33,7 @@ export function LandingMarketingSections() {
             </li>
           ))}
         </ol>
+        <Link className="working-together-about-link" href="/about">Get to Know Me</Link>
       </section>
 
       <section className="landing-offerings" id="home-possibilities" aria-labelledby="landing-offerings-title">
