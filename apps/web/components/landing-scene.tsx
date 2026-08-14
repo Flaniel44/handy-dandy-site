@@ -145,6 +145,68 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
         </filter>`,
       );
     }
+    if (houseDefs && !houseDefs.querySelector("#garageLightBeam")) {
+      houseDefs.insertAdjacentHTML(
+        "beforeend",
+        `<radialGradient id="garageLightBeam" gradientUnits="userSpaceOnUse" cx="151" cy="338" r="112">
+          <stop offset="0%" stop-color="#fff9c4" stop-opacity=".72" />
+          <stop offset="48%" stop-color="#ffe082" stop-opacity=".34" />
+          <stop offset="100%" stop-color="#ffb300" stop-opacity="0" />
+        </radialGradient>
+        <clipPath id="garageOpeningClip">
+          <rect x="108" y="333" width="82" height="67" rx="2" />
+        </clipPath>`,
+      );
+    }
+
+    let garage = houseScene?.querySelector<SVGGElement>(".smart-garage");
+    if (houseScene && !garage) {
+      houseScene.insertAdjacentHTML(
+        "beforeend",
+        `<g class="smart-garage" role="button" tabindex="0" aria-pressed="false" aria-label="Open garage door">
+          <path class="garage-light-spill" d="M112 394 L190 394 L215 438 L84 438 Z" fill="url(#garageLightBeam)" pointer-events="none" aria-hidden="true" />
+          <path class="garage-building" d="M99 400 V328 L149 299 L200 328 V400 Z" />
+          <path class="garage-roof" d="M91 329 L149 294 L199 329 L193 337 L149 307 L99 337 Z" />
+          <rect class="garage-opening" x="108" y="333" width="82" height="67" rx="2" />
+          <g class="garage-interior" clip-path="url(#garageOpeningClip)" pointer-events="none" aria-hidden="true">
+            <rect x="110" y="335" width="78" height="63" fill="#11182b" />
+            <path class="garage-back-lines" d="M116 349 H183 M116 366 H183 M116 383 H183" />
+            <rect class="garage-shelf" x="114" y="356" width="13" height="29" rx="1" />
+            <path class="garage-car" d="M130 381 L137 370 H166 L176 381 H181 V394 H125 V381 Z" />
+            <circle class="garage-wheel" cx="137" cy="394" r="4.2" />
+            <circle class="garage-wheel" cx="169" cy="394" r="4.2" />
+            <path class="garage-window" d="M140 372 H163 L169 380 H134 Z" />
+            <g class="garage-ceiling-light">
+              <path d="M137 337 H163" />
+              <rect x="140" y="337" width="20" height="4.5" rx="2.2" />
+            </g>
+          </g>
+          <g class="garage-door" pointer-events="none" aria-hidden="true">
+            <rect x="108" y="333" width="82" height="67" rx="2" />
+            <path d="M108 344 H190 M108 355 H190 M108 366 H190 M108 377 H190 M108 388 H190" />
+            <circle cx="149" cy="383" r="2.2" />
+          </g>
+          <g class="garage-wifi" pointer-events="none" aria-hidden="true">
+            <path d="M142 290 Q149 283 156 290" />
+            <path d="M137 287 Q149 275 161 287" />
+            <circle cx="149" cy="292" r="1.3" />
+          </g>
+          <rect class="garage-click-target" x="98" y="318" width="103" height="89" rx="9" fill="transparent" pointer-events="all" aria-hidden="true" />
+        </g>`,
+      );
+      garage = houseScene.querySelector<SVGGElement>(".smart-garage");
+      if (garage) houseScene.prepend(garage);
+    }
+    const setGarageOpen = (open: boolean) => {
+      garage?.classList.toggle("garage-open", open);
+      garage?.setAttribute("aria-pressed", String(open));
+      garage?.setAttribute("aria-label", `${open ? "Close" : "Open"} garage door`);
+    };
+    setGarageOpen(false);
+    const garageInterval = window.setInterval(() => {
+      if (garage) setGarageOpen(!garage.classList.contains("garage-open"));
+    }, 180_000);
+
     let bedroomBlinds = houseScene?.querySelector<SVGGElement>(".smart-blinds");
     if (houseScene && !bedroomBlinds) {
       houseScene.insertAdjacentHTML(
@@ -166,11 +228,6 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
           </g>
           <rect class="blinds-housing" x="211.5" y="212.5" width="46" height="7" rx="3.5" />
           <circle class="blinds-motor-light" cx="251.5" cy="216" r="1.35" />
-          <g class="blinds-wifi" pointer-events="none" aria-hidden="true">
-            <path d="M229.5 211 Q234.5 206 239.5 211" />
-            <path d="M226 208 Q234.5 199.5 243 208" />
-            <circle cx="234.5" cy="212.5" r="1" />
-          </g>
         </g>`,
       );
       bedroomBlinds = houseScene.querySelector<SVGGElement>(".smart-blinds");
@@ -373,7 +430,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
             <path class="camera-wifi-wave wave-outer" d="M-5 -3 Q0 -8 5 -3" />
           </g>
         </g>
-        <g class="tracking-camera bedroom-camera" transform="translate(197 306) scale(-1.15 1.15)">
+        <g class="tracking-camera bedroom-camera" transform="translate(197 248) scale(-1.15 1.15)">
           <rect x="0" y="7" width="4" height="17" rx="1.5" fill="#5a6080" />
           <path d="M4 17 H8 L12 13" fill="none" stroke="#7f77dd" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
           <g class="camera-aim">
@@ -518,6 +575,54 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     sceneSvg?.querySelector(":scope > title")?.remove();
     const wireFlows = Array.from(root.querySelectorAll<SVGPathElement>(".data-wire-flow"));
     const dataNodes = Array.from(root.querySelectorAll<SVGCircleElement>(".data-node > circle"));
+    const dataNetwork = houseScene?.querySelector<SVGGElement>(".data-network");
+    if (dataNetwork && !dataNetwork.querySelector(".network-burst-layer")) {
+      dataNetwork.classList.add("interactive-data-network");
+      dataNetwork.setAttribute("role", "button");
+      dataNetwork.setAttribute("tabindex", "0");
+      dataNetwork.setAttribute("aria-label", "Send a data pulse through the smart-home wiring");
+      const wireGeometry = Array.from(dataNetwork.querySelectorAll<SVGPathElement>(":scope > .data-wire-base"));
+      const burstLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      burstLayer.setAttribute("class", "network-burst-layer");
+      burstLayer.setAttribute("pointer-events", "none");
+      burstLayer.setAttribute("aria-hidden", "true");
+      wireGeometry.forEach((wire, index) => {
+        const burst = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        burst.setAttribute("class", "network-burst-path");
+        burst.setAttribute("d", wire.getAttribute("d") ?? "");
+        burst.setAttribute("pathLength", "100");
+        burst.style.setProperty("--network-path-index", String(index));
+        burstLayer.append(burst);
+      });
+      dataNetwork.append(burstLayer);
+
+      const hitLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      hitLayer.setAttribute("class", "network-hit-layer");
+      hitLayer.setAttribute("aria-hidden", "true");
+      wireGeometry.forEach((wire) => {
+        const hitPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        hitPath.setAttribute("d", wire.getAttribute("d") ?? "");
+        hitPath.setAttribute("fill", "none");
+        hitPath.setAttribute("stroke", "transparent");
+        hitPath.setAttribute("stroke-width", "13");
+        hitPath.setAttribute("stroke-linecap", "round");
+        hitPath.setAttribute("pointer-events", "stroke");
+        hitLayer.append(hitPath);
+      });
+      hitLayer.insertAdjacentHTML(
+        "beforeend",
+        `<circle cx="340" cy="210" r="16" fill="transparent" pointer-events="all" />
+         <circle cx="367" cy="210" r="13" fill="transparent" pointer-events="all" />`,
+      );
+      dataNetwork.append(hitLayer);
+      dataNetwork.insertAdjacentHTML(
+        "beforeend",
+        `<g class="network-control-node" pointer-events="none" aria-hidden="true">
+          <circle class="network-control-ring" cx="340" cy="210" r="7" />
+          <circle class="network-control-core" cx="340" cy="210" r="3.3" />
+        </g>`,
+      );
+    }
     let disabledDevices = new Set<string>();
     try {
       const savedDevices = JSON.parse(window.sessionStorage.getItem(DEVICE_STORAGE_KEY) ?? "[]");
@@ -627,6 +732,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       );
     }
     let sleeperWakeTimer: number | undefined;
+    let networkBurstTimer: number | undefined;
 
     DEVICE_CONFIG.forEach(({ roomClass, label, sourceSelector, hitArea, wireIndexes, nodeIndex }) => {
       const source = houseScene?.querySelector<SVGGElement>(sourceSelector);
@@ -711,7 +817,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       phase: index * Math.PI * .75,
     }));
     const mobileScene = window.matchMedia("(max-width: 620px)");
-    const syncSceneViewport = () => sceneSvg?.setAttribute("viewBox", mobileScene.matches ? "170 0 340 460" : "0 0 680 460");
+    const syncSceneViewport = () => sceneSvg?.setAttribute("viewBox", mobileScene.matches ? "110 0 460 460" : "0 0 680 460");
     syncSceneViewport();
     mobileScene.addEventListener("change", syncSceneViewport);
 
@@ -836,12 +942,36 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       return true;
     };
 
+    const toggleGarageFrom = (target: EventTarget | null) => {
+      if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
+      const garageControl = target.closest<SVGGElement>(".smart-garage");
+      if (!garageControl) return false;
+      setGarageOpen(!garageControl.classList.contains("garage-open"));
+      return true;
+    };
+
     const cycleThermostatFrom = (target: EventTarget | null) => {
       if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
       const control = target.closest<SVGGElement>(".smart-thermostat");
       if (!control) return false;
       const currentTemperature = Number(control.dataset.temperature ?? 21);
       setThermostatTemperature(currentTemperature === 19 ? 21 : currentTemperature === 21 ? 23 : 19);
+      return true;
+    };
+
+    const triggerNetworkBurstFrom = (target: EventTarget | null) => {
+      if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
+      const network = target.closest<SVGGElement>(".interactive-data-network");
+      if (!network) return false;
+      window.clearTimeout(networkBurstTimer);
+      network.classList.remove("network-burst-active");
+      network.getBBox();
+      network.classList.add("network-burst-active");
+      network.setAttribute("aria-label", "Data pulse travelling through the smart-home wiring");
+      networkBurstTimer = window.setTimeout(() => {
+        network.classList.remove("network-burst-active");
+        network.setAttribute("aria-label", "Send a data pulse through the smart-home wiring");
+      }, 1_900);
       return true;
     };
 
@@ -1251,7 +1381,9 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       if (speedUpVacuumFrom(event.target)) return;
       if (growWifiFrom(event.target)) return;
       if (replayDoorbellFrom(event.target)) return;
+      if (triggerNetworkBurstFrom(event.target)) return;
       if (cycleThermostatFrom(event.target)) return;
+      if (toggleGarageFrom(event.target)) return;
       if (wakeSleeperFrom(event.target)) return;
       if (toggleShowerFrom(event.target)) return;
       if (toggleBlindsFrom(event.target)) return;
@@ -1265,6 +1397,16 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest(".smart-garage")) {
+        event.preventDefault();
+        toggleGarageFrom(event.target);
+        return;
+      }
+      if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest(".interactive-data-network")) {
+        event.preventDefault();
+        triggerNetworkBurstFrom(event.target);
+        return;
+      }
       if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest(".smart-thermostat")) {
         event.preventDefault();
         cycleThermostatFrom(event.target);
@@ -1381,12 +1523,14 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       mobileScene.removeEventListener("change", syncSceneViewport);
       window.clearInterval(ambientTimer);
       window.clearInterval(blindsInterval);
+      window.clearInterval(garageInterval);
       stopDoorbellLightSchedule();
       if (ropeFrame !== undefined) window.cancelAnimationFrame(ropeFrame);
       if (readyTimer) window.clearTimeout(readyTimer);
       if (hintTimer) window.clearTimeout(hintTimer);
       if (cameraFrame !== undefined) window.cancelAnimationFrame(cameraFrame);
       if (sleeperWakeTimer !== undefined) window.clearTimeout(sleeperWakeTimer);
+      if (networkBurstTimer !== undefined) window.clearTimeout(networkBurstTimer);
       window.clearTimeout(demoUnitHoldTimer);
       window.clearTimeout(demoUnitNoticeTimer);
       stageLogo?.remove();
@@ -1575,6 +1719,182 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
           fill: #232b47;
           stroke: #8279e5;
         }
+        .scene-root .interactive-data-network {
+          cursor: pointer;
+          outline: none;
+        }
+        .scene-root .network-control-ring {
+          fill: #232b47;
+          opacity: .72;
+          stroke: #8ed8ff;
+          stroke-dasharray: 2 2;
+          stroke-width: 1.2px;
+        }
+        .scene-root .network-control-core {
+          fill: #8ed8ff;
+          filter: drop-shadow(0 0 2px #8ed8ff);
+          opacity: .8;
+        }
+        .scene-root .interactive-data-network:focus-visible .network-control-ring {
+          filter: drop-shadow(0 0 4px #8ed8ff);
+          opacity: 1;
+          stroke-width: 1.8px;
+        }
+        .scene-root .network-burst-path {
+          fill: none;
+          opacity: 0;
+          stroke: #b8ecff;
+          stroke-dasharray: 8 92;
+          stroke-dashoffset: 100;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-width: 4.2px;
+          filter: drop-shadow(0 0 3px #40c4ff);
+        }
+        .scene-root .interactive-data-network.network-burst-active .network-burst-path {
+          animation: networkDataBurst 1.55s ease-in-out both;
+          animation-delay: calc(var(--network-path-index) * 65ms);
+        }
+        .scene-root .interactive-data-network.network-burst-active .network-control-ring {
+          animation: networkControlRingBurst 1.35s ease-out;
+        }
+        .scene-root .interactive-data-network.network-burst-active .network-control-core,
+        .scene-root .interactive-data-network.network-burst-active .data-node > circle {
+          animation: networkNodeBurst 1.35s ease-out;
+        }
+        @keyframes networkDataBurst {
+          0% { opacity: 0; stroke-dashoffset: 100; }
+          12% { opacity: 1; }
+          78% { opacity: 1; }
+          100% { opacity: 0; stroke-dashoffset: 0; }
+        }
+        @keyframes networkControlRingBurst {
+          0% { opacity: .72; transform: scale(1); transform-origin: 340px 210px; }
+          22%, 55% { opacity: 1; stroke: #ffffff; transform: scale(1.45); transform-origin: 340px 210px; }
+          100% { opacity: .72; transform: scale(1); transform-origin: 340px 210px; }
+        }
+        @keyframes networkNodeBurst {
+          0% { filter: none; }
+          24%, 62% { fill: #b8ecff; filter: drop-shadow(0 0 5px #40c4ff); }
+          100% { filter: none; }
+        }
+        .scene-root .smart-garage {
+          cursor: pointer;
+          outline: none;
+        }
+        .scene-root .smart-garage:focus-visible .garage-door {
+          filter: drop-shadow(0 0 5px #b388ff);
+        }
+        .scene-root .garage-light-spill {
+          opacity: 0;
+          transform: scale(.94);
+          transform-box: fill-box;
+          transform-origin: center top;
+          transition: opacity .55s ease .35s, transform .7s ease .25s;
+        }
+        .scene-root.lit .smart-garage.garage-open .garage-light-spill {
+          opacity: .72;
+          transform: scale(1);
+        }
+        .scene-root .garage-building {
+          fill: #232b47;
+          stroke: #3a4468;
+          stroke-linejoin: round;
+          stroke-width: 8px;
+        }
+        .scene-root .garage-roof {
+          fill: #7f77dd;
+          stroke: #9189ed;
+          stroke-linejoin: round;
+          stroke-width: 1.6px;
+        }
+        .scene-root .garage-opening {
+          fill: #101628;
+          stroke: #4a537c;
+          stroke-width: 2.5px;
+        }
+        .scene-root .garage-back-lines {
+          fill: none;
+          opacity: .28;
+          stroke: #5a6080;
+          stroke-width: 1px;
+        }
+        .scene-root .garage-shelf {
+          fill: #4a5175;
+          stroke: #7f77dd;
+          stroke-width: 1px;
+        }
+        .scene-root .garage-car {
+          fill: #55508f;
+          stroke: #837cdc;
+          stroke-linejoin: round;
+          stroke-width: 1.2px;
+        }
+        .scene-root .garage-wheel {
+          fill: #090b14;
+          stroke: #5a6080;
+          stroke-width: 1px;
+        }
+        .scene-root .garage-window {
+          fill: #263b5f;
+          stroke: #6b78ad;
+          stroke-width: .8px;
+        }
+        .scene-root .garage-ceiling-light path {
+          fill: none;
+          stroke: #5a6080;
+          stroke-width: 1.4px;
+        }
+        .scene-root .garage-ceiling-light rect {
+          fill: #fff4b0;
+          filter: drop-shadow(0 0 4px #ffd180);
+        }
+        .scene-root .garage-door {
+          transform: scaleY(1);
+          transform-box: fill-box;
+          transform-origin: center top;
+          transition: transform .9s cubic-bezier(.4, 0, .2, 1), filter .2s ease;
+        }
+        .scene-root .garage-door rect {
+          fill: #615ba8;
+          stroke: #9b94ed;
+          stroke-width: 2px;
+        }
+        .scene-root .garage-door path {
+          fill: none;
+          opacity: .78;
+          stroke: #353d69;
+          stroke-width: 1.25px;
+        }
+        .scene-root .garage-door circle {
+          fill: #252d4b;
+          stroke: #b9b4ff;
+          stroke-width: .9px;
+        }
+        .scene-root .smart-garage.garage-open .garage-door {
+          transform: scaleY(.13);
+        }
+        .scene-root .garage-wifi {
+          fill: none;
+          opacity: .42;
+          stroke: #8ed8ff;
+          stroke-linecap: round;
+          stroke-width: 1.35px;
+          transform-box: fill-box;
+          transform-origin: center bottom;
+        }
+        .scene-root .garage-wifi circle {
+          fill: #8ed8ff;
+          stroke: none;
+        }
+        .scene-root.lit .garage-wifi {
+          animation: garageWifiTransmit 3.4s ease-out infinite;
+        }
+        @keyframes garageWifiTransmit {
+          0%, 16% { opacity: .16; transform: translateY(1px) scale(.82); }
+          40%, 62% { opacity: .75; }
+          82%, 100% { opacity: 0; transform: translateY(-2px) scale(1.2); }
+        }
         .scene-root .smart-blinds {
           cursor: pointer;
           outline: none;
@@ -1639,24 +1959,6 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
         .scene-root .blinds-motor-light {
           fill: #8ed8ff;
           filter: drop-shadow(0 0 2px #8ed8ff);
-        }
-        .scene-root .blinds-wifi {
-          fill: none;
-          opacity: .58;
-          stroke: #8ed8ff;
-          stroke-linecap: round;
-          stroke-width: 1.2px;
-        }
-        .scene-root .blinds-wifi circle {
-          fill: #8ed8ff;
-          stroke: none;
-        }
-        .scene-root.lit .blinds-wifi {
-          animation: blindsWifiPulse 2.8s ease-in-out infinite;
-        }
-        @keyframes blindsWifiPulse {
-          0%, 100% { opacity: .3; }
-          50% { opacity: .82; }
         }
         @keyframes blindLampColour {
           0%, 100% { fill: #f59842; }
@@ -1775,10 +2077,15 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
           stroke: #8ed8ff;
           stroke-linecap: round;
           stroke-width: 1px;
+          transform-box: fill-box;
+          transform-origin: center bottom;
         }
         .scene-root .thermostat-wifi circle {
           fill: #8ed8ff;
           stroke: none;
+        }
+        .scene-root.lit .thermostat-wifi {
+          animation: thermostatWifiTransmit 2.8s ease-out infinite;
         }
         .scene-root .smart-thermostat.thermostat-cool .thermostat-shell {
           fill: #426f9c;
@@ -1833,6 +2140,11 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
           0% { opacity: 0; transform: translateY(-2px); }
           35%, 68% { opacity: .85; }
           100% { opacity: 0; transform: translateY(5px); }
+        }
+        @keyframes thermostatWifiTransmit {
+          0%, 14% { opacity: .18; transform: translateY(1px) scale(.78); }
+          38%, 62% { opacity: .9; }
+          82%, 100% { opacity: 0; transform: translateY(-1.5px) scale(1.28); }
         }
         .scene-root .doorbell-visitor-scene {
           cursor: pointer;
