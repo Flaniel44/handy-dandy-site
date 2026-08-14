@@ -12,7 +12,10 @@ import { prepareRouteTransition } from "./route-transition";
 
 const STORAGE_KEY = "handy-dandy-house-powered";
 const DEVICE_STORAGE_KEY = "handy-dandy-device-power";
+const BLINDS_STORAGE_KEY = "handy-dandy-bedroom-blinds";
 const POWER_STATE_TTL_MS = 24 * 60 * 60 * 1000;
+const DOORBELL_SEQUENCE_MS = 60_000;
+const DOORBELL_RING_DELAY_MS = 7_380;
 const ROOM_CLASSES = ["lamp1", "lamp2", "lamp3", "lamp4"] as const;
 const DEVICE_CONFIG = [
   {
@@ -128,6 +131,67 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     stageLogo?.addEventListener("contextmenu", (event) => event.preventDefault());
 
     const houseScene = root.querySelector<SVGGElement>(".house-scene");
+    const houseDefs = houseScene?.ownerSVGElement?.querySelector<SVGDefsElement>("defs");
+    if (houseDefs && !houseDefs.querySelector("#doorbellBlueTint")) {
+      houseDefs.insertAdjacentHTML(
+        "beforeend",
+        `<filter id="doorbellBlueTint" x="-70%" y="-70%" width="240%" height="240%" color-interpolation-filters="sRGB">
+          <feFlood flood-color="#527fb8" result="blue" />
+          <feComposite in="blue" in2="SourceAlpha" operator="in" result="blueShape" />
+          <feGaussianBlur in="SourceAlpha" stdDeviation="1.2" result="glowAlpha" />
+          <feFlood flood-color="#527fb8" flood-opacity=".42" result="glowColour" />
+          <feComposite in="glowColour" in2="glowAlpha" operator="in" result="blueGlow" />
+          <feMerge><feMergeNode in="blueGlow" /><feMergeNode in="blueShape" /></feMerge>
+        </filter>`,
+      );
+    }
+    let bedroomBlinds = houseScene?.querySelector<SVGGElement>(".smart-blinds");
+    if (houseScene && !bedroomBlinds) {
+      houseScene.insertAdjacentHTML(
+        "beforeend",
+        `<g class="smart-blinds" transform="translate(100 9)" role="button" tabindex="0" aria-pressed="false" aria-label="Close bedroom blinds">
+          <rect class="blinds-click-target" x="207" y="210" width="55" height="57" rx="7" fill="transparent" pointer-events="all" aria-hidden="true" />
+          <rect class="blinds-window" x="214" y="216" width="41" height="42" rx="2.5" />
+          <g class="blinds-night-sky" pointer-events="none" aria-hidden="true">
+            <circle cx="244" cy="225" r="4.2" />
+            <circle cx="221" cy="224" r=".7" />
+            <circle cx="230" cy="229" r=".55" />
+            <circle cx="249" cy="239" r=".65" />
+          </g>
+          <path class="blinds-window-divider" d="M234.5 217.5 V256.5 M215.5 237 H253.5" />
+          <g class="blind-shade" pointer-events="none" aria-hidden="true">
+            <rect x="216" y="218" width="37" height="37" rx="1.5" />
+            <rect class="blind-light-wash lamp1" x="216.7" y="218.7" width="35.6" height="35.6" rx="1.2" />
+            <path d="M216 224 H253 M216 230 H253 M216 236 H253 M216 242 H253 M216 248 H253 M216 254 H253" />
+          </g>
+          <rect class="blinds-housing" x="211.5" y="212.5" width="46" height="7" rx="3.5" />
+          <circle class="blinds-motor-light" cx="251.5" cy="216" r="1.35" />
+          <g class="blinds-wifi" pointer-events="none" aria-hidden="true">
+            <path d="M229.5 211 Q234.5 206 239.5 211" />
+            <path d="M226 208 Q234.5 199.5 243 208" />
+            <circle cx="234.5" cy="212.5" r="1" />
+          </g>
+        </g>`,
+      );
+      bedroomBlinds = houseScene.querySelector<SVGGElement>(".smart-blinds");
+    }
+
+    const setBlindsClosed = (closed: boolean) => {
+      bedroomBlinds?.classList.toggle("blinds-closed", closed);
+      bedroomBlinds?.setAttribute("aria-pressed", String(closed));
+      bedroomBlinds?.setAttribute("aria-label", `${closed ? "Open" : "Close"} bedroom blinds`);
+      try {
+        window.sessionStorage.setItem(BLINDS_STORAGE_KEY, closed ? "closed" : "open");
+      } catch {
+        // The blinds remain interactive when browser storage is unavailable.
+      }
+    };
+    try {
+      setBlindsClosed(window.sessionStorage.getItem(BLINDS_STORAGE_KEY) === "closed");
+    } catch {
+      setBlindsClosed(false);
+    }
+
     if (houseScene && !houseScene.querySelector(".robot-vacuum-runner")) {
       const vacuumStyles = document.createElement("style");
       vacuumStyles.textContent = `
@@ -258,6 +322,68 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       );
     }
 
+    let doorbellScene = houseScene?.querySelector<SVGGElement>(".doorbell-visitor-scene");
+    if (houseScene && !doorbellScene) {
+      houseScene.insertAdjacentHTML(
+        "beforeend",
+        `<g class="doorbell-visitor-scene" role="button" tabindex="0" aria-label="Replay smart doorbell visitor">
+          <rect class="doorbell-click-target" x="475" y="332" width="34" height="53" rx="8" fill="transparent" pointer-events="all" aria-hidden="true" />
+          <g class="smart-doorbell" pointer-events="none" aria-hidden="true">
+            <rect x="482.5" y="344" width="10" height="23" rx="4.5" />
+            <circle class="doorbell-lens" cx="487.5" cy="350" r="2.35" />
+            <circle class="doorbell-button" cx="487.5" cy="360.5" r="2.8" />
+            <circle class="doorbell-button-light" cx="487.5" cy="360.5" r="1.35" />
+            <g class="doorbell-ring-waves">
+              <path d="M496 351 Q503 355.5 496 360" />
+              <path d="M499.5 347 Q511.5 355.5 499.5 364" />
+            </g>
+          </g>
+          <g class="doorbell-visitor-runner" pointer-events="none" aria-hidden="true">
+            <g class="doorbell-visitor-body">
+              <circle cx="516" cy="355" r="7" />
+              <path class="visitor-torso" d="M510 363 Q516 360 522 363 L524 382 H508 Z" />
+              <path class="visitor-back-arm" d="M520 365 Q525 373 523 381" />
+              <g class="visitor-ringing-arm">
+                <path d="M511 366 Q501 365 493 359" />
+                <circle cx="492" cy="358.5" r="2.1" />
+              </g>
+              <path class="visitor-leg visitor-leg-one" d="M512 381 L509 399" />
+              <path class="visitor-leg visitor-leg-two" d="M520 381 L523 399" />
+            </g>
+          </g>
+        </g>`,
+      );
+      doorbellScene = houseScene.querySelector<SVGGElement>(".doorbell-visitor-scene");
+    }
+    let doorbellFlashTimer: number | undefined;
+    let doorbellFlashInterval: number | undefined;
+    const flashExistingLightsBlue = () => {
+      if (!root.classList.contains("lit")) return;
+      root.querySelectorAll<SVGElement>(".device-room-illumination, .device-toggle-source").forEach((light) => {
+        light.animate(
+          [
+            { filter: "none", offset: 0 },
+            { filter: "url(#doorbellBlueTint)", offset: .16 },
+            { filter: "none", offset: .43 },
+            { filter: "url(#doorbellBlueTint)", offset: .63 },
+            { filter: "none", offset: 1 },
+          ],
+          { duration: 1_150, easing: "linear" },
+        );
+      });
+    };
+    const stopDoorbellLightSchedule = () => {
+      window.clearTimeout(doorbellFlashTimer);
+      window.clearInterval(doorbellFlashInterval);
+    };
+    const scheduleDoorbellLightFlash = () => {
+      stopDoorbellLightSchedule();
+      doorbellFlashTimer = window.setTimeout(() => {
+        flashExistingLightsBlue();
+        doorbellFlashInterval = window.setInterval(flashExistingLightsBlue, DOORBELL_SEQUENCE_MS);
+      }, DOORBELL_RING_DELAY_MS);
+    };
+
     const wifiWaveSelector = ".wifi-wave, .vacuum-wifi-wave, .camera-wifi-wave";
     const unwrappedWifiParents = new Set<SVGElement>();
     root.querySelectorAll<SVGElement>(wifiWaveSelector).forEach((wave) => {
@@ -379,6 +505,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     const bathtub = houseScene?.querySelector<SVGGElement>(
       'g[transform="translate(415,262) scale(1.6)"]',
     );
+    bathtub?.setAttribute("transform", "translate(410,255) scale(1.9)");
     if (bathtub && !bathtub.querySelector(".shower-effects")) {
       bathtub.classList.add("interactive-shower");
       bathtub.setAttribute("role", "button");
@@ -485,7 +612,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       if (aim && !aim.querySelector(".camera-vision-cone")) {
         aim.insertAdjacentHTML(
           "afterbegin",
-          `<path class="camera-vision-cone" d="M31 10 L150 -44 L150 70 L31 16 Z" pointer-events="none" aria-hidden="true" />`,
+          `<path class="camera-vision-cone" d="M31.5 10.5 L1231.5 -247 L1231.5 273 L31.5 15.5 Z" pointer-events="none" aria-hidden="true" />`,
         );
       }
       if (!camera.querySelector(".camera-snapshot-reticle")) {
@@ -501,7 +628,6 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     const cameraTrackers = trackingCameras.map((camera, index) => ({
       camera,
       aim: camera.querySelector<SVGGElement>(".camera-aim"),
-      cone: camera.querySelector<SVGPathElement>(".camera-vision-cone"),
       reticle: camera.querySelector<SVGGElement>(".camera-snapshot-reticle"),
       currentAngle: 0,
       targetAngle: 0,
@@ -567,6 +693,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     if (restored) root.classList.add("lit", "session-restored", "ambient-ready", "sign-powered");
     syncPoweredContent(restored);
     syncOpenHouseLight(restored);
+    if (restored) scheduleDoorbellLightFlash();
 
     let readyTimer: number | undefined;
     let hintTimer: number | undefined;
@@ -585,8 +712,10 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       if (powered) {
         window.clearTimeout(hintTimer);
         root.classList.remove("chain-hint-visible");
+        scheduleDoorbellLightFlash();
       } else {
         scheduleChainHint();
+        stopDoorbellLightSchedule();
       }
       if (powered && !root.classList.contains("session-restored")) {
         root.classList.remove("ambient-ready");
@@ -626,6 +755,31 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       const roomClass = source?.dataset.deviceToggle;
       if (!source || !roomClass) return false;
       setDevicePowered(roomClass, disabledDevices.has(roomClass));
+      return true;
+    };
+
+    const toggleBlindsFrom = (target: EventTarget | null) => {
+      if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
+      const blinds = target.closest<SVGGElement>(".smart-blinds");
+      if (!blinds) return false;
+      setBlindsClosed(!blinds.classList.contains("blinds-closed"));
+      return true;
+    };
+
+    const replayDoorbellFrom = (target: EventTarget | null) => {
+      if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
+      const doorbell = target.closest<SVGGElement>(".doorbell-visitor-scene");
+      if (!doorbell) return false;
+      const animations = doorbell.getAnimations({ subtree: true });
+      const cameraLed = houseScene?.querySelector<SVGCircleElement>(
+        '.bathroom-camera .camera-aim circle[cx="18"]',
+      );
+      if (cameraLed) animations.push(...cameraLed.getAnimations());
+      animations.forEach((animation) => {
+        animation.cancel();
+        animation.play();
+      });
+      scheduleDoorbellLightFlash();
       return true;
     };
 
@@ -774,40 +928,6 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
           : Math.sin(time / 1500 + tracker.phase) * 12;
         tracker.currentAngle += (desiredAngle - tracker.currentAngle) * .075;
         tracker.aim.setAttribute("transform", `rotate(${tracker.currentAngle.toFixed(2)} 12 13)`);
-
-        if (tracker.isTracking && tracker.cone) {
-          // The cone lives inside the rotating camera head. Counter-rotate the
-          // pointer first so its centre line passes through the cursor even
-          // while the camera is smoothly catching up with it. Extend the cone
-          // beyond that point and let the stage crop it at the container edge.
-          const inverseAngle = -tracker.currentAngle * Math.PI / 180;
-          const pointerDx = tracker.pointerX - 12;
-          const pointerDy = tracker.pointerY - 13;
-          const targetX = 12 + pointerDx * Math.cos(inverseAngle) - pointerDy * Math.sin(inverseAngle);
-          const targetY = 13 + pointerDx * Math.sin(inverseAngle) + pointerDy * Math.cos(inverseAngle);
-          const originX = 31.5;
-          const originY = 13;
-          const dx = targetX - originX;
-          const dy = targetY - originY;
-          const distance = Math.max(1, Math.hypot(dx, dy));
-          const unitX = dx / distance;
-          const unitY = dy / distance;
-          const perpendicularX = -unitY;
-          const perpendicularY = unitX;
-          const nearHalfWidth = 2.5;
-          const pointerHalfWidth = Math.max(9, Math.min(34, distance * .25));
-          const coneReach = 1200;
-          const farHalfWidth = Math.min(300, coneReach * pointerHalfWidth / distance);
-          const farX = originX + unitX * coneReach;
-          const farY = originY + unitY * coneReach;
-          tracker.cone.setAttribute(
-            "d",
-            `M${(originX + perpendicularX * nearHalfWidth).toFixed(2)} ${(originY + perpendicularY * nearHalfWidth).toFixed(2)} ` +
-            `L${(farX + perpendicularX * farHalfWidth).toFixed(2)} ${(farY + perpendicularY * farHalfWidth).toFixed(2)} ` +
-            `L${(farX - perpendicularX * farHalfWidth).toFixed(2)} ${(farY - perpendicularY * farHalfWidth).toFixed(2)} ` +
-            `L${(originX - perpendicularX * nearHalfWidth).toFixed(2)} ${(originY - perpendicularY * nearHalfWidth).toFixed(2)} Z`,
-          );
-        }
 
         if (tracker.isTracking && !tracker.snapshotTaken && time - tracker.trackingStartedAt >= 3000) {
           tracker.snapshotTaken = true;
@@ -1051,8 +1171,10 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     const onClick = (event: MouseEvent) => {
       if (speedUpVacuumFrom(event.target)) return;
       if (growWifiFrom(event.target)) return;
+      if (replayDoorbellFrom(event.target)) return;
       if (wakeSleeperFrom(event.target)) return;
       if (toggleShowerFrom(event.target)) return;
+      if (toggleBlindsFrom(event.target)) return;
       if (toggleDeviceFrom(event.target)) return;
       const action = actionFrom(event.target);
       if (action === "toggle-light" && suppressChainClick) {
@@ -1063,6 +1185,16 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest(".doorbell-visitor-scene")) {
+        event.preventDefault();
+        replayDoorbellFrom(event.target);
+        return;
+      }
+      if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest(".smart-blinds")) {
+        event.preventDefault();
+        toggleBlindsFrom(event.target);
+        return;
+      }
       if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest(".interactive-sleeper")) {
         event.preventDefault();
         wakeSleeperFrom(event.target);
@@ -1163,6 +1295,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       chain.removeEventListener("pointercancel", releasePullChain);
       mobileScene.removeEventListener("change", syncSceneViewport);
       window.clearInterval(ambientTimer);
+      stopDoorbellLightSchedule();
       if (ropeFrame !== undefined) window.cancelAnimationFrame(ropeFrame);
       if (readyTimer) window.clearTimeout(readyTimer);
       if (hintTimer) window.clearTimeout(hintTimer);
@@ -1355,6 +1488,217 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
         .scene-root .tracking-camera .camera-aim > rect {
           fill: #232b47;
           stroke: #8279e5;
+        }
+        .scene-root .smart-blinds {
+          cursor: pointer;
+          outline: none;
+        }
+        .scene-root .smart-blinds:focus-visible {
+          filter: drop-shadow(0 0 5px #b388ff);
+        }
+        .scene-root .blinds-window {
+          fill: #121a31;
+          stroke: #8279e5;
+          stroke-width: 2.5px;
+        }
+        .scene-root .blinds-night-sky {
+          fill: #ffd180;
+          opacity: .82;
+          transition: opacity .65s ease;
+        }
+        .scene-root .blinds-night-sky circle:not(:first-child) {
+          fill: #d6dcff;
+        }
+        .scene-root .blinds-window-divider {
+          fill: none;
+          opacity: .48;
+          stroke: #5e66a5;
+          stroke-width: 1.25px;
+        }
+        .scene-root .blind-shade {
+          transform: scaleY(.14);
+          transform-box: fill-box;
+          transform-origin: center top;
+          transition: transform .78s cubic-bezier(.34, 1.18, .5, 1);
+        }
+        .scene-root .blind-shade rect {
+          fill: #6d67b8;
+          stroke: #a49dff;
+          stroke-width: 1.1px;
+        }
+        .scene-root .blind-shade .blind-light-wash {
+          animation: blindLampColour 4s ease-in-out infinite;
+          fill: #f59842;
+          mix-blend-mode: screen;
+          opacity: .2;
+          stroke: none;
+        }
+        .scene-root .blind-shade path {
+          fill: none;
+          opacity: .72;
+          stroke: #3f4775;
+          stroke-width: 1px;
+        }
+        .scene-root .smart-blinds.blinds-closed .blind-shade {
+          transform: scaleY(1);
+        }
+        .scene-root .smart-blinds.blinds-closed .blinds-night-sky {
+          opacity: .12;
+        }
+        .scene-root .blinds-housing {
+          fill: #7f77dd;
+          stroke: #aaa4ff;
+          stroke-width: 1.1px;
+        }
+        .scene-root .blinds-motor-light {
+          fill: #8ed8ff;
+          filter: drop-shadow(0 0 2px #8ed8ff);
+        }
+        .scene-root .blinds-wifi {
+          fill: none;
+          opacity: .58;
+          stroke: #8ed8ff;
+          stroke-linecap: round;
+          stroke-width: 1.2px;
+        }
+        .scene-root .blinds-wifi circle {
+          fill: #8ed8ff;
+          stroke: none;
+        }
+        .scene-root.lit .blinds-wifi {
+          animation: blindsWifiPulse 2.8s ease-in-out infinite;
+        }
+        @keyframes blindsWifiPulse {
+          0%, 100% { opacity: .3; }
+          50% { opacity: .82; }
+        }
+        @keyframes blindLampColour {
+          0%, 100% { fill: #f59842; }
+          50% { fill: #f5428d; }
+        }
+        .scene-root .doorbell-visitor-scene {
+          cursor: pointer;
+          outline: none;
+        }
+        .scene-root .doorbell-visitor-scene:focus-visible .smart-doorbell {
+          filter: drop-shadow(0 0 5px #8ed8ff);
+        }
+        .scene-root .smart-doorbell > rect {
+          fill: #252d4b;
+          stroke: #8279e5;
+          stroke-width: 1.5px;
+        }
+        .scene-root .doorbell-lens {
+          fill: #080a12;
+          stroke: #676fae;
+          stroke-width: .8px;
+        }
+        .scene-root .doorbell-button {
+          fill: #343d66;
+          stroke: #9b94f1;
+          stroke-width: .9px;
+        }
+        .scene-root .doorbell-button-light {
+          fill: #8ed8ff;
+          filter: drop-shadow(0 0 2px #8ed8ff);
+          opacity: .5;
+        }
+        .scene-root .doorbell-ring-waves {
+          fill: none;
+          opacity: 0;
+          stroke: #8ed8ff;
+          stroke-linecap: round;
+          stroke-width: 1.7px;
+        }
+        .scene-root .doorbell-visitor-runner {
+          opacity: 0;
+          transform: translateX(78px);
+        }
+        .scene-root .doorbell-visitor-body circle,
+        .scene-root .visitor-torso {
+          fill: #6861b8;
+          stroke: #958ef1;
+          stroke-width: 1px;
+        }
+        .scene-root .visitor-back-arm,
+        .scene-root .visitor-ringing-arm path,
+        .scene-root .visitor-leg {
+          fill: none;
+          stroke: #6861b8;
+          stroke-linecap: round;
+          stroke-width: 5px;
+        }
+        .scene-root .visitor-ringing-arm circle {
+          fill: #8279e5;
+          stroke: none;
+        }
+        .scene-root .visitor-ringing-arm {
+          transform: rotate(-48deg);
+          transform-origin: 511px 366px;
+        }
+        .scene-root.lit .doorbell-visitor-runner {
+          animation: visitorApproachesDoor 60s linear infinite;
+        }
+        .scene-root.lit .doorbell-visitor-body {
+          animation: visitorWalkBob 60s ease-in-out infinite;
+        }
+        .scene-root.lit .visitor-ringing-arm {
+          animation: visitorPressesDoorbell 60s ease-in-out infinite;
+        }
+        .scene-root.lit .visitor-leg-one {
+          animation: visitorLegOne 60s ease-in-out infinite;
+        }
+        .scene-root.lit .visitor-leg-two {
+          animation: visitorLegTwo 60s ease-in-out infinite;
+        }
+        .scene-root.lit .doorbell-ring-waves {
+          animation: doorbellRadioRing 60s ease-out infinite;
+        }
+        .scene-root.lit .doorbell-button-light {
+          animation: doorbellButtonRing 60s ease-out infinite;
+        }
+        .scene-root.lit .bathroom-camera .camera-aim circle[cx="18"] {
+          animation: doorbellCameraAlert 60s ease-out infinite;
+        }
+        @keyframes visitorApproachesDoor {
+          0%, 2.1% { opacity: 0; transform: translateX(78px); }
+          3% { opacity: 1; }
+          9.6%, 18.9% { opacity: 1; transform: translateX(0); }
+          26.1% { opacity: 1; transform: translateX(78px); }
+          27.3%, 100% { opacity: 0; transform: translateX(78px); }
+        }
+        @keyframes visitorWalkBob {
+          0%, 2.1%, 9.6%, 18.9%, 27.3%, 100% { transform: translateY(0); }
+          3.6%, 5.4%, 7.2%, 20.4%, 22.5%, 24.6% { transform: translateY(-1.8px); }
+          4.5%, 6.3%, 8.4%, 21.3%, 23.4%, 25.5% { transform: translateY(0); }
+        }
+        @keyframes visitorPressesDoorbell {
+          0%, 10.2%, 17.4%, 100% { transform: rotate(-48deg); }
+          11.7%, 15% { transform: rotate(0deg); }
+          12.6% { transform: rotate(4deg); }
+        }
+        @keyframes visitorLegOne {
+          0%, 2.1%, 9.6%, 18.9%, 27.3%, 100% { transform: rotate(0deg); transform-origin: 512px 381px; }
+          3.9%, 6.9%, 20.7%, 23.7% { transform: rotate(18deg); transform-origin: 512px 381px; }
+          5.4%, 8.4%, 22.2%, 25.2% { transform: rotate(-18deg); transform-origin: 512px 381px; }
+        }
+        @keyframes visitorLegTwo {
+          0%, 2.1%, 9.6%, 18.9%, 27.3%, 100% { transform: rotate(0deg); transform-origin: 520px 381px; }
+          3.9%, 6.9%, 20.7%, 23.7% { transform: rotate(-18deg); transform-origin: 520px 381px; }
+          5.4%, 8.4%, 22.2%, 25.2% { transform: rotate(18deg); transform-origin: 520px 381px; }
+        }
+        @keyframes doorbellRadioRing {
+          0%, 11.7%, 15.9%, 100% { opacity: 0; transform: scale(.72); transform-origin: 488px 355px; }
+          12.6%, 14.1% { opacity: .95; transform: scale(1); transform-origin: 488px 355px; }
+          15% { opacity: .18; transform: scale(1.22); transform-origin: 488px 355px; }
+        }
+        @keyframes doorbellButtonRing {
+          0%, 11.7%, 15.9%, 100% { opacity: .5; }
+          12.3%, 14.7% { opacity: 1; fill: #ffd180; filter: drop-shadow(0 0 4px #ffd180); }
+        }
+        @keyframes doorbellCameraAlert {
+          0%, 12.9%, 17.4%, 100% { fill: #f59842; filter: none; }
+          13.8%, 16.5% { fill: #ff5252; filter: drop-shadow(0 0 3px #ff5252); }
         }
         .scene-root .camera-vision-cone {
           fill: #ff1744 !important;
