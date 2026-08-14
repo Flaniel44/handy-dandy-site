@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { RouteTransition } from "../components/route-transition";
 import { SiteSessionNav } from "../components/site-session-nav";
 import "./globals.css";
@@ -42,6 +43,20 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en-CA">
+      <head>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-Q98VED0W7K"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-Q98VED0W7K');
+          `}
+        </Script>
+      </head>
       <body>
         <RouteTransition>
           <SiteSessionNav />
