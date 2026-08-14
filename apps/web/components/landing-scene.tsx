@@ -219,7 +219,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     setGarageOpen(false);
     const garageInterval = window.setInterval(() => {
       if (garage) setGarageOpen(!garage.classList.contains("garage-open"));
-    }, 180_000);
+    }, 60_000);
 
     let bedroomBlinds = houseScene?.querySelector<SVGGElement>(".smart-blinds");
     if (houseScene && !bedroomBlinds) {
@@ -255,7 +255,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     setBlindsClosed(true);
     const blindsInterval = window.setInterval(() => {
       if (bedroomBlinds) setBlindsClosed(!bedroomBlinds.classList.contains("blinds-closed"));
-    }, 120_000);
+    }, 45_000);
 
     let thermostat = houseScene?.querySelector<SVGGElement>(".smart-thermostat");
     if (houseScene && !thermostat) {
@@ -332,6 +332,11 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     } catch {
       setThermostatTemperature(21);
     }
+    const thermostatInterval = window.setInterval(() => {
+      if (!thermostat) return;
+      const currentTemperature = Number(thermostat.dataset.temperature ?? 21);
+      setThermostatTemperature(currentTemperature === 19 ? 23 : 19);
+    }, 90_000);
 
     if (houseScene && !houseScene.querySelector(".robot-vacuum-runner")) {
       const vacuumStyles = document.createElement("style");
@@ -1580,6 +1585,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       window.clearInterval(rooftopWifiTimer);
       window.clearInterval(blindsInterval);
       window.clearInterval(garageInterval);
+      window.clearInterval(thermostatInterval);
       stopDoorbellLightSchedule();
       if (ropeFrame !== undefined) window.cancelAnimationFrame(ropeFrame);
       if (readyTimer) window.clearTimeout(readyTimer);
