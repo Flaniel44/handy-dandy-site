@@ -777,8 +777,9 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
 
         if (tracker.isTracking && tracker.cone) {
           // The cone lives inside the rotating camera head. Counter-rotate the
-          // pointer first so its far edge remains centred on the cursor even
-          // while the camera is smoothly catching up with it.
+          // pointer first so its centre line passes through the cursor even
+          // while the camera is smoothly catching up with it. Extend the cone
+          // beyond that point and let the stage crop it at the container edge.
           const inverseAngle = -tracker.currentAngle * Math.PI / 180;
           const pointerDx = tracker.pointerX - 12;
           const pointerDy = tracker.pointerY - 13;
@@ -794,9 +795,11 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
           const perpendicularX = -unitY;
           const perpendicularY = unitX;
           const nearHalfWidth = 2.5;
-          const farHalfWidth = Math.max(9, Math.min(34, distance * .25));
-          const farX = targetX + unitX * 5;
-          const farY = targetY + unitY * 5;
+          const pointerHalfWidth = Math.max(9, Math.min(34, distance * .25));
+          const coneReach = 1200;
+          const farHalfWidth = Math.min(300, coneReach * pointerHalfWidth / distance);
+          const farX = originX + unitX * coneReach;
+          const farY = originY + unitY * coneReach;
           tracker.cone.setAttribute(
             "d",
             `M${(originX + perpendicularX * nearHalfWidth).toFixed(2)} ${(originY + perpendicularY * nearHalfWidth).toFixed(2)} ` +
