@@ -165,8 +165,8 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
         "beforeend",
         `<g class="smart-garage" role="button" tabindex="0" aria-pressed="false" aria-label="Open garage door">
           <path class="garage-light-spill" d="M112 394 L190 394 L215 438 L84 438 Z" fill="url(#garageLightBeam)" pointer-events="none" aria-hidden="true" />
-          <path class="garage-building" d="M99 400 V328 L149 299 L200 328 V400 Z" />
-          <path class="garage-roof" d="M91 329 L149 294 L199 329 L193 337 L149 307 L99 337 Z" />
+          <path class="garage-building" d="M99 400 V329 L149 299 L199 329 V400 Z" />
+          <path class="garage-roof" d="M92 332 Q88 329 92 326 L145 295 Q149 292 153 295 L206 326 Q210 329 206 332 L202 336 Q200 339 197 337 L152 310 Q149 308 146 310 L101 337 Q98 339 96 336 Z" />
           <rect class="garage-opening" x="108" y="333" width="82" height="67" rx="2" />
           <g class="garage-interior" clip-path="url(#garageOpeningClip)" pointer-events="none" aria-hidden="true">
             <rect x="110" y="335" width="78" height="63" fill="#11182b" />
