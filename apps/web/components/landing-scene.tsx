@@ -2331,16 +2331,20 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
           animation: tvMovieCar 4.8s linear infinite;
         }
         .scene-root .tv-device-wifi {
-          animation: tvWifiPulse 3.6s ease-in-out infinite;
           fill: none;
           opacity: .48;
           stroke: #8ed8ff;
           stroke-linecap: round;
           stroke-width: 1.05px;
+          transform-box: fill-box;
+          transform-origin: center bottom;
         }
         .scene-root .tv-device-wifi circle {
           fill: #8ed8ff;
           stroke: none;
+        }
+        .scene-root.lit .tv-device-wifi {
+          animation: tvWifiPulse 3.2s ease-out infinite;
         }
         .scene-root .interactive-shower {
           cursor: pointer;
@@ -2477,8 +2481,9 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
           50% { opacity: .55; transform: scale(.72); }
         }
         @keyframes tvWifiPulse {
-          0%, 100% { opacity: .28; }
-          50% { opacity: .62; }
+          0%, 16% { opacity: .16; transform: translateY(1px) scale(.8); }
+          40%, 62% { opacity: .78; }
+          82%, 100% { opacity: 0; transform: translateY(-1.8px) scale(1.26); }
         }
         .scene-root.lit .lamp { animation: lampFlicker 1s steps(1, end) forwards !important; }
         .scene-root.lit .lamp1 { animation-delay: .2s !important; }
