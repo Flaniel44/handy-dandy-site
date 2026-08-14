@@ -24,6 +24,7 @@ export function LandingMarketingSections() {
         <div className="possibility-section-heading">
           <p className="eyebrow">A clear, personal process</p>
           <h2 id="working-together-title">What working with me looks like.</h2>
+          <Link className="working-together-about-link" href="/about">Get to Know Me</Link>
         </div>
         <ol className="working-together-grid">
           {workingTogetherSteps.map((step, index) => (
@@ -33,7 +34,6 @@ export function LandingMarketingSections() {
             </li>
           ))}
         </ol>
-        <Link className="working-together-about-link" href="/about">Get to Know Me</Link>
       </section>
 
       <section className="landing-offerings" id="home-possibilities" aria-labelledby="landing-offerings-title">

@@ -228,6 +228,11 @@ a { color: inherit; }
   text-decoration: none;
   transition: border-color .2s ease, background .2s ease, box-shadow .2s ease, transform .2s ease;
 }
+.landing-working-together .possibility-section-heading .working-together-about-link {
+  align-self: end;
+  justify-self: end;
+  margin-top: 0;
+}
 .working-together-about-link:hover,
 .working-together-about-link:focus-visible {
   border-color: #aaa3ff;
@@ -547,6 +552,7 @@ a { color: inherit; }
   .possibility-media { min-height: 280px; }
   .possibility-section-heading, .possibility-service-grid, .working-together-grid { grid-template-columns: 1fr; }
   .possibility-section-heading .eyebrow { margin-bottom: 0; }
+  .landing-working-together .possibility-section-heading .working-together-about-link { justify-self: start; }
   .possibility-service-card { min-height: 260px; }
   .working-together-grid { gap: 0; }
   .possibilities-cta { padding-inline: 24px; }
