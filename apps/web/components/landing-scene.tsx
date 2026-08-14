@@ -12,7 +12,7 @@ import { prepareRouteTransition } from "./route-transition";
 
 const STORAGE_KEY = "handy-dandy-house-powered";
 const DEVICE_STORAGE_KEY = "handy-dandy-device-power";
-const BLINDS_STORAGE_KEY = "handy-dandy-bedroom-blinds";
+const THERMOSTAT_STORAGE_KEY = "handy-dandy-thermostat-temperature";
 const POWER_STATE_TTL_MS = 24 * 60 * 60 * 1000;
 const DOORBELL_SEQUENCE_MS = 60_000;
 const DOORBELL_RING_DELAY_MS = 7_380;
@@ -180,16 +180,86 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       bedroomBlinds?.classList.toggle("blinds-closed", closed);
       bedroomBlinds?.setAttribute("aria-pressed", String(closed));
       bedroomBlinds?.setAttribute("aria-label", `${closed ? "Open" : "Close"} bedroom blinds`);
+    };
+    setBlindsClosed(true);
+    const blindsInterval = window.setInterval(() => {
+      if (bedroomBlinds) setBlindsClosed(!bedroomBlinds.classList.contains("blinds-closed"));
+    }, 120_000);
+
+    let thermostat = houseScene?.querySelector<SVGGElement>(".smart-thermostat");
+    if (houseScene && !thermostat) {
+      houseScene.insertAdjacentHTML(
+        "beforeend",
+        `<g class="smart-thermostat thermostat-comfort" transform="translate(324 335) scale(1.1)" role="button" tabindex="0" aria-label="Thermostat set to 21 degrees Celsius. Activate to increase">
+          <rect class="thermostat-click-target" x="-12" y="-14" width="42" height="44" rx="12" fill="transparent" pointer-events="all" aria-hidden="true" />
+          <circle class="thermostat-wall-glow" cx="9" cy="8" r="15" pointer-events="none" aria-hidden="true" />
+          <circle class="thermostat-shell" cx="9" cy="8" r="11.5" />
+          <circle class="thermostat-screen" cx="9" cy="8" r="8.2" />
+          <path class="thermostat-progress" d="M3.2 2.1 A8.4 8.4 0 0 1 15.4 2.3" />
+          <g class="thermostat-mode-icon thermostat-cold-icon" pointer-events="none" aria-hidden="true">
+            <path d="M9 3 V11 M5.5 5 L12.5 9 M12.5 5 L5.5 9 M9 3 L7.8 4.3 M9 3 L10.2 4.3 M9 11 L7.8 9.7 M9 11 L10.2 9.7" />
+          </g>
+          <g class="thermostat-mode-icon thermostat-hot-icon" pointer-events="none" aria-hidden="true">
+            <path d="M9.2 2.8 C11.8 5.3 12.5 7.2 11.6 9.2 C11 10.6 9.9 11.3 8.7 11.3 C6.7 11.3 5.4 9.9 5.6 8.1 C5.8 6.6 6.8 5.8 7.2 4.4 C7.8 5.1 8.1 5.8 8.2 6.5 C9.3 5.5 9.5 4.3 9.2 2.8 Z" />
+          </g>
+          <g class="thermostat-mode-icon thermostat-comfort-icon" pointer-events="none" aria-hidden="true">
+            <circle cx="9" cy="7" r="2.6" />
+            <path d="M9 2.8 V3.7 M9 10.3 V11.2 M4.8 7 H5.7 M12.3 7 H13.2 M6 4 L6.7 4.7 M11.3 9.3 L12 10 M12 4 L11.3 4.7 M6.7 9.3 L6 10" />
+          </g>
+          <text class="thermostat-mode-label" x="9" y="13.3">COMFORT</text>
+          <g class="thermostat-wifi" pointer-events="none" aria-hidden="true">
+            <path d="M5 -6 Q9 -10 13 -6" />
+            <circle cx="9" cy="-4.8" r=".8" />
+          </g>
+        </g>
+        <g class="smart-hvac-unit hvac-comfort" transform="translate(348 308)" pointer-events="none" aria-hidden="true">
+          <rect class="hvac-shadow" x="-1.5" y="1.5" width="45" height="15" rx="4" />
+          <rect class="hvac-body" x="0" y="0" width="42" height="13" rx="3.5" />
+          <path class="hvac-seam" d="M3 8.5 H39" />
+          <path class="hvac-vent" d="M7 10.5 Q21 13 35 10.5" />
+          <circle class="hvac-status-light" cx="36.5" cy="4.3" r="1.1" />
+          <g class="hvac-cool-air">
+            <path d="M9 14 C9 18 5 20 6 25" />
+            <path d="M20 14 C20 19 16 21 17 27" />
+            <path d="M31 14 C31 18 27 21 28 25" />
+          </g>
+          <g class="hvac-heat-air">
+            <path d="M11 14 C7 18 15 21 11 26" />
+            <path d="M22 14 C18 18 26 21 22 27" />
+            <path d="M33 14 C29 18 37 21 33 26" />
+          </g>
+        </g>`,
+      );
+      thermostat = houseScene.querySelector<SVGGElement>(".smart-thermostat");
+    }
+    const hvacUnit = houseScene?.querySelector<SVGGElement>(".smart-hvac-unit");
+
+    const setThermostatTemperature = (temperature: number) => {
+      if (!thermostat) return;
+      const normalizedTemperature = temperature === 19 || temperature === 23 ? temperature : 21;
+      const mode = normalizedTemperature === 19 ? "cool" : normalizedTemperature === 23 ? "warm" : "comfort";
+      const nextTemperature = normalizedTemperature === 19 ? 21 : normalizedTemperature === 21 ? 23 : 19;
+      thermostat.classList.remove("thermostat-cool", "thermostat-comfort", "thermostat-warm");
+      thermostat.classList.add(`thermostat-${mode}`);
+      hvacUnit?.classList.remove("hvac-cool", "hvac-comfort", "hvac-warm");
+      hvacUnit?.classList.add(`hvac-${mode}`);
+      const modeDisplay = thermostat.querySelector<SVGTextElement>(".thermostat-mode-label");
+      if (modeDisplay) modeDisplay.textContent = mode.toUpperCase();
+      thermostat.dataset.temperature = String(normalizedTemperature);
+      thermostat.setAttribute(
+        "aria-label",
+        `Thermostat set to ${normalizedTemperature} degrees Celsius. Activate to set ${nextTemperature} degrees`,
+      );
       try {
-        window.sessionStorage.setItem(BLINDS_STORAGE_KEY, closed ? "closed" : "open");
+        window.sessionStorage.setItem(THERMOSTAT_STORAGE_KEY, String(normalizedTemperature));
       } catch {
-        // The blinds remain interactive when browser storage is unavailable.
+        // The thermostat remains interactive when browser storage is unavailable.
       }
     };
     try {
-      setBlindsClosed(window.sessionStorage.getItem(BLINDS_STORAGE_KEY) === "closed");
+      setThermostatTemperature(Number(window.sessionStorage.getItem(THERMOSTAT_STORAGE_KEY) ?? 21));
     } catch {
-      setBlindsClosed(false);
+      setThermostatTemperature(21);
     }
 
     if (houseScene && !houseScene.querySelector(".robot-vacuum-runner")) {
@@ -766,6 +836,15 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       return true;
     };
 
+    const cycleThermostatFrom = (target: EventTarget | null) => {
+      if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
+      const control = target.closest<SVGGElement>(".smart-thermostat");
+      if (!control) return false;
+      const currentTemperature = Number(control.dataset.temperature ?? 21);
+      setThermostatTemperature(currentTemperature === 19 ? 21 : currentTemperature === 21 ? 23 : 19);
+      return true;
+    };
+
     const replayDoorbellFrom = (target: EventTarget | null) => {
       if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
       const doorbell = target.closest<SVGGElement>(".doorbell-visitor-scene");
@@ -1172,6 +1251,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       if (speedUpVacuumFrom(event.target)) return;
       if (growWifiFrom(event.target)) return;
       if (replayDoorbellFrom(event.target)) return;
+      if (cycleThermostatFrom(event.target)) return;
       if (wakeSleeperFrom(event.target)) return;
       if (toggleShowerFrom(event.target)) return;
       if (toggleBlindsFrom(event.target)) return;
@@ -1185,6 +1265,11 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest(".smart-thermostat")) {
+        event.preventDefault();
+        cycleThermostatFrom(event.target);
+        return;
+      }
       if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.closest(".doorbell-visitor-scene")) {
         event.preventDefault();
         replayDoorbellFrom(event.target);
@@ -1295,6 +1380,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       chain.removeEventListener("pointercancel", releasePullChain);
       mobileScene.removeEventListener("change", syncSceneViewport);
       window.clearInterval(ambientTimer);
+      window.clearInterval(blindsInterval);
       stopDoorbellLightSchedule();
       if (ropeFrame !== undefined) window.cancelAnimationFrame(ropeFrame);
       if (readyTimer) window.clearTimeout(readyTimer);
@@ -1575,6 +1661,178 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
         @keyframes blindLampColour {
           0%, 100% { fill: #f59842; }
           50% { fill: #f5428d; }
+        }
+        .scene-root .smart-thermostat {
+          cursor: pointer;
+          outline: none;
+        }
+        .scene-root .smart-thermostat:focus-visible {
+          filter: drop-shadow(0 0 5px #b388ff);
+        }
+        .scene-root .thermostat-wall-glow {
+          fill: #8279e5;
+          filter: blur(4px);
+          opacity: .14;
+          transition: fill .35s ease, opacity .35s ease;
+        }
+        .scene-root .thermostat-shell {
+          fill: #6861b8;
+          stroke: #aaa4ff;
+          stroke-width: 1.4px;
+          transition: fill .35s ease, stroke .35s ease;
+        }
+        .scene-root .thermostat-screen {
+          fill: #12182b;
+          stroke: #394369;
+          stroke-width: .75px;
+        }
+        .scene-root .thermostat-progress {
+          fill: none;
+          stroke: #b9b4ff;
+          stroke-linecap: round;
+          stroke-width: 1.2px;
+          transition: stroke .35s ease;
+        }
+        .scene-root .thermostat-mode-label {
+          fill: #eef0ff;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+          pointer-events: none;
+          text-anchor: middle;
+        }
+        .scene-root .thermostat-mode-label {
+          fill: #aeb5d5;
+          font-size: 1.85px;
+          font-weight: 700;
+          letter-spacing: .2px;
+        }
+        .scene-root .thermostat-mode-icon {
+          opacity: 0;
+          transition: opacity .24s ease;
+        }
+        .scene-root .thermostat-cold-icon path {
+          fill: none;
+          stroke: #8ed8ff;
+          stroke-linecap: round;
+          stroke-width: 1.05px;
+        }
+        .scene-root .thermostat-hot-icon path {
+          fill: #ff9a65;
+          stroke: #ffc09c;
+          stroke-linejoin: round;
+          stroke-width: .55px;
+        }
+        .scene-root .thermostat-comfort-icon circle,
+        .scene-root .thermostat-comfort-icon path {
+          fill: none;
+          stroke: #c4c0ff;
+          stroke-linecap: round;
+          stroke-width: .8px;
+        }
+        .scene-root .smart-thermostat.thermostat-cool .thermostat-cold-icon,
+        .scene-root .smart-thermostat.thermostat-warm .thermostat-hot-icon,
+        .scene-root .smart-thermostat.thermostat-comfort .thermostat-comfort-icon {
+          opacity: 1;
+        }
+        .scene-root .smart-hvac-unit .hvac-shadow {
+          fill: #080a12;
+          opacity: .28;
+        }
+        .scene-root .smart-hvac-unit .hvac-body {
+          fill: #7770c8;
+          stroke: #aaa4ff;
+          stroke-width: 1.15px;
+          transition: fill .35s ease, stroke .35s ease;
+        }
+        .scene-root .smart-hvac-unit .hvac-seam,
+        .scene-root .smart-hvac-unit .hvac-vent {
+          fill: none;
+          stroke: #3f4775;
+          stroke-linecap: round;
+          stroke-width: 1px;
+        }
+        .scene-root .smart-hvac-unit .hvac-status-light {
+          fill: #b9b4ff;
+          filter: drop-shadow(0 0 1.5px #b9b4ff);
+          transition: fill .35s ease;
+        }
+        .scene-root .hvac-cool-air,
+        .scene-root .hvac-heat-air {
+          fill: none;
+          opacity: 0;
+          stroke-linecap: round;
+          stroke-width: 1.35px;
+          transition: opacity .25s ease;
+        }
+        .scene-root .hvac-cool-air {
+          stroke: #65c7ef;
+        }
+        .scene-root .hvac-heat-air {
+          stroke: #ff9a65;
+        }
+        .scene-root .thermostat-wifi {
+          fill: none;
+          opacity: .5;
+          stroke: #8ed8ff;
+          stroke-linecap: round;
+          stroke-width: 1px;
+        }
+        .scene-root .thermostat-wifi circle {
+          fill: #8ed8ff;
+          stroke: none;
+        }
+        .scene-root .smart-thermostat.thermostat-cool .thermostat-shell {
+          fill: #426f9c;
+          stroke: #8ed8ff;
+        }
+        .scene-root .smart-thermostat.thermostat-cool .thermostat-progress {
+          stroke: #8ed8ff;
+        }
+        .scene-root .smart-thermostat.thermostat-cool .thermostat-wall-glow {
+          fill: #40c4ff;
+          opacity: .22;
+        }
+        .scene-root .smart-hvac-unit.hvac-cool .hvac-body {
+          fill: #4f789e;
+          stroke: #8ed8ff;
+        }
+        .scene-root .smart-hvac-unit.hvac-cool .hvac-status-light {
+          fill: #8ed8ff;
+        }
+        .scene-root .smart-hvac-unit.hvac-cool .hvac-cool-air {
+          animation: hvacCoolAir 1.7s ease-out infinite;
+          opacity: 1;
+        }
+        .scene-root .smart-thermostat.thermostat-warm .thermostat-shell {
+          fill: #a85f52;
+          stroke: #ffab7a;
+        }
+        .scene-root .smart-thermostat.thermostat-warm .thermostat-progress {
+          stroke: #ffab7a;
+        }
+        .scene-root .smart-thermostat.thermostat-warm .thermostat-wall-glow {
+          fill: #ff7043;
+          opacity: .22;
+        }
+        .scene-root .smart-hvac-unit.hvac-warm .hvac-body {
+          fill: #a86659;
+          stroke: #ffab7a;
+        }
+        .scene-root .smart-hvac-unit.hvac-warm .hvac-status-light {
+          fill: #ffab7a;
+        }
+        .scene-root .smart-hvac-unit.hvac-warm .hvac-heat-air {
+          animation: hvacHeatAir 1.9s ease-in-out infinite;
+          opacity: 1;
+        }
+        @keyframes hvacCoolAir {
+          0% { opacity: 0; transform: translateY(-2px); }
+          35%, 70% { opacity: .9; }
+          100% { opacity: 0; transform: translateY(5px); }
+        }
+        @keyframes hvacHeatAir {
+          0% { opacity: 0; transform: translateY(-2px); }
+          35%, 68% { opacity: .85; }
+          100% { opacity: 0; transform: translateY(5px); }
         }
         .scene-root .doorbell-visitor-scene {
           cursor: pointer;
