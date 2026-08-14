@@ -191,11 +191,25 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
             <path d="M137 287 Q149 275 161 287" />
             <circle cx="149" cy="292" r="1.3" />
           </g>
-          <rect class="garage-click-target" x="96" y="326" width="106" height="81" rx="7" fill="#ffffff" fill-opacity="0.001" pointer-events="all" aria-hidden="true" />
         </g>`,
       );
       garage = houseScene.querySelector<SVGGElement>(".smart-garage");
       if (garage) houseScene.prepend(garage);
+    }
+    let garageClickTarget = houseScene?.querySelector<SVGRectElement>(":scope > .garage-click-target");
+    if (houseScene && !garageClickTarget) {
+      garageClickTarget = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      garageClickTarget.setAttribute("class", "garage-click-target");
+      garageClickTarget.setAttribute("x", "100");
+      garageClickTarget.setAttribute("y", "326");
+      garageClickTarget.setAttribute("width", "100");
+      garageClickTarget.setAttribute("height", "81");
+      garageClickTarget.setAttribute("rx", "7");
+      garageClickTarget.setAttribute("fill", "#ffffff");
+      garageClickTarget.setAttribute("fill-opacity", "0.001");
+      garageClickTarget.setAttribute("pointer-events", "all");
+      garageClickTarget.setAttribute("aria-hidden", "true");
+      houseScene.append(garageClickTarget);
     }
     const setGarageOpen = (open: boolean) => {
       garage?.classList.toggle("garage-open", open);
@@ -946,7 +960,8 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
 
     const toggleGarageFrom = (target: EventTarget | null) => {
       if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
-      const garageControl = target.closest<SVGGElement>(".smart-garage");
+      const garageControl = target.closest<SVGGElement>(".smart-garage")
+        ?? (target.closest(".garage-click-target") ? garage : null);
       if (!garageControl) return false;
       setGarageOpen(!garageControl.classList.contains("garage-open"));
       return true;
@@ -1042,6 +1057,22 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       );
       return true;
     };
+
+    const rooftopWifiSignals = Array.from(
+      root.querySelectorAll<SVGGElement>(".roof-antennas .interactive-wifi"),
+    );
+    let previousRooftopWifiIndex = -1;
+    const rooftopWifiTimer = window.setInterval(() => {
+      if (!root.classList.contains("lit") || rooftopWifiSignals.length === 0) return;
+
+      let nextIndex = Math.floor(Math.random() * rooftopWifiSignals.length);
+      if (rooftopWifiSignals.length > 1 && nextIndex === previousRooftopWifiIndex) {
+        nextIndex = (nextIndex + 1 + Math.floor(Math.random() * (rooftopWifiSignals.length - 1)))
+          % rooftopWifiSignals.length;
+      }
+      previousRooftopWifiIndex = nextIndex;
+      growWifiFrom(rooftopWifiSignals[nextIndex]);
+    }, 4_000);
 
     const speedUpVacuumFrom = (target: EventTarget | null) => {
       if (!(target instanceof Element) || !root.classList.contains("lit")) return false;
@@ -1546,6 +1577,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       chain.removeEventListener("pointercancel", releasePullChain);
       mobileScene.removeEventListener("change", syncSceneViewport);
       window.clearInterval(ambientTimer);
+      window.clearInterval(rooftopWifiTimer);
       window.clearInterval(blindsInterval);
       window.clearInterval(garageInterval);
       stopDoorbellLightSchedule();
@@ -1806,6 +1838,10 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
         .scene-root .smart-garage {
           cursor: pointer;
           outline: none;
+          touch-action: manipulation;
+        }
+        .scene-root .garage-click-target {
+          cursor: pointer;
           touch-action: manipulation;
         }
         .scene-root .smart-garage:focus-visible .garage-door {
