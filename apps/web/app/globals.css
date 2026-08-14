@@ -260,7 +260,9 @@ a { color: inherit; }
 .about-image-placeholder strong, .about-image-placeholder span { position: relative; }
 .about-image-placeholder strong { font-size: 1rem; }
 .about-image-placeholder span { color: #89889a; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
-.about-portrait-placeholder { aspect-ratio: 4 / 5; }
+.about-portrait-placeholder { aspect-ratio: 2 / 3; }
+.about-portrait { position: relative; min-height: 440px; overflow: hidden; border: 1px solid #686f9c; border-radius: 18px; background: #121625; box-shadow: 0 28px 70px #0006, 0 0 30px #6259c326; }
+.about-portrait img { object-fit: cover; object-position: 50% 48%; }
 .about-section-heading { display: grid; grid-template-columns: minmax(180px, .38fr) minmax(0, 1fr); gap: 40px; align-items: start; }
 .about-section-heading h2, .about-smart-home h2, .about-local h2, .about-cta h2 { margin: 0; font-size: clamp(2.7rem, 6vw, 5.4rem); line-height: .94; letter-spacing: -.052em; }
 .about-story { padding-top: clamp(100px, 15vw, 190px); }

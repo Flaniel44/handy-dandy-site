@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
+
+import danielPortrait from "../../public/images/daniel-about.jpg";
 
 export const metadata: Metadata = {
   title: "Get to Know Me",
@@ -57,7 +60,15 @@ export default function AboutPage() {
             I&apos;m that guy who friends, family, and neighbours call when technology becomes confusing—or when they have an idea they aren&apos;t sure is possible.
           </p>
         </div>
-        <ImagePlaceholder label="A photo of Daniel" note="Portrait placeholder" className="about-portrait-placeholder" />
+        <div className="about-portrait about-portrait-placeholder">
+          <Image
+            src={danielPortrait}
+            alt="Daniel smiling outdoors with a young child"
+            fill
+            priority
+            sizes="(max-width: 760px) min(100vw - 40px, 420px), 36vw"
+          />
+        </div>
       </section>
 
       <section className="about-story" aria-labelledby="about-story-title">
