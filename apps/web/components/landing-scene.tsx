@@ -166,7 +166,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
         `<g class="smart-garage" role="button" tabindex="0" aria-pressed="false" aria-label="Open garage door">
           <path class="garage-light-spill" d="M112 394 L190 394 L215 438 L84 438 Z" fill="url(#garageLightBeam)" pointer-events="none" aria-hidden="true" />
           <path class="garage-building" d="M99 400 V329 L149 299 L199 329 V400 Z" />
-          <path class="garage-roof" d="M92 332 Q88 329 92 326 L145 295 Q149 292 153 295 L206 326 Q210 329 206 332 L202 336 Q200 339 197 337 L152 310 Q149 308 146 310 L101 337 Q98 339 96 336 Z" />
+          <path class="garage-roof" d="M93 332 L149 298 L205 332" />
           <rect class="garage-opening" x="108" y="333" width="82" height="67" rx="2" />
           <g class="garage-interior" clip-path="url(#garageOpeningClip)" pointer-events="none" aria-hidden="true">
             <rect x="110" y="335" width="78" height="63" fill="#11182b" />
@@ -191,7 +191,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
             <path d="M137 287 Q149 275 161 287" />
             <circle cx="149" cy="292" r="1.3" />
           </g>
-          <rect class="garage-click-target" x="98" y="318" width="103" height="89" rx="9" fill="transparent" pointer-events="all" aria-hidden="true" />
+          <rect class="garage-click-target" x="96" y="326" width="106" height="81" rx="7" fill="#ffffff" fill-opacity="0.001" pointer-events="all" aria-hidden="true" />
         </g>`,
       );
       garage = houseScene.querySelector<SVGGElement>(".smart-garage");
@@ -430,7 +430,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
             <path class="camera-wifi-wave wave-outer" d="M-5 -3 Q0 -8 5 -3" />
           </g>
         </g>
-        <g class="tracking-camera bedroom-camera" transform="translate(197 248) scale(-1.15 1.15)">
+        <g class="tracking-camera bedroom-camera" transform="translate(197 208) scale(-1.15 1.15)">
           <rect x="0" y="7" width="4" height="17" rx="1.5" fill="#5a6080" />
           <path d="M4 17 H8 L12 13" fill="none" stroke="#7f77dd" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
           <g class="camera-aim">
@@ -816,6 +816,8 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
       touchTrackingUntil: 0,
       phase: index * Math.PI * .75,
     }));
+    const doorbellVisitorRunner = doorbellScene?.querySelector<SVGGElement>(".doorbell-visitor-runner");
+    const doorbellVisitorHead = doorbellScene?.querySelector<SVGCircleElement>(".doorbell-visitor-body > circle");
     const mobileScene = window.matchMedia("(max-width: 620px)");
     const syncSceneViewport = () => sceneSvg?.setAttribute("viewBox", mobileScene.matches ? "110 0 460 460" : "0 0 680 460");
     syncSceneViewport();
@@ -1132,9 +1134,31 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
           tracker.touchTrackingUntil = 0;
           tracker.camera.classList.remove("camera-touch-tracking");
         }
+        let visitorAngle: number | undefined;
+        if (
+          !tracker.isTracking
+          && tracker.camera.classList.contains("bathroom-camera")
+          && root.classList.contains("lit")
+          && doorbellVisitorRunner
+          && doorbellVisitorHead
+          && Number.parseFloat(window.getComputedStyle(doorbellVisitorRunner).opacity) > .2
+        ) {
+          const cameraMatrix = tracker.camera.getScreenCTM();
+          const visitorBounds = doorbellVisitorHead.getBoundingClientRect();
+          if (cameraMatrix && visitorBounds.width > 0 && visitorBounds.height > 0) {
+            const visitorTarget = new DOMPoint(
+              visitorBounds.left + visitorBounds.width / 2,
+              visitorBounds.top + visitorBounds.height / 2,
+            ).matrixTransform(cameraMatrix.inverse());
+            const candidateAngle = Math.atan2(visitorTarget.y - 13, visitorTarget.x - 12) * 180 / Math.PI;
+            if (visitorTarget.x > 12 && candidateAngle >= -50 && candidateAngle <= 50) {
+              visitorAngle = Math.max(-38, Math.min(42, candidateAngle));
+            }
+          }
+        }
         const desiredAngle = tracker.isTracking
           ? tracker.targetAngle
-          : Math.sin(time / 1500 + tracker.phase) * 12;
+          : visitorAngle ?? Math.sin(time / 1500 + tracker.phase) * 12;
         tracker.currentAngle += (desiredAngle - tracker.currentAngle) * .075;
         tracker.aim.setAttribute("transform", `rotate(${tracker.currentAngle.toFixed(2)} 12 13)`);
 
@@ -1578,6 +1602,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
             radial-gradient(circle at 50% 72%, #5c55aa24 0, transparent 42%),
             linear-gradient(145deg, #111526 0%, #0b0d16 72%) !important;
           background-size: 28px 28px, 28px 28px, auto, auto !important;
+          background-attachment: fixed, fixed, scroll, scroll !important;
         }
         .scene-root .stage > svg {
           position: relative;
@@ -1635,6 +1660,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
             radial-gradient(circle at 50% 68%, #6f67c83d 0, transparent 46%),
             linear-gradient(145deg, #1a2037 0%, #101426 72%) !important;
           background-size: 28px 28px, 28px 28px, auto, auto !important;
+          background-attachment: fixed, fixed, scroll, scroll !important;
         }
         .scene-root .house-scene {
           filter: drop-shadow(0 12px 12px #0007);
@@ -1656,8 +1682,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
         }
         .scene-root .house-scene > rect.lamp {
           rx: 6px;
-          stroke: #454c70;
-          stroke-width: 2px;
+          stroke: none;
         }
         .scene-root .house-scene [fill="#7f77dd"] {
           fill: #6861b8;
@@ -1781,6 +1806,7 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
         .scene-root .smart-garage {
           cursor: pointer;
           outline: none;
+          touch-action: manipulation;
         }
         .scene-root .smart-garage:focus-visible .garage-door {
           filter: drop-shadow(0 0 5px #b388ff);
@@ -1803,10 +1829,11 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
           stroke-width: 8px;
         }
         .scene-root .garage-roof {
-          fill: #7f77dd;
-          stroke: #9189ed;
+          fill: none;
+          stroke: #8279e5;
+          stroke-linecap: round;
           stroke-linejoin: round;
-          stroke-width: 1.6px;
+          stroke-width: 7px;
         }
         .scene-root .garage-opening {
           fill: #101628;
@@ -2501,6 +2528,17 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
           user-select: none;
           -webkit-user-select: none;
           transition: filter .18s ease, opacity .18s ease;
+        }
+        .scene-root .device-toggle-source > path,
+        .scene-root .interactive-shower > path,
+        .scene-root .interactive-sleeper > path {
+          filter: drop-shadow(0 .65px .45px #080b18b3);
+          paint-order: stroke fill;
+          stroke: #aaa6d5;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-opacity: .58;
+          stroke-width: .48px;
         }
         .scene-root.lit .device-toggle-source:hover,
         .scene-root.lit .device-toggle-source:focus-visible {
