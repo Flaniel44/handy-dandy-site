@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
-import danielPortrait from "../../public/images/daniel-about.jpg";
-
 export const metadata: Metadata = {
   title: "Get to Know Me",
   description: "Meet Daniel, the friendly local tech helper behind Digital HandyDan in Ottawa, and learn why he loves making technology easier and more useful.",
@@ -62,7 +60,7 @@ export default function AboutPage() {
         </div>
         <div className="about-portrait about-portrait-placeholder">
           <Image
-            src={danielPortrait}
+            src="/images/daniel-about.jpg"
             alt="Daniel smiling outdoors with a young child"
             fill
             priority
