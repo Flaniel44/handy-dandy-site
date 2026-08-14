@@ -305,9 +305,9 @@ export function LandingScene({ launchOfferEnabled = false, openHouseBridgeEnable
     if (actions && !reviewJump) {
       reviewJump = document.createElement("a");
       reviewJump.className = "landing-review-jump hide";
-      reviewJump.href = "#home-possibilities";
+      reviewJump.href = "#working-with-me";
       reviewJump.innerHTML = `
-        <span>Scroll to learn about the process</span>
+        <span>Learn about the process</span>
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 4v15m-6-6 6 6 6-6" />
         </svg>
